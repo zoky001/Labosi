@@ -1,0 +1,7 @@
+#Konfiguracija NWTIS grupa 2
+#Tue Mar 13 17:01:12 CET 2018
+
+pero=1
+iva=ivic
+marko=martic
+a=b
