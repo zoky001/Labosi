@@ -1,0 +1,8 @@
+#Konfiguracija NWTIS grupa 2
+#Wed Mar 14 17:41:12 CET 2018
+port=8000
+maks.broj.zahtjeva.cekanje=5
+maks.broj.radnih.dretvi=5
+datoteka.evidencije.rada=NWTis_zorhrncic_evidencija_rada.bin
+interval.za.serijalizaciju=60
+
