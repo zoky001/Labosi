@@ -10,16 +10,52 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.foi.nwtis.nikbukove.konfiguracije.Konfiguracija;
-import org.foi.nwtis.nikbukove.konfiguracije.KonfiguracijaApstraktna;
-import org.foi.nwtis.nikbukove.konfiguracije.NeispravnaKonfiguracija;
-import org.foi.nwtis.nikbukove.konfiguracije.NemaKonfiguracije;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaApstraktna;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 
 /**
  *
  * @author grupa_1
  */
 public class ServerSustava {
+
+    private static boolean pause_state = false;
+    private static boolean stop_request = false;
+
+    
+     public static boolean beginStoppingServer() {
+        if (stop_request == false) {
+            stop_request = true;
+            return true;
+        } else {
+            return false;
+        }
+    }
+        public static boolean isStopRequest() {
+        return stop_request;
+    };
+    public static boolean isPause() {
+        return pause_state;
+    };
+    public static boolean setServerPause() {
+        if (pause_state == true) {
+            return false;
+        } else {
+            pause_state = true;
+            return true;
+        }
+    }
+
+    public static boolean setServerStart() {
+        if (pause_state == true) {
+            pause_state = false;
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     public static void main(String[] args) {
         String datotekaKonfig;
@@ -49,8 +85,8 @@ public class ServerSustava {
         boolean krajRada = false;
         int brojRadnihDretvi = 0;
 //TODO Provjeri i kao postoju učitaj evidenciju rada
-SerijalizatorEvidencije se = new SerijalizatorEvidencije("zorhrncic - serijalizator", konfig);
-se.start();
+        SerijalizatorEvidencije se = new SerijalizatorEvidencije("zorhrncic - serijalizator", konfig);
+        se.start();
         try {
             ServerSocket serverSocket = new ServerSocket(port, maksCekanje);
             while (!krajRada) {
@@ -58,10 +94,10 @@ se.start();
                 System.out.println("Korisnik se spojio");
                 if (brojRadnihDretvi == maksRadnihDretvi) {
 //TODO Vrati odgovarajući odgovor
-                }else{
- RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + brojRadnihDretvi, konfig);
- brojRadnihDretvi++;
- radnaDretva.start();
+                } else {
+                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + brojRadnihDretvi, konfig);
+                    brojRadnihDretvi++;
+                    radnaDretva.start();
                 }
             }
         } catch (IOException ex) {

@@ -3,9 +3,9 @@ package org.foi.nwtis.nikbukove;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.foi.nwtis.nikbukove.konfiguracije.KonfiguracijaApstraktna;
-import org.foi.nwtis.nikbukove.konfiguracije.NeispravnaKonfiguracija;
-import org.foi.nwtis.nikbukove.konfiguracije.NemaKonfiguracije;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaApstraktna;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 
 public class Vjezba_03_3 {
 

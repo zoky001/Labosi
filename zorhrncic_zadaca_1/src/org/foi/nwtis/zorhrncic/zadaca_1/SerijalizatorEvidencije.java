@@ -15,7 +15,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.foi.nwtis.nikbukove.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 
 /**
  *

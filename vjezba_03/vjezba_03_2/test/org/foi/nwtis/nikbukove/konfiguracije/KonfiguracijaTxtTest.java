@@ -5,6 +5,8 @@
  */
 package org.foi.nwtis.nikbukove.konfiguracije;
 
+import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaTxt;
 import java.io.File;
 import java.util.Properties;
 import org.junit.After;
