@@ -105,16 +105,16 @@ public abstract class KonfiguracijaApstraktna implements Konfiguracija{
         
         if(datoteka.toLowerCase().endsWith(".txt")){
             konfig = new KonfiguracijaTxt(datoteka);
-            konfig.spremiKonfiguraciju();
+            konfig.ucitajKonfiguraciju(datoteka);
         }else if(datoteka.toLowerCase().endsWith(".xml")){
             konfig = new KonfiguracijaXML(datoteka);
-            konfig.spremiKonfiguraciju();
+            konfig.ucitajKonfiguraciju(datoteka);
         } else if(datoteka.toLowerCase().endsWith(".json")){
             konfig = new KonfiguracijaJSON(datoteka);
-            konfig.spremiKonfiguraciju();
+            konfig.ucitajKonfiguraciju(datoteka);
         } else if(datoteka.toLowerCase().endsWith(".bin")){
             konfig = new KonfiguracijaBin(datoteka);
-            konfig.spremiKonfiguraciju();
+            konfig.ucitajKonfiguraciju(datoteka);
         } else{
             throw new NemaKonfiguracije("Neispravna ekstenzija!");
         }

@@ -10,6 +10,8 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class KonfiguracijaBin extends KonfiguracijaApstraktna {
 
@@ -41,10 +43,12 @@ public class KonfiguracijaBin extends KonfiguracijaApstraktna {
             InputStream is = Files.newInputStream(datKonf.toPath(), StandardOpenOption.READ);  
             ObjectInputStream ois = new ObjectInputStream(is);
           
-            //this.postavke = (Properties) ois.readObject();
+                this.postavke = (Properties) ois.readObject();
             ois.close();
         }catch (IOException ex){
             throw new NeispravnaKonfiguracija("Problem kod učitavanja datoteke "+datKonf.getAbsolutePath());
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(KonfiguracijaBin.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

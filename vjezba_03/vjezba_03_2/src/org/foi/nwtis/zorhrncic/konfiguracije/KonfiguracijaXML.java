@@ -2,6 +2,7 @@
 package org.foi.nwtis.zorhrncic.konfiguracije;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,9 +36,18 @@ public class KonfiguracijaXML extends KonfiguracijaApstraktna {
         }
         
         try{
-            InputStream is = Files.newInputStream(datKonf.toPath(), StandardOpenOption.READ);      
-            this.postavke.loadFromXML(is);
+           // InputStream is = Files.newInputStream(datKonf.toPath(), StandardOpenOption.READ);  
+           //   this.postavke.loadFromXML(is);
+           
+			FileInputStream fileInput = new FileInputStream(datKonf);
+			
+			this.postavke.loadFromXML(fileInput);
+			fileInput.close();
+			
+                        
+          
         }catch (IOException ex){
+            System.out.println("ERROR:" + ex.getMessage());
             throw new NeispravnaKonfiguracija("Problem kod učitavanja datoteke "+datKonf.getAbsolutePath());
         }
     }

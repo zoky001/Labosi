@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jdk.nashorn.internal.parser.TokenType;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 
 /**
@@ -32,11 +33,14 @@ public class RadnaDretva extends Thread {
     PrintWriter out;
     private static boolean pause_state = false;
 
-    public RadnaDretva(Socket socket, String nazivDretve, Konfiguracija konfig) {
+    private Evidencija evidencija;
+
+    public RadnaDretva(Socket socket, String nazivDretve, Konfiguracija konfig, Evidencija evidencija) {
         super(nazivDretve);
         this.socket = socket;
         this.nazivDretve = nazivDretve;
         this.konfig = konfig;
+        this.evidencija = evidencija;
     }
 
     @Override
@@ -48,8 +52,10 @@ public class RadnaDretva extends Thread {
     @Override
     public void run() {
         try (
+                 
                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
+              evidencija.dodajNoviZahtjev();//test monitor
             this.out = out;
             String inputLine, outputLine;
 
@@ -61,6 +67,8 @@ public class RadnaDretva extends Thread {
 
 //TODO smanji broj aktivnih radnih dretvi kod ServerSustava
         } catch (IOException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
 
@@ -77,36 +85,79 @@ public class RadnaDretva extends Thread {
             commandWords.add(retval);
         }
         if (commandWords.size() > 1) {
-            obradaZahtjevaAdmina(commandWords);
-            obradaZahtjevaKlijenata(commandWords);
+
+            if (ServerSustava.isStopRequest()) {
+                //server is stopped
+                if (!obradaZahtjevaAdmina(commandWords, ServerSustava.isStopRequest())) {
+//prima samo zahtjeve admina, treba li vratiti odgovor ako je zahtjev od klijenta
+                    out.println("ERROR 02; komanda nije ispravna");
+                    try {
+                        evidencija.dodajNeispravanZahtjev();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            } else if (ServerSustava.isPause()) {
+                if (!obradaZahtjevaAdmina(commandWords, ServerSustava.isStopRequest())) {
+//prima samo zahtjeve admina, treba li vratiti odgovor ako je zahtjev od klijenta
+                    out.println("ERROR 02; komanda nije ispravna");
+                    try {
+                        evidencija.dodajNeispravanZahtjev();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            } else if (!obradaZahtjevaAdmina(commandWords, ServerSustava.isStopRequest()) && !obradaZahtjevaKlijenata(commandWords)) {
+
+                out.println("ERROR 02; komanda nije ispravna");
+                try {
+                    evidencija.dodajNeispravanZahtjev();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
         }
 
     }
 
-    private void obradaZahtjevaAdmina(List<String> commandWords) {
+    private boolean obradaZahtjevaAdmina(List<String> commandWords, boolean stopped) {
         System.out.println("obrada zahtjeva admina");
-        if (commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "PAUZA;".equals(commandWords.get(4))) {
+        if (!stopped && commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "PAUZA;".equals(commandWords.get(4))) {
             obradaAdminPauza(commandWords);
-        } else if (commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "KRENI;".equals(commandWords.get(4))) {
+            return true;
+        } else if (!stopped && commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "KRENI;".equals(commandWords.get(4))) {
             obradaAdminKreni(commandWords);
-        } else if (commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "ZAUSTAVI;".equals(commandWords.get(4))) {
+            return true;
+        } else if (!stopped && commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "ZAUSTAVI;".equals(commandWords.get(4))) {
             obradaAdminZaustavi(commandWords);
+            return true;
         } else if (commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "STANJE;".equals(commandWords.get(4))) {
+            //without stopped
             obradaAdminStanje(commandWords);
-        } else if (commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "EVIDENCIJA;".equals(commandWords.get(4))) {
+            return true;
+        } else if (!stopped && commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "EVIDENCIJA;".equals(commandWords.get(4))) {
             obradaAdminEvidencija(commandWords);
-        } else if (commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "IOT;".equals(commandWords.get(4))) {
+            return true;
+        } else if (!stopped && commandWords.size() == 5 && "KORISNIK".equals(commandWords.get(0)) && commandWords.get(1) != null && "LOZINKA".equals(commandWords.get(2)) && commandWords.get(3) != null && "IOT;".equals(commandWords.get(4))) {
             obradaAdminIot(commandWords);
+            return true;
+        } else {
+            return false;
         }
 
     }
 
-    private void obradaZahtjevaKlijenata(List<String> commandWords) {
+    private boolean obradaZahtjevaKlijenata(List<String> commandWords) {
         System.out.println("obrada zahtjeva klijnata");
         if (commandWords.size() == 2 && "CEKAJ".equals(commandWords.get(0)) && commandWords.get(1) != null) {
             obradaKlijenataCekaj(commandWords);
+            return true;
         } else if (commandWords.size() == 2 && "IOT".equals(commandWords.get(0)) && commandWords.get(1) != null) {
             System.out.println("upisan parametar datoteka. Dodaje ili ažurira podatke o IOT uređaju na temelju primljenih podataka u json formatu. Od atributa jedino je obavezan id. Ako je neispravni json format vraća odgovor ERROR 20; tekst (tekst objašnjava razlog pogreške). Ako je došlo do problema tijekom rada vraća mu se odgovor ERROR 21; tekst (tekst objašnjava razlog pogreške). Ako je sve u redu i dodan je novi IOT, vraća mu se odgovor OK 20; Ako je sve u redu i ažuriran je postojeći IOT , vraća mu se odgovor OK 21;");
+            return true;
+        } else {
+            return false;
         }
 
     }
@@ -219,7 +270,6 @@ public class RadnaDretva extends Thread {
         int vrijemeCekanja;
 
         if (commandWords.size() == 2 && "CEKAJ".equals(commandWords.get(0))) {
-
             System.out.println(vrijemeCekanja = Integer.parseInt(commandWords.get(1)));
             try {
                 Thread.sleep(vrijemeCekanja * 1000);

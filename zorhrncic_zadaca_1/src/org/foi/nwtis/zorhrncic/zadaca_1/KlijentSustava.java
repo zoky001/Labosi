@@ -40,10 +40,14 @@ public class KlijentSustava extends KorisnikSustava {
                     BufferedReader in = new BufferedReader(
                             new InputStreamReader(socket.getInputStream()));) {
 
-                for (String command : getCommand()) {
-                       out.println(command);
+                if (getCommand() != null) {
+                    for (String command : getCommand()) {
+                        out.println(command);
+                    }
+                }else{
+                    System.out.println("ERROR 02; komanda nije ispravna");
                 }
-            
+
                 while ((fromServer = in.readLine()) != null) {
                     System.out.println("Server je napisao: " + fromServer);
                     if (fromServer.equals("Bye.")) {

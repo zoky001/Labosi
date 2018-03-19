@@ -5,7 +5,10 @@
  */
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
@@ -24,8 +27,7 @@ public class ServerSustava {
     private static boolean pause_state = false;
     private static boolean stop_request = false;
 
-    
-     public static boolean beginStoppingServer() {
+    public static boolean beginStoppingServer() {
         if (stop_request == false) {
             stop_request = true;
             return true;
@@ -33,12 +35,17 @@ public class ServerSustava {
             return false;
         }
     }
-        public static boolean isStopRequest() {
+
+    public static boolean isStopRequest() {
         return stop_request;
-    };
+    }
+
+    ;
     public static boolean isPause() {
         return pause_state;
-    };
+    }
+
+    ;
     public static boolean setServerPause() {
         if (pause_state == true) {
             return false;
@@ -85,17 +92,23 @@ public class ServerSustava {
         boolean krajRada = false;
         int brojRadnihDretvi = 0;
 //TODO Provjeri i kao postoju učitaj evidenciju rada
-        SerijalizatorEvidencije se = new SerijalizatorEvidencije("zorhrncic - serijalizator", konfig);
+
+        IOT iot = new IOT();
+        Evidencija evidencija = new Evidencija();
+      
+
+        SerijalizatorEvidencije se = new SerijalizatorEvidencije("zorhrncic - serijalizator", konfig, evidencija);
         se.start();
         try {
             ServerSocket serverSocket = new ServerSocket(port, maksCekanje);
             while (!krajRada) {
                 Socket socket = serverSocket.accept();
                 System.out.println("Korisnik se spojio");
+
                 if (brojRadnihDretvi == maksRadnihDretvi) {
-//TODO Vrati odgovarajući odgovor
+                    vratiOdgovorDaNemaSlobodnihRadnihDretvi(socket);
                 } else {
-                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + brojRadnihDretvi, konfig);
+                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + brojRadnihDretvi, konfig,evidencija);
                     brojRadnihDretvi++;
                     radnaDretva.start();
                 }
@@ -104,4 +117,20 @@ public class ServerSustava {
             Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
+    private void vratiOdgovorDaNemaSlobodnihRadnihDretvi(Socket socket) {
+        try (
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
+
+            String inputLine, outputLine;
+
+            out.println("ERROR 01; nema više slobodnih radnih dretvi");
+
+        } catch (IOException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
 }

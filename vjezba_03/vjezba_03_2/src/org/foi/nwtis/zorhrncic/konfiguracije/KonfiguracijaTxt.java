@@ -62,8 +62,9 @@ public class KonfiguracijaTxt extends KonfiguracijaApstraktna {
            throw new NeispravnaKonfiguracija(datoteka+ " nije datoteka već direktorij");
         }
             try{
-                OutputStream os = Files.newOutputStream(datKonf.toPath(), StandardOpenOption.CREATE);      
-                this.postavke.store(os, "Konfiguracija NWTIS grupa 2");
+                OutputStream os = Files.newOutputStream(datKonf.toPath(), StandardOpenOption.CREATE);
+                
+                this.postavke.store(os, "Konfiguracija, komentar");
             }catch (IOException ex){
                 throw new NeispravnaKonfiguracija("Problem kod učitavanja datoteke "+datKonf.getAbsolutePath());
             }

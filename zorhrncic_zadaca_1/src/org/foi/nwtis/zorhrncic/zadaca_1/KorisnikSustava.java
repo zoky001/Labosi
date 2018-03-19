@@ -179,7 +179,7 @@ public class KorisnikSustava {
     }
 
     private void ucitajUlazneParametreKlijenta(String[] args) {
-        if (korisnik == null && lozinka == null) {
+        if (korisnik == null && lozinka == null && args.length > 4) {
             upisaniArgumenti.setProperty("datotekaIotClient", args[args.length - 1]);
             this.datotekaIotClient = args[args.length - 1];
         }

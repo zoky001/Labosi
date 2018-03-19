@@ -5,7 +5,12 @@
  */
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -20,6 +25,7 @@ public class Evidencija implements Serializable {
     private long brojPrkinutihZahtjeva = 0;
     private long ukupnoVrijemeRadaRadnihDretvi = 0;
     private long brojObavljanjaSerijalizacije = 0;
+    private boolean upis = false;
 
     public long getUkupanbrojZahtjeva() {
         return ukupanbrojZahtjeva;
@@ -77,6 +83,41 @@ public class Evidencija implements Serializable {
         this.brojObavljanjaSerijalizacije = brojObavljanjaSerijalizacije;
     }
 
+    public synchronized void dodajNoviZahtjev()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
 
- 
+        upis = true;
+
+        //radi
+        this.ukupanbrojZahtjeva++;
+        
+
+        upis = false;
+        System.out.println("Posao obavljen");
+        notify();
+    }
+
+    public synchronized void dodajNeispravanZahtjev()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+
+        upis = true;
+
+        //radi
+        this.brojNeispravnihZahtjeva++;
+
+        upis = false;
+        System.out.println("Posao obavljen");
+        notify();
+    }
+
+
+
 }

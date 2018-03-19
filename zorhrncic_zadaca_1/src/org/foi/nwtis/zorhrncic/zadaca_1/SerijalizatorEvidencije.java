@@ -5,6 +5,7 @@
  */
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
+import com.google.gson.Gson;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -13,9 +14,12 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
 
 /**
  *
@@ -27,12 +31,15 @@ public class SerijalizatorEvidencije extends Thread {
     Konfiguracija konfig;
     boolean krajRada = false;
     String nazivDatotekeZaSerijalizaciju;
+    private Evidencija evidencija;
 
-    public SerijalizatorEvidencije(String nazivDretve, Konfiguracija konfig) {
+    public SerijalizatorEvidencije(String nazivDretve, Konfiguracija konfig, Evidencija e) {
         super(nazivDretve);
 
         this.nazivDretve = nazivDretve;
         this.konfig = konfig;
+        this.evidencija = e;
+
     }
 
     @Override
@@ -50,18 +57,29 @@ public class SerijalizatorEvidencije extends Thread {
             long pocetak = System.currentTimeMillis();
 
             System.out.println("Dretva: " + nazivDretve + "Početak: " + pocetak);
-            ObjectOutputStream oos = null;
+          OutputStream os =null;
             try {
-                File f = new File(nazivDatotekeZaSerijalizaciju);
-                oos = new ObjectOutputStream(new FileOutputStream(f));
-//TODO Dohvati objekt evidencije rada iz ServerSustava i serijaliziraj        
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
+             
+                File datKonf = new File(nazivDatotekeZaSerijalizaciju);
+
+                if (datKonf.exists() && datKonf.isDirectory()) {
+                    throw new NeispravnaKonfiguracija(nazivDatotekeZaSerijalizaciju + " nije datoteka već direktorij");
+                }
+                try {
+                    os = Files.newOutputStream(datKonf.toPath(), StandardOpenOption.CREATE);
+                    Gson gsonObj = new Gson();
+                    String strJson = gsonObj.toJson(evidencija);
+                     System.out.println(strJson);
+                    os.write(strJson.getBytes());
+                    //this.postavke.storeToXML(os, "Konfiguracija NWTIS grupa 2");
+                } catch (IOException ex) {
+                    throw new NeispravnaKonfiguracija("Problem kod učitavanja datoteke " + datKonf.getAbsolutePath());
+                }
+            } catch (NeispravnaKonfiguracija ex) {
                 Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
             } finally {
                 try {
-                    oos.close();
+                    os.close();
                 } catch (IOException ex) {
                     Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
                 }
