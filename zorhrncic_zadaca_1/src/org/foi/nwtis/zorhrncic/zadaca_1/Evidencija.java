@@ -5,12 +5,14 @@
  */
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
 
 /**
  *
@@ -18,69 +20,50 @@ import java.util.logging.Logger;
  */
 public class Evidencija implements Serializable {
 
-    private long ukupanbrojZahtjeva = 0;
-    private long brojNeispravnihZahtjeva = 0;
-    private long brojNedozvoljenihZahtjeva = 0;
-    private long brojUspjesnihZahtjeva = 0;
-    private long brojPrkinutihZahtjeva = 0;
+    private long ukupanbrojZahtjeva = 0; // broj svih tahteva na serveru
+    private long brojPrkinutihZahtjeva = 0; // broj zahtjeva koji su odbijeni jer nema slobodnih radnih dretvi
+    private long brojUspjesnihZahtjeva = 0;//broj uspješno izvršenih zahteva
+
+    private long brojNeispravnihZahtjeva = 0; // pogrešna komanda
+    private long brojNedozvoljenihZahtjeva = 0; //pogrešna lozinka
+
     private long ukupnoVrijemeRadaRadnihDretvi = 0;
     private long brojObavljanjaSerijalizacije = 0;
+
     private boolean upis = false;
 
-    public long getUkupanbrojZahtjeva() {
-        return ukupanbrojZahtjeva;
+    public synchronized void dodajUspjesnoObavljenZahtjev()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+
+        upis = true;
+
+        //radi
+        this.brojUspjesnihZahtjeva++;
+
+        upis = false;
+        System.out.println("Posao obavljen");
+        notify();
     }
 
-    public void setUkupanbrojZahtjeva(long ukupanbrojZahtjeva) {
-        this.ukupanbrojZahtjeva = ukupanbrojZahtjeva;
-    }
+    public synchronized void dodajOdbijenZahtjevJerNemaDretvi()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
 
-    public long getBrojNeispravnihZahtjeva() {
-        return brojNeispravnihZahtjeva;
-    }
+        upis = true;
 
-    public void setBrojNeispravnihZahtjeva(long brojNeispravnihZahtjeva) {
-        this.brojNeispravnihZahtjeva = brojNeispravnihZahtjeva;
-    }
+        //radi
+        this.brojPrkinutihZahtjeva++;
 
-    public long getBrojNedozvoljenihZahtjeva() {
-        return brojNedozvoljenihZahtjeva;
-    }
-
-    public void setBrojNedozvoljenihZahtjeva(long brojNedozvoljenihZahtjeva) {
-        this.brojNedozvoljenihZahtjeva = brojNedozvoljenihZahtjeva;
-    }
-
-    public long getBrojUspjesnihZahtjeva() {
-        return brojUspjesnihZahtjeva;
-    }
-
-    public void setBrojUspjesnihZahtjeva(long brojUspjesnihZahtjeva) {
-        this.brojUspjesnihZahtjeva = brojUspjesnihZahtjeva;
-    }
-
-    public long getBrojPrkinutihZahtjeva() {
-        return brojPrkinutihZahtjeva;
-    }
-
-    public void setBrojPrkinutihZahtjeva(long brojPrkinutihZahtjeva) {
-        this.brojPrkinutihZahtjeva = brojPrkinutihZahtjeva;
-    }
-
-    public long getUkupnoVrijemeRadaRadnihDretvi() {
-        return ukupnoVrijemeRadaRadnihDretvi;
-    }
-
-    public void setUkupnoVrijemeRadaRadnihDretvi(long ukupnoVrijemeRadaRadnihDretvi) {
-        this.ukupnoVrijemeRadaRadnihDretvi = ukupnoVrijemeRadaRadnihDretvi;
-    }
-
-    public long getBrojObavljanjaSerijalizacije() {
-        return brojObavljanjaSerijalizacije;
-    }
-
-    public void setBrojObavljanjaSerijalizacije(long brojObavljanjaSerijalizacije) {
-        this.brojObavljanjaSerijalizacije = brojObavljanjaSerijalizacije;
+        upis = false;
+        System.out.println("Posao obavljen");
+        notify();
     }
 
     public synchronized void dodajNoviZahtjev()
@@ -91,10 +74,8 @@ public class Evidencija implements Serializable {
         }
 
         upis = true;
-
         //radi
         this.ukupanbrojZahtjeva++;
-        
 
         upis = false;
         System.out.println("Posao obavljen");
@@ -103,6 +84,7 @@ public class Evidencija implements Serializable {
 
     public synchronized void dodajNeispravanZahtjev()
             throws InterruptedException {
+        upis = false;
         while (upis) {
             System.out.println("Netko upisuje");
             wait();
@@ -118,6 +100,53 @@ public class Evidencija implements Serializable {
         notify();
     }
 
+    public synchronized void obaviSerijalizaciju(String nazivDatotekeZaSerijalizaciju)
+            throws InterruptedException {
+        upis = false;
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+        upis = true;
+        obaviSerijizacijuPoaso(nazivDatotekeZaSerijalizaciju);
+        this.brojObavljanjaSerijalizacije++;
+        upis = false;
+        System.out.println("Posao obavljen");
+        notify();
+    }
 
+    private void obaviSerijizacijuPoaso(String nazivDatotekeZaSerijalizaciju) {
+        ObjectOutputStream s = null;
+        try {
+            File datKonf = new File(nazivDatotekeZaSerijalizaciju);
+            if (datKonf.exists() && datKonf.isDirectory()) {
+                throw new NeispravnaKonfiguracija(nazivDatotekeZaSerijalizaciju + " nije datoteka već direktorij");
+            }
+            try {
+                FileOutputStream out = new FileOutputStream(nazivDatotekeZaSerijalizaciju);
+                s = new ObjectOutputStream(out);
+                s.writeObject(this);
+                // os = Files.newOutputStream(datKonf.toPath(), StandardOpenOption.CREATE);
+                // Gson gsonObj = new Gson();
+                //  String strJson = gsonObj.toJson(evidencija);
+                //System.out.println(strJson);
+                //os.write(strJson.getBytes());
+                //this.postavke.storeToXML(os, "Konfiguracija NWTIS grupa 2");
+            } catch (IOException ex) {
+                throw new NeispravnaKonfiguracija("Problem kod učitavanja datoteke " + datKonf.getAbsolutePath());
+            }
+        } catch (NeispravnaKonfiguracija ex) {
+            Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                // os.close();
+                s.close();
+            } catch (IOException ex) {
+                Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        //radi
+
+    }
 
 }

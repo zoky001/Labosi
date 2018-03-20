@@ -57,32 +57,10 @@ public class SerijalizatorEvidencije extends Thread {
             long pocetak = System.currentTimeMillis();
 
             System.out.println("Dretva: " + nazivDretve + "Početak: " + pocetak);
-          OutputStream os =null;
             try {
-             
-                File datKonf = new File(nazivDatotekeZaSerijalizaciju);
-
-                if (datKonf.exists() && datKonf.isDirectory()) {
-                    throw new NeispravnaKonfiguracija(nazivDatotekeZaSerijalizaciju + " nije datoteka već direktorij");
-                }
-                try {
-                    os = Files.newOutputStream(datKonf.toPath(), StandardOpenOption.CREATE);
-                    Gson gsonObj = new Gson();
-                    String strJson = gsonObj.toJson(evidencija);
-                     System.out.println(strJson);
-                    os.write(strJson.getBytes());
-                    //this.postavke.storeToXML(os, "Konfiguracija NWTIS grupa 2");
-                } catch (IOException ex) {
-                    throw new NeispravnaKonfiguracija("Problem kod učitavanja datoteke " + datKonf.getAbsolutePath());
-                }
-            } catch (NeispravnaKonfiguracija ex) {
+                evidencija.obaviSerijalizaciju(nazivDatotekeZaSerijalizaciju);  
+            } catch (InterruptedException ex) {
                 Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
-            } finally {
-                try {
-                    os.close();
-                } catch (IOException ex) {
-                    Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
-                }
             }
 
             long kraj = System.currentTimeMillis();

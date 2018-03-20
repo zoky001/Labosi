@@ -5,16 +5,25 @@
  */
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
+import com.google.gson.Gson;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaApstraktna;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaBin;
 import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 
@@ -26,6 +35,15 @@ public class ServerSustava {
 
     private static boolean pause_state = false;
     private static boolean stop_request = false;
+    private Evidencija evidencija;
+    private int port;
+    private int maksCekanje;
+    private String datotekaEvidencije;
+    private int maksRadnihDretvi;
+    private int brojRadnihDretvi;
+    private int redniBrojDrete;
+    private boolean krajRada;
+    private boolean upis = false;
 
     public static boolean beginStoppingServer() {
         if (stop_request == false) {
@@ -76,27 +94,31 @@ public class ServerSustava {
             ServerSustava ss = new ServerSustava();
             ss.pokreniPosluzitelj(konfig);
         } catch (NemaKonfiguracije ex) {
-            Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Ne postoji datoteka konfiguracije!!");
+            //Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
             return;
         } catch (NeispravnaKonfiguracija ex) {
-            Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Greška u datoteci konfiguracije!!");
+            //Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
     }
 
     private void pokreniPosluzitelj(Konfiguracija konfig) {
-        int port = Integer.parseInt(konfig.dajPostavku("port"));
-        int maksCekanje = Integer.parseInt(konfig.dajPostavku("maks.broj.zahtjeva.cekanje"));
-        String datotekaEvidencije = konfig.dajPostavku("datoteka.evidencije.rada");
-        int maksRadnihDretvi = Integer.parseInt(konfig.dajPostavku("maks.broj.radnih.dretvi"));
-        boolean krajRada = false;
-        int brojRadnihDretvi = 0;
+        port = Integer.parseInt(konfig.dajPostavku("port"));
+        maksCekanje = Integer.parseInt(konfig.dajPostavku("maks.broj.zahtjeva.cekanje"));
+        datotekaEvidencije = konfig.dajPostavku("datoteka.evidencije.rada");
+        maksRadnihDretvi = Integer.parseInt(konfig.dajPostavku("maks.broj.radnih.dretvi"));
+        krajRada = false;
+        brojRadnihDretvi = 0;
+        redniBrojDrete = 0;
 //TODO Provjeri i kao postoju učitaj evidenciju rada
+        postaviEvidencijuRada(datotekaEvidencije);
+
+        Gson g = new Gson();
+        System.out.println(g.toJson(evidencija));
 
         IOT iot = new IOT();
-        Evidencija evidencija = new Evidencija();
-      
-
         SerijalizatorEvidencije se = new SerijalizatorEvidencije("zorhrncic - serijalizator", konfig, evidencija);
         se.start();
         try {
@@ -104,16 +126,20 @@ public class ServerSustava {
             while (!krajRada) {
                 Socket socket = serverSocket.accept();
                 System.out.println("Korisnik se spojio");
+                evidencija.dodajNoviZahtjev();//test monitor
 
-                if (brojRadnihDretvi == maksRadnihDretvi) {
+                if (brojRadnihDretvi >= maksRadnihDretvi) {
+                    evidencija.dodajOdbijenZahtjevJerNemaDretvi();
                     vratiOdgovorDaNemaSlobodnihRadnihDretvi(socket);
                 } else {
-                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + brojRadnihDretvi, konfig,evidencija);
-                    brojRadnihDretvi++;
+                    povecajBrojRadnihDretvi();
+                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + Integer.toBinaryString(redniBrojDrete), konfig, evidencija);
                     radnaDretva.start();
                 }
             }
         } catch (IOException ex) {
+            Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
             Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -131,6 +157,87 @@ public class ServerSustava {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+
+    public void ucitajEvidenciju(String datoteka) throws NemaKonfiguracije, NeispravnaKonfiguracija {
+        if (datoteka == null || datoteka.length() == 0) {
+            throw new NemaKonfiguracije("naziv datoteke nedostaje");
+        }
+        File datKonf = new File(datoteka);
+        if (!datKonf.exists()) {
+            throw new NemaKonfiguracije("Datoteka: " + datoteka + " ne postoji!");
+        } else if (datKonf.isDirectory()) {
+            throw new NeispravnaKonfiguracija(datoteka + " nije datoteka već direktorij");
+        }
+        try {
+            InputStream is = Files.newInputStream(datKonf.toPath(), StandardOpenOption.READ);
+            ObjectInputStream ois = new ObjectInputStream(is);
+            evidencija = (Evidencija) ois.readObject();
+            ois.close();
+        } catch (IOException ex) {
+            throw new NeispravnaKonfiguracija("Problem kod učitavanja datoteke " + datKonf.getAbsolutePath());
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(KonfiguracijaBin.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void postaviEvidencijuRada(String datotekaEvidencije) {
+
+        try {
+            FileInputStream in = new FileInputStream(datotekaEvidencije);
+            ObjectInputStream s = new ObjectInputStream(in);
+            evidencija = (Evidencija) s.readObject();
+            s.close();
+        } catch (Exception e) {
+            System.out.println("Problem kod učitavanja podataka evidencije: " + e.getMessage());
+        } finally {
+            if (evidencija == null) {
+                evidencija = new Evidencija();
+                System.out.println("Problem kod učitavanja podataka evidencije: ");
+            }
+        }
+
+    }
+    
+
+    private synchronized void povecajBrojRadnihDretvi()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+
+        upis = true;
+
+        //radi
+        if (this.redniBrojDrete >= 63) {
+            redniBrojDrete = 0;
+        }else{
+        redniBrojDrete++;
+        }
+        this.brojRadnihDretvi++;
+        System.out.println("Povećan broj radnih dretvi: " + brojRadnihDretvi);
+        upis = false;
+        System.out.println("Posao obavljen");
+        notify();
+    }
+    
+        public synchronized void smanjiBrojRadnihDretvi()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+
+        upis = true;
+
+        //radi
+        this.brojRadnihDretvi--;
+        evidencija.dodajUspjesnoObavljenZahtjev();
+        System.out.println("Povećan broj radnih dretvi: " + brojRadnihDretvi);
+        upis = false;
+        System.out.println("Posao obavljen");
+        notify();
     }
 
 }

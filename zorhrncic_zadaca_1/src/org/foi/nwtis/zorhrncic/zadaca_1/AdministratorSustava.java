@@ -38,8 +38,35 @@ public class AdministratorSustava extends KorisnikSustava {
 
         try {
             Socket socket = new Socket(upisaniArgumenti.getProperty("adresa"), Integer.parseInt(upisaniArgumenti.getProperty("port")));
-
             try (
+                    InputStream inputStream = socket.getInputStream();
+                    OutputStream outputStream = socket.getOutputStream();) {
+                if (getCommand().size() > 0) {
+                    for (String command : getCommand()) {
+                        outputStream.write(command.getBytes());
+                    }
+                } else {
+                    System.out.println("ERROR 02; komanda nije ispravna");
+                }
+
+                // String komanda = "KORISNIK  " + korisnik + "; LOZINKA " + lozinka + "; PAUZA;"; // korisnik iz korisnik sustava 
+                // outputStream.write(komanda.getBytes());
+                outputStream.flush();
+                socket.shutdownOutput();
+
+                int znak;
+                StringBuffer buffer = new StringBuffer();
+                while (true) {
+                    znak = inputStream.read();
+                    if (znak == -1) {
+                        break;
+                    }
+                    buffer.append((char) znak);
+
+                }
+                System.out.println("buffer: " + buffer.toString());
+
+            } /*  try (
                     PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
                     BufferedReader in = new BufferedReader(
                             new InputStreamReader(socket.getInputStream()));) {
@@ -62,7 +89,7 @@ public class AdministratorSustava extends KorisnikSustava {
 
                 }
 
-            } catch (IOException ex) {
+            }*/ catch (IOException ex) {
                 Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
 
