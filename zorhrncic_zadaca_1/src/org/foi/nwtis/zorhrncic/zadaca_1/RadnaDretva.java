@@ -90,7 +90,7 @@ public class RadnaDretva extends Thread {
                 buffer.append((char) znak);
 
             }
-            System.out.println("Klijent je napisao: " + buffer.toString());
+            System.out.println("Klijent je napisao KOMDANDU: " + buffer.toString());
             obradaZahtjeva(buffer.toString());
             //TODO Provjeri ispravnost primljene komande
 
@@ -189,16 +189,16 @@ public class RadnaDretva extends Thread {
 
     private boolean obradaZahtjevaKlijenata(List<String> commandWords) {
         System.out.println("obrada zahtjeva klijnata");
-        if (commandWords.size() == 2 && "CEKAJ".equals(commandWords.get(0)) && commandWords.get(1) != null) {
-            obradaKlijenataCekaj(commandWords);
+        if (commandWords.size() == 4 && "CEKAJ".equals(commandWords.get(0)) && commandWords.get(1) != null && "IOT".equals(commandWords.get(2)) && commandWords.get(3) != null) {
+            obradaKlijenataCekaj_ObradaIot(commandWords);
             return true;
         } else if (commandWords.size() == 2 && "IOT".equals(commandWords.get(0)) && commandWords.get(1) != null) {
+            obradaKlijentaIotDatoteka(commandWords.get(1));
             System.out.println("upisan parametar datoteka. Dodaje ili ažurira podatke o IOT uređaju na temelju primljenih podataka u json formatu. Od atributa jedino je obavezan id. Ako je neispravni json format vraća odgovor ERROR 20; tekst (tekst objašnjava razlog pogreške). Ako je došlo do problema tijekom rada vraća mu se odgovor ERROR 21; tekst (tekst objašnjava razlog pogreške). Ako je sve u redu i dodan je novi IOT, vraća mu se odgovor OK 20; Ako je sve u redu i ažuriran je postojeći IOT , vraća mu se odgovor OK 21;");
             return true;
         } else {
             return false;
         }
-
     }
 
     private void obradaAdminPauza(List<String> commandWords) {
@@ -318,7 +318,7 @@ public class RadnaDretva extends Thread {
 
     private boolean authenticateUser() {
         for (int i = 0; i < 10; i++) {
-            System.out.println("Lozink: \" konfig.dajPostavku(\"admin." + i + "." + username + " : " + password + " )   :  _" + konfig.dajPostavku("admin." + i + "." + username) + "_");
+            //System.out.println("Lozink: \" konfig.dajPostavku(\"admin." + i + "." + username + " : " + password + " )   :  _" + konfig.dajPostavku("admin." + i + "." + username) + "_");
             if (konfig.dajPostavku("admin." + i + "." + username) != null && konfig.dajPostavku("admin." + i + "." + username).equals(password)) {
                 System.out.println("postoji korinsnik");
                 postojiAdmin = true;
@@ -329,19 +329,23 @@ public class RadnaDretva extends Thread {
     }
 
     //client
-    private void obradaKlijenataCekaj(List<String> commandWords) {
+    private void obradaKlijenataCekaj_ObradaIot(List<String> commandWords) {
+        System.out.println("cekaj + upisan parametar datoteka. Dodaje ili ažurira podatke o IOT uređaju na temelju primljenih podataka u json formatu. Od atributa jedino je obavezan id. Ako je neispravni json format vraća odgovor ERROR 20; tekst (tekst objašnjava razlog pogreške). Ako je došlo do problema tijekom rada vraća mu se odgovor ERROR 21; tekst (tekst objašnjava razlog pogreške). Ako je sve u redu i dodan je novi IOT, vraća mu se odgovor OK 20; Ako je sve u redu i ažuriran je postojeći IOT , vraća mu se odgovor OK 21;");
+
         System.out.println("upisan parametar --spavanje n . Radna dretva treba čekati zadani broj sekundi pretvorenih u milisekunde. Ako je uspješno odradila čekanje vraća mu se odgovor OK; Ako nije uspjela odraditi čekanje vraća mu se odgovor ERROR 22; tekst (tekst objašnjava razlog pogreške). ");
         int vrijemeCekanja;
         try {
-            if (commandWords.size() == 2 && "CEKAJ".equals(commandWords.get(0))) {
-                System.out.println(vrijemeCekanja = Integer.parseInt(commandWords.get(1)));
-
+            if (commandWords.size() == 4 && "CEKAJ".equals(commandWords.get(0)) && "IOT".equals(commandWords.get(2)) && commandWords.get(3) != null) {
+                
+            
+                System.out.println(vrijemeCekanja = Integer.parseInt(commandWords.get(1).substring(0, commandWords.get(1).length() - 1)));
                 Thread.sleep(vrijemeCekanja * 1000);
-                out.write("OK; 1".getBytes());
+                out.write("OK;".getBytes());
+                obradaKlijentaIotDatoteka(commandWords.get(3));
 
             }
         } catch (InterruptedException ex) {
-            String mess = "ERROR 22; "+ ex.getMessage();
+            String mess = "ERROR 22; " + ex.getMessage();
             try {
                 out.write(mess.getBytes());
             } catch (IOException ex1) {
@@ -349,6 +353,22 @@ public class RadnaDretva extends Thread {
             }
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    private void obradaKlijentaIotDatoteka(String commandWords) {
+        System.out.println("SAMO upisan parametar datoteka. Dodaje ili ažurira podatke o IOT uređaju na temelju primljenih podataka u json formatu. Od atributa jedino je obavezan id. Ako je neispravni json format vraća odgovor ERROR 20; tekst (tekst objašnjava razlog pogreške). Ako je došlo do problema tijekom rada vraća mu se odgovor ERROR 21; tekst (tekst objašnjava razlog pogreške). Ako je sve u redu i dodan je novi IOT, vraća mu se odgovor OK 20; Ako je sve u redu i ažuriran je postojeći IOT , vraća mu se odgovor OK 21;");
+        try {
+            out.write("OK; TODO REzultati iod datoteka".getBytes());
+        } catch (IOException ex) {
+            String mess = "ERROR 22; " + ex.getMessage();
+            try {
+                out.write(mess.getBytes());
+            } catch (IOException ex1) {
+                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex1);
+            }
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
 
