@@ -25,12 +25,10 @@ import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
  */
 public class AdministratorSustava extends KorisnikSustava {
 
-    Konfiguracija konfig;
-    private String fromServer;
 
-    public AdministratorSustava(Konfiguracija konfig, Properties upisaniAurumenti) {
+    public AdministratorSustava(Properties upisaniAurumenti) {
         super();
-        this.konfig = konfig;
+
         this.upisaniArgumenti = upisaniAurumenti;
     }
 
@@ -49,8 +47,6 @@ public class AdministratorSustava extends KorisnikSustava {
                     System.out.println("ERROR 02; komanda nije ispravna");
                 }
 
-                // String komanda = "KORISNIK  " + korisnik + "; LOZINKA " + lozinka + "; PAUZA;"; // korisnik iz korisnik sustava 
-                // outputStream.write(komanda.getBytes());
                 outputStream.flush();
                 socket.shutdownOutput();
 
@@ -62,41 +58,14 @@ public class AdministratorSustava extends KorisnikSustava {
                         break;
                     }
                     buffer.append((char) znak);
-
                 }
                 System.out.println("buffer: " + buffer.toString());
-
-            } /*  try (
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                    BufferedReader in = new BufferedReader(
-                            new InputStreamReader(socket.getInputStream()));) {
-
-                if (getCommand().size() > 0) {
-                    for (String command : getCommand()) {
-                        out.println(command);
-                    }
-                } else {
-                    System.out.println("ERROR 02; komanda nije ispravna");
-                }
-
-              
-
-                while ((fromServer = in.readLine()) != null) {
-                    System.out.println("Server je napisao: " + fromServer);
-                    if (fromServer.equals("Bye.")) {
-                        break;
-                    }
-
-                }
-
-            }*/ catch (IOException ex) {
+            }catch (IOException ex) {
                 Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
-
         } catch (IOException ex) {
             Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
         }
-
     }
 
     private List<String> getCommand() {

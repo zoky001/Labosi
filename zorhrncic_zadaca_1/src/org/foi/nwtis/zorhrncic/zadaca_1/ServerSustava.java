@@ -33,8 +33,8 @@ import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
  */
 public class ServerSustava {
 
-    private static boolean pause_state = false;
-    private static boolean stop_request = false;
+    private boolean pause_state = false;
+    private boolean stop_request = false;
     private Evidencija evidencija;
     private int port;
     private int maksCekanje;
@@ -45,41 +45,92 @@ public class ServerSustava {
     private boolean krajRada;
     private boolean upis = false;
 
-    public static boolean beginStoppingServer() {
+    public synchronized boolean beginStoppingServer()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+        upis = true;
         if (stop_request == false) {
             stop_request = true;
+            upis = false;
+            notify();
             return true;
         } else {
+            upis = false;
+            notify();
             return false;
         }
+
     }
 
-    public static boolean isStopRequest() {
-        return stop_request;
+    public synchronized boolean isStopRequest()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+        upis = true;
+        boolean ret = stop_request;
+        upis = false;
+        notify();
+        return ret;
+
     }
 
-    ;
-    public static boolean isPause() {
-        return pause_state;
+    public synchronized boolean isPause()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+        upis = true;
+        boolean ret = pause_state;
+        upis = false;
+        notify();
+        return ret;
+
     }
 
-    ;
-    public static boolean setServerPause() {
+    public synchronized boolean setServerPause()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+        upis = true;
         if (pause_state == true) {
+            upis = false;
+            notify();
             return false;
         } else {
             pause_state = true;
+            upis = false;
+            notify();
             return true;
         }
+
     }
 
-    public static boolean setServerStart() {
+    public synchronized boolean setServerStart()
+            throws InterruptedException {
+        while (upis) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+        upis = true;
         if (pause_state == true) {
             pause_state = false;
+            upis = false;
+            notify();
             return true;
         } else {
+            upis = false;
+            notify();
             return false;
         }
+
     }
 
     public static void main(String[] args) {
@@ -95,11 +146,9 @@ public class ServerSustava {
             ss.pokreniPosluzitelj(konfig);
         } catch (NemaKonfiguracije ex) {
             System.out.println("Ne postoji datoteka konfiguracije!!");
-            //Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
             return;
         } catch (NeispravnaKonfiguracija ex) {
             System.out.println("Greška u datoteci konfiguracije!!");
-            //Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
     }
@@ -133,7 +182,7 @@ public class ServerSustava {
                     vratiOdgovorDaNemaSlobodnihRadnihDretvi(socket);
                 } else {
                     povecajBrojRadnihDretvi();
-                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + Integer.toBinaryString(redniBrojDrete), konfig, evidencija);
+                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + Integer.toBinaryString(redniBrojDrete), konfig, evidencija, this);
                     radnaDretva.start();
                 }
             }
@@ -198,7 +247,6 @@ public class ServerSustava {
         }
 
     }
-    
 
     private synchronized void povecajBrojRadnihDretvi()
             throws InterruptedException {
@@ -206,14 +254,11 @@ public class ServerSustava {
             System.out.println("Netko upisuje");
             wait();
         }
-
         upis = true;
-
-        //radi
         if (this.redniBrojDrete >= 63) {
             redniBrojDrete = 0;
-        }else{
-        redniBrojDrete++;
+        } else {
+            redniBrojDrete++;
         }
         this.brojRadnihDretvi++;
         System.out.println("Povećan broj radnih dretvi: " + brojRadnihDretvi);
@@ -221,20 +266,17 @@ public class ServerSustava {
         System.out.println("Posao obavljen");
         notify();
     }
-    
-        public synchronized void smanjiBrojRadnihDretvi()
+
+    public synchronized void smanjiBrojRadnihDretvi()
             throws InterruptedException {
         while (upis) {
             System.out.println("Netko upisuje");
             wait();
         }
-
         upis = true;
-
-        //radi
         this.brojRadnihDretvi--;
         evidencija.dodajUspjesnoObavljenZahtjev();
-        System.out.println("Povećan broj radnih dretvi: " + brojRadnihDretvi);
+        System.out.println("Smanjen broj radnih dretvi: " + brojRadnihDretvi);
         upis = false;
         System.out.println("Posao obavljen");
         notify();

@@ -34,13 +34,15 @@ public class RadnaDretva extends Thread {
     private static boolean pause_state = false;
 
     private Evidencija evidencija;
+    private ServerSustava serverSustava;
 
-    public RadnaDretva(Socket socket, String nazivDretve, Konfiguracija konfig, Evidencija evidencija) {
+    public RadnaDretva(Socket socket, String nazivDretve, Konfiguracija konfig, Evidencija evidencija, ServerSustava serverSustava) {
         super(nazivDretve);
         this.socket = socket;
         this.nazivDretve = nazivDretve;
         this.konfig = konfig;
         this.evidencija = evidencija;
+        this.serverSustava = serverSustava;
     }
 
     @Override
@@ -96,6 +98,12 @@ public class RadnaDretva extends Thread {
 
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                serverSustava.smanjiBrojRadnihDretvi();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
 //TODO smanji broj aktivnih radnih dretvi kod ServerSustava
@@ -112,52 +120,30 @@ public class RadnaDretva extends Thread {
             commandWords.add(retval);
         }
         if (commandWords.size() > 1) {
-
-            if (ServerSustava.isStopRequest()) {
-                //server is stopped
-                if (!obradaZahtjevaAdmina(commandWords, ServerSustava.isStopRequest())) {
-                    try {
+            try {
+                if (serverSustava.isStopRequest()) {
+                    //server is stopped
+                    if (!obradaZahtjevaAdmina(commandWords, serverSustava.isStopRequest())) {
                         //prima samo zahtjeve admina, treba li vratiti odgovor ako je zahtjev od klijenta
                         out.write("ERROR 02; komanda nije ispravna".getBytes());
-                    } catch (IOException ex) {
-                        Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    try {
                         evidencija.dodajNeispravanZahtjev();
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                }
-            } else if (ServerSustava.isPause()) {
-                if (!obradaZahtjevaAdmina(commandWords, ServerSustava.isStopRequest())) {
-                    try {
+                } else if (serverSustava.isPause()) {
+                    if (!obradaZahtjevaAdmina(commandWords, serverSustava.isStopRequest())) {
                         //prima samo zahtjeve admina, treba li vratiti odgovor ako je zahtjev od klijenta
                         out.write("ERROR 02; komanda nije ispravna".getBytes());
-                    } catch (IOException ex) {
-                        Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    try {
                         evidencija.dodajNeispravanZahtjev();
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                }
-            } else if (!obradaZahtjevaAdmina(commandWords, ServerSustava.isStopRequest()) && !obradaZahtjevaKlijenata(commandWords)) {
-
-                try {
+                } else if (!obradaZahtjevaAdmina(commandWords, serverSustava.isStopRequest()) && !obradaZahtjevaKlijenata(commandWords)) {
                     out.write("ERROR 02; komanda nije ispravna".getBytes());
-                } catch (IOException ex) {
-                    Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                try {
                     evidencija.dodajNeispravanZahtjev();
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
                 }
+            } catch (IOException ex) {
+                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
-
         }
-
     }
 
     private boolean obradaZahtjevaAdmina(List<String> commandWords, boolean stopped) {
@@ -205,11 +191,11 @@ public class RadnaDretva extends Thread {
         System.out.println("upisan parametar --pauza pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu i server nije u stanju pauze, privremeno prekida prijem svih komandi osim administratorskih. Korisniku se vraća odgovor OK.  Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako je u stanju pauze vraća se odgovor ERROR 11; tekst (tekst objašnjava razlog pogreške).");
         extractUsernameAndPasswordFromCommand(commandWords);
         try {
-            if (authenticateUser() && ServerSustava.setServerPause()) {
+            if (authenticateUser() && serverSustava.setServerPause()) {
 
                 out.write("OK".getBytes());
 
-            } else if (authenticateUser() && !ServerSustava.setServerPause()) {
+            } else if (authenticateUser() && !serverSustava.setServerPause()) {
                 out.write("ERROR 11; server se već nalazi u stanju pauze!".getBytes());
             } else if (!authenticateUser()) {
                 out.write("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!".getBytes());
@@ -218,6 +204,8 @@ public class RadnaDretva extends Thread {
             }
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -225,9 +213,9 @@ public class RadnaDretva extends Thread {
         System.out.println("upisan parametar --kreni pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu i server je u stanju pauze, nastavlja prijem svih komandi. Korisnku se vraća odgovor OK.  Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nije u stanju pauze vraća se odgovor ERROR 12; tekst (tekst objašnjava razlog pogreške).");
         extractUsernameAndPasswordFromCommand(commandWords);
         try {
-            if (authenticateUser() && ServerSustava.setServerStart()) {
+            if (authenticateUser() && serverSustava.setServerStart()) {
                 out.write("OK".getBytes());
-            } else if (authenticateUser() && !ServerSustava.setServerStart()) {
+            } else if (authenticateUser() && !serverSustava.setServerStart()) {
                 out.write("ERROR 12; server nije u stanju pauze!".getBytes());
             } else if (!authenticateUser()) {
                 out.write("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!".getBytes());
@@ -235,6 +223,8 @@ public class RadnaDretva extends Thread {
                 out.write("ERROR;".getBytes());
             }
         } catch (IOException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -246,13 +236,15 @@ public class RadnaDretva extends Thread {
             if (!authenticateUser()) {
                 out.write("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!".getBytes());
             } else if (true) {
-                ServerSustava.beginStoppingServer(); // TODO dovršti
+                serverSustava.beginStoppingServer(); // TODO dovršti
                 out.write("OK".getBytes());
             } else {
                 out.write("ERROR;".getBytes());
 //TODO upisan parametar --zaustavi pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu prekida prijem komandi, serijalizira evidenciju rada i završava rad. Korisniku se vraća odgovor OK.  Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nešto nije u redu s prekidom rada ili serijalizacijom vraća se odgovor ERROR 13; tekst (tekst objašnjava razlog pogreške).            
             }
         } catch (IOException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -263,17 +255,19 @@ public class RadnaDretva extends Thread {
         try {
             if (!authenticateUser()) {
                 out.write("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!".getBytes());
-            } else if (authenticateUser() && ServerSustava.isStopRequest()) {
+            } else if (authenticateUser() && serverSustava.isStopRequest()) {
                 out.write("OK; 2".getBytes()); // JE u stanju pauze
-            } else if (authenticateUser() && !ServerSustava.isPause()) {
+            } else if (authenticateUser() && !serverSustava.isPause()) {
                 out.write("OK; 0".getBytes()); // nije u stanju pauze
-            } else if (authenticateUser() && ServerSustava.isPause()) {
+            } else if (authenticateUser() && serverSustava.isPause()) {
                 out.write("OK; 1".getBytes()); // JE u stanju pauze
             } else {
                 out.write("ERROR;".getBytes());
 //TODO upisan parametar --zaustavi pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu prekida prijem komandi, serijalizira evidenciju rada i završava rad. Korisniku se vraća odgovor OK.  Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nešto nije u redu s prekidom rada ili serijalizacijom vraća se odgovor ERROR 13; tekst (tekst objašnjava razlog pogreške).            
             }
         } catch (IOException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -336,8 +330,7 @@ public class RadnaDretva extends Thread {
         int vrijemeCekanja;
         try {
             if (commandWords.size() == 4 && "CEKAJ".equals(commandWords.get(0)) && "IOT".equals(commandWords.get(2)) && commandWords.get(3) != null) {
-                
-            
+
                 System.out.println(vrijemeCekanja = Integer.parseInt(commandWords.get(1).substring(0, commandWords.get(1).length() - 1)));
                 Thread.sleep(vrijemeCekanja * 1000);
                 out.write("OK;".getBytes());

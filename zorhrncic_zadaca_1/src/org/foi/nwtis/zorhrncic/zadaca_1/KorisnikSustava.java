@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 
 /**
@@ -17,11 +19,21 @@ import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
  */
 public class KorisnikSustava {
 
+    String sintaksaIP_URL = "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5]))|((?:http(?:s)?\\:\\/\\/)?[a-zA-Z0-9_-]+(?:.[a-zA-Z0-9_-]+)*.[a-zA-Z]{2,4}(?:\\/[a-zA-Z0-9_]+)*(?:\\/[a-zA-Z0-9_]+.[a-zA-Z]{2,4}(?:\\?[a-zA-Z0-9_]+\\=[a-zA-Z0-9_]+)?)?(?:\\&[a-zA-Z0-9_]+\\=[a-zA-Z0-9_]+)*)$";
+
+    String sintaksaClientSaSpavanjem = "^-s ([^\\s]+) -p ([8-9][0-9][0-9][0-9]) (?:--spavanje (0?[1-9]|[1-9][0-9]|[1-5][0-9][0-9]|[6-6][0-0][0-0]))? ([^\\s]+\\.(?i)(txt|xml|json|bin))";// (--spavanje ([^\\s]+) | --ne )";// ([^\\s]+\\.(?i)txt|xml|json)";
+    String sintaksaClientBezSpavanja = "^-s ([^\\s]+) -p ([8-9][0-9][0-9][0-9]) ([^\\s]+\\.(?i)(txt|xml|json|bin))";
+    String sintaksaAdmin = "^-k ([^[a-zA-Z0-9_-]]{3,10}) -l ([^[a-zA-Z0-9[#!]_-]]{3,10}) -s ([^\\s]+) -p ([8-9][0-9][0-9][0-9]) (--pauza|--kreni|--zaustavi|--stanje|--evidencija ([^\\s]+\\.(?i)(txt|xml|json|bin))|--iot ([^\\s]+\\.(?i)(txt|xml|json|bin)))";
+
     String korisnik;
     String lozinka;
     String adresa;
     int port;
-    boolean administrator = false;
+    private boolean administrator = false;
+    private boolean client = false;
     String[] args;
     Konfiguracija konfig;
     private final String parametarKorisnik = "-k";
@@ -36,154 +48,119 @@ public class KorisnikSustava {
     private final String parametarEvidencija = "--evidencija";
     private final String parametarIot = "--iot";
 
-    List<String> dozvoljeniParametriList = new ArrayList<>();
-    private boolean pauza;
-    private boolean stanje;
-    private boolean kreni;
-    private boolean zaustavi;
-    private int spavanje;
-    private String datotekaEvidencija;
-    private String datotekaIot;
-    private String datotekaIotClient;
+
+
 
     protected Properties upisaniArgumenti = new Properties();
 
     public KorisnikSustava() {
-        dozvoljeniParametriList.add(parametarAdresa);
-        dozvoljeniParametriList.add(parametarKorisnik);
-        dozvoljeniParametriList.add(parametarLozinka);
-        dozvoljeniParametriList.add(parametarPort);
-        dozvoljeniParametriList.add(parametarPauza);
-        dozvoljeniParametriList.add(parametarStanje);
-        dozvoljeniParametriList.add(parametarKreni);
-        dozvoljeniParametriList.add(parametarZaustavi);
-        dozvoljeniParametriList.add(parametarSpavanje);
-        dozvoljeniParametriList.add(parametarEvidencija);
-        dozvoljeniParametriList.add(parametarIot);
+ 
 
     }
 
     public static void main(String[] args) {
 
         KorisnikSustava ks = new KorisnikSustava();
-        ks.preuzmiPostavke(args);
-        ks.args = args;
+        if (ks.preuzmiPostavke(args)) {
+            ks.args = args;
+            if (ks.administrator) {
+                AdministratorSustava anAdministratorSustava = new AdministratorSustava( ks.upisaniArgumenti);
+                anAdministratorSustava.preuzmiKontrolu();
 
-        if (ks.administrator) {
-//TODO kreiraj objekt administrator sustava i predaj mu kontrolu
-            AdministratorSustava anAdministratorSustava = new AdministratorSustava(ks.konfig,ks.upisaniArgumenti);
-            anAdministratorSustava.preuzmiKontrolu();
+            } else {
+                KlijentSustava klijentSustava = new KlijentSustava(ks.upisaniArgumenti);
+                klijentSustava.preuzmiKontrolu();
 
-        } else {
-            //TODO kreiraj objekt korisnika sustava i predaj mu kontrolu
-            KlijentSustava klijentSustava = new KlijentSustava(ks.konfig,ks.upisaniArgumenti);
-            klijentSustava.preuzmiKontrolu();
-
+            }
         }
 
     }
 
-    private void preuzmiPostavke(String[] args) {
-
-//TODO Provjeri upisane argumente
-        ucitajUlazneParametreAdmina(args);
-        ucitajUlazneParametreKlijenta(args);
-        
+    private boolean preuzmiPostavke(String[] args) {
+        administrator = ucitajUlazneParametreAdmina(args);
+        client = ucitajUlazneParametreKlijenta(args);
         for (Map.Entry<Object, Object> entry : upisaniArgumenti.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
-                System.out.println(key + " - "+ value + "\n");
-            
+            System.out.println(key + " - " + value + "");
         }
-        
-        
-    
-
-        if (korisnik != null) {
-            korisnik = korisnik.trim();
-            if (!korisnik.isEmpty()) {
-                administrator = true;
-            }
+        if (!administrator && !client) {
+            System.out.println("ERROR 02; greška u komandi \n\n Dozvoljene komande:\n\n  ADMINISTRATOR: \n\n -k korisnik -l lozinka -s [ipadresa | adresa] -p port [--pauza | --kreni | --zaustavi | --stanje | --evidencija datoteka1 | --iot datoteka2] \n\n - korisnik (min 3, maks 10 znakova) može sadržavati mala i velika slova, brojeve i znakove: _, -  \n - lozinka (min 3, maks 10 znakova) može sadržavati mala i velika slova, brojeve i znakove: _, -, #, ! \n - ipadresa je adresa IPv4 (npr. 127.0.0.1, 192.168.15.1) \n - adresa je opisni naziv poslužitelja (npr. localhost, dkermek.nwtis.foi.hr) \n - port može biti u intervalu između 8000 i 9999. \n - datoteka1 - datoteka u koju se provodi deserijalizacija evidencije rada. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. evidencija.txt, d:\\NWTiS\\evidencija.txt,...) \n - datoteka2 - datoteka u koju se sprema trenutno stanje iot uređaja. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. iot.txt, d:\\NWTiS\\iot.txt,...) \n\n KLIJENT: \n\n -s [ipadresa | adresa] -p port [--spavanje nnn] datoteka \n\n - nnn je broj sekundi koje čeka radna dretva prije nego što završi rad, može biti u intervalu 1 do 600 \n - datoteka - datoteka s podacima jednog iot uređaja u json formatu. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. iot.txt, d:\\NWTiS\\iot.txt,...).");
+            return false;
         }
-
-        if (lozinka != null) {
-            lozinka = lozinka.trim();
-            if (!lozinka.isEmpty()) {
-                administrator = true;
-            } else {
-                administrator = false;
-            }
-        } else {
-            administrator = false;
-        }
-//TODO Provjeri da li je korisnik koa admin u postavkama
-
+        return true;
     }
 
-    private void ucitajUlazneParametreAdmina(String[] args) {
-        int index = 0;
-        for (String arg : args) {
-            if (dozvoljeniParametriList.contains(arg)) {
-                switch (arg) {
-                    case parametarKorisnik:
-                        upisaniArgumenti.setProperty("korisnik", args[index + 1]);
-                        korisnik = args[index + 1];
-                        break;
-                    case parametarAdresa:
-                        upisaniArgumenti.setProperty("adresa", args[index + 1]);
-                        adresa = args[index + 1];
-                        break;
-                    case parametarLozinka:
-                        upisaniArgumenti.setProperty("lozinka", args[index + 1]);
-                        lozinka = args[index + 1];
-                        break;
-                    case parametarPort:
-                        upisaniArgumenti.setProperty("port", args[index + 1]);
-                        port = Integer.parseInt(args[index + 1]);
-                        break;
-                    case parametarPauza:
-                        upisaniArgumenti.setProperty("pauza", "1");
-                        pauza = true;
-                        break;
-                    case parametarStanje:
-                        upisaniArgumenti.setProperty("stanje", "1");
-                        stanje = true;
-                        break;
-                    case parametarKreni:
-                        upisaniArgumenti.setProperty("kreni", "1");
-                        kreni = true;
-                        break;
-                    case parametarZaustavi:
-                        upisaniArgumenti.setProperty("zaustavi", "1");
-                        zaustavi = true;
-                        break;
-                    case parametarSpavanje:
-                        upisaniArgumenti.setProperty("spavanje", args[index + 1]);
-                        spavanje = Integer.parseInt(args[index + 1]);
-                        break;
-                    case parametarEvidencija:
-                        upisaniArgumenti.setProperty("datotekaEvidencija", args[index + 1]);
-                        datotekaEvidencija = args[index + 1];
-                        break;
-                    case parametarIot:
-                        upisaniArgumenti.setProperty("datotekaIot", args[index + 1]);
-                        datotekaIot = args[index + 1];
-                        break;
-                }
-                System.out.println(arg + "\n");
+    private boolean ucitajUlazneParametreAdmina(String[] args) {
+        if (testInputArgs(sintaksaAdmin, args)) {
+            if (testInputString(sintaksaIP_URL, args[5])) {
+                upisaniArgumenti.setProperty("korisnik", args[1]);
+                upisaniArgumenti.setProperty("lozinka", args[3]);
+                upisaniArgumenti.setProperty("adresa", args[5]);
+                upisaniArgumenti.setProperty("port", args[7]);
+                return setOtherArguments(args);
 
             }
-            index++;
         }
-
+        return false;
     }
 
-    private void ucitajUlazneParametreKlijenta(String[] args) {
-        if (korisnik == null && lozinka == null && args.length > 4) {
-            upisaniArgumenti.setProperty("datotekaIotClient", args[args.length - 1]);
-            this.datotekaIotClient = args[args.length - 1];
+    private boolean setOtherArguments(String[] args) {
+        switch (args[8]) {
+            case parametarPauza:
+                upisaniArgumenti.setProperty("pauza", "1");
+                return true;
+            case parametarStanje:
+                upisaniArgumenti.setProperty("stanje", "1");
+                return true;
+            case parametarKreni:
+                upisaniArgumenti.setProperty("kreni", "1");
+                return true;
+            case parametarZaustavi:
+                upisaniArgumenti.setProperty("zaustavi", "1");
+                return true;
+            case parametarEvidencija:
+                upisaniArgumenti.setProperty("datotekaEvidencija", args[9]);
+                return true;
+            case parametarIot:
+                upisaniArgumenti.setProperty("datotekaIot", args[9]);
+                return true;
         }
-
+        return false;
     }
 
+    private boolean ucitajUlazneParametreKlijenta(String[] args) {
+        if (testInputArgs(sintaksaClientBezSpavanja, args)) {
+            if (testInputString(sintaksaIP_URL, args[1])) {
+                upisaniArgumenti.setProperty("adresa", args[1]);
+                upisaniArgumenti.setProperty("port", args[3]);
+                upisaniArgumenti.setProperty("datotekaIotClient", args[4]);
+                return true;
+            }
+        } else if (testInputArgs(sintaksaClientSaSpavanjem, args)) {
+            if (testInputString(sintaksaIP_URL, args[1])) {
+                upisaniArgumenti.setProperty("adresa", args[1]);
+                upisaniArgumenti.setProperty("port", args[3]);
+                upisaniArgumenti.setProperty("datotekaIotClient", args[6]);
+                upisaniArgumenti.setProperty("spavanje", args[5]);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean testInputArgs(String sintaksa, String[] args) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            sb.append(args[i]).append(" ");
+        }
+        return testInputString(sintaksa, sb.toString());
+    }
+
+    public boolean testInputString(String sintaksa, String string) {
+        String p = string.trim();
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(p);
+        return m.matches();
+    }
 }
