@@ -182,7 +182,7 @@ public class ServerSustava {
                     vratiOdgovorDaNemaSlobodnihRadnihDretvi(socket);
                 } else {
                     povecajBrojRadnihDretvi();
-                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + Integer.toBinaryString(redniBrojDrete), konfig, evidencija, this);
+                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + Integer.toBinaryString(redniBrojDrete), konfig, evidencija, this,iot);
                     radnaDretva.start();
                 }
             }

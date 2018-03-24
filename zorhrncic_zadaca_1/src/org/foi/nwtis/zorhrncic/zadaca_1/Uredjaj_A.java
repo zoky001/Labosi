@@ -18,6 +18,54 @@ public class Uredjaj_A {
     private int vlaga;
     private int svjetlost;
     private int vjetar;
+
+    public int getID() {
+        return ID;
+    }
+
+    public void setID(int ID) {
+        this.ID = ID;
+    }
+
+    public int getTemperatura() {
+        return temperatura;
+    }
+
+    public void setTemperatura(int temperatura) {
+        this.temperatura = temperatura;
+    }
+
+    public int getVlaga() {
+        return vlaga;
+    }
+
+    public void setVlaga(int vlaga) {
+        this.vlaga = vlaga;
+    }
+
+    public int getSvjetlost() {
+        return svjetlost;
+    }
+
+    public void setSvjetlost(int svjetlost) {
+        this.svjetlost = svjetlost;
+    }
+
+    public int getVjetar() {
+        return vjetar;
+    }
+
+    public void setVjetar(int vjetar) {
+        this.vjetar = vjetar;
+    }
+
+    public int getBuka() {
+        return buka;
+    }
+
+    public void setBuka(int buka) {
+        this.buka = buka;
+    }
     private int buka;
 
     public Uredjaj_A(int ID, int temperatura, int vlaga, int svjetlost, int vjetar, int buka) {

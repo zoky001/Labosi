@@ -30,87 +30,96 @@ public class Evidencija implements Serializable {
     private long ukupnoVrijemeRadaRadnihDretvi = 0;
     private long brojObavljanjaSerijalizacije = 0;
 
-    private boolean upis = false;
+    private transient  boolean upis = false;
+
+    public boolean isUpis() {
+        return upis;
+    }
+
+    public void setUpis(boolean upis) {
+        this.upis = upis;
+    }
+    
+    
 
     public synchronized void dodajUspjesnoObavljenZahtjev()
             throws InterruptedException {
-        while (upis) {
+        while (isUpis()) {
             System.out.println("Netko upisuje");
             wait();
         }
-
-        upis = true;
+        setUpis(true);
 
         //radi
         this.brojUspjesnihZahtjeva++;
 
-        upis = false;
+        setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
 
     public synchronized void dodajOdbijenZahtjevJerNemaDretvi()
             throws InterruptedException {
-        while (upis) {
+        while (isUpis()) {
             System.out.println("Netko upisuje");
             wait();
         }
 
-        upis = true;
 
+ setUpis(true);
         //radi
         this.brojPrkinutihZahtjeva++;
 
-        upis = false;
+ setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
 
     public synchronized void dodajNoviZahtjev()
             throws InterruptedException {
-        while (upis) {
+        while (isUpis()) {
             System.out.println("Netko upisuje");
             wait();
         }
 
-        upis = true;
+ setUpis(true);
         //radi
         this.ukupanbrojZahtjeva++;
 
-        upis = false;
+ setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
 
     public synchronized void dodajNeispravanZahtjev()
             throws InterruptedException {
-        upis = false;
-        while (upis) {
+       // upis = false;
+        while (isUpis()) {
             System.out.println("Netko upisuje");
             wait();
         }
 
-        upis = true;
+ setUpis(true);
 
         //radi
         this.brojNeispravnihZahtjeva++;
 
-        upis = false;
+ setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
 
     public synchronized void obaviSerijalizaciju(String nazivDatotekeZaSerijalizaciju)
             throws InterruptedException {
-        upis = false;
-        while (upis) {
+        //upis = false;
+        while (isUpis()) {
             System.out.println("Netko upisuje");
             wait();
         }
-        upis = true;
-        obaviSerijizacijuPoaso(nazivDatotekeZaSerijalizaciju);
+ setUpis(true);
+ obaviSerijizacijuPoaso(nazivDatotekeZaSerijalizaciju);
         this.brojObavljanjaSerijalizacije++;
-        upis = false;
+ setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
@@ -147,6 +156,10 @@ public class Evidencija implements Serializable {
         }
         //radi
 
+    }
+
+    public Evidencija() {
+         setUpis(false);
     }
 
 }

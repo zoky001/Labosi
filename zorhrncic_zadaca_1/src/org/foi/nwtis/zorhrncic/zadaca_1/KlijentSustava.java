@@ -113,7 +113,7 @@ public class KlijentSustava extends KorisnikSustava {
 
     private String[] getCommand() {
         if (upisaniArgumenti.containsKey("spavanje") && upisaniArgumenti.containsKey("datotekaIotClient")) {
-            String[] retValue = {"CEKAJ " + upisaniArgumenti.getProperty("spavanje") + "; " + "IOT " + upisaniArgumenti.getProperty("datotekaIotClient") + ";"};
+            String[] retValue = {"CEKAJ " + upisaniArgumenti.getProperty("spavanje") + "; " + "IOT " + getJsonFile(upisaniArgumenti.getProperty("datotekaIotClient")) + ";"};
             return retValue;
         } else if (upisaniArgumenti.containsKey("datotekaIotClient")) {
             System.out.println("JSON:  "+getJsonFile(upisaniArgumenti.getProperty("datotekaIotClient")));

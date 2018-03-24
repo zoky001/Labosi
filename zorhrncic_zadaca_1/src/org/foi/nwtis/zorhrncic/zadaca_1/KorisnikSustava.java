@@ -149,7 +149,7 @@ public class KorisnikSustava {
         return false;
     }
 
-    public boolean testInputArgs(String sintaksa, String[] args) {
+    public static boolean testInputArgs(String sintaksa, String[] args) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < args.length; i++) {
             sb.append(args[i]).append(" ");
@@ -157,7 +157,7 @@ public class KorisnikSustava {
         return testInputString(sintaksa, sb.toString());
     }
 
-    public boolean testInputString(String sintaksa, String string) {
+    public static boolean testInputString(String sintaksa, String string) {
         String p = string.trim();
         Pattern pattern = Pattern.compile(sintaksa);
         Matcher m = pattern.matcher(p);

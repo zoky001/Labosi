@@ -58,6 +58,7 @@ public class TestOpcija {
 
         //IOT sadržajDatoteke; 
         String sintaksaSadrzajDatoteke = "IOT (.*);";
+        String sintaksaSadrzajDatotekeCekaj = "CEKAJ ([0-9]+); IOT (.*);";
 
         String sintaksaIP = "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
                 + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
@@ -75,7 +76,7 @@ public class TestOpcija {
         String p = sb.toString().trim();
 
         // p="-k korisnik -l lozinka -s knjkjk -p port";// [--pauza | --kreni | --zaustavi | --stanje | --evidencija datoteka1 | --iot datoteka2]";
-        Pattern pattern = Pattern.compile(sintaksa);
+        Pattern pattern = Pattern.compile(sintaksaSadrzajDatotekeCekaj);
         Matcher m = pattern.matcher(p);
         boolean status = m.matches();
         if (status) {
