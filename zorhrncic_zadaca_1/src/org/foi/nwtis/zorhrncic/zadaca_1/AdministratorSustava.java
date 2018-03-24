@@ -6,25 +6,28 @@
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import sun.misc.IOUtils;
 
 /**
  *
  * @author grupa_1
  */
 public class AdministratorSustava extends KorisnikSustava {
-
 
     public AdministratorSustava(Properties upisaniAurumenti) {
         super();
@@ -51,16 +54,31 @@ public class AdministratorSustava extends KorisnikSustava {
                 socket.shutdownOutput();
 
                 int znak;
+                boolean end = false;
+
                 StringBuffer buffer = new StringBuffer();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 while (true) {
                     znak = inputStream.read();
                     if (znak == -1) {
                         break;
                     }
+                    if ((char) znak == (char) 0x0D) {
+                        end = true;
+                    }
+
                     buffer.append((char) znak);
+
+                    if (end) {
+                        baos.write(znak);
+                    }
+
                 }
-                System.out.println("buffer: " + buffer.toString());
-            }catch (IOException ex) {
+
+                String str = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+                System.out.println("buffer: " + str);
+
+            } catch (IOException ex) {
                 Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
         } catch (IOException ex) {

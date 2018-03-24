@@ -5,11 +5,16 @@
  */
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
@@ -30,7 +35,7 @@ public class Evidencija implements Serializable {
     private long ukupnoVrijemeRadaRadnihDretvi = 0;
     private long brojObavljanjaSerijalizacije = 0;
 
-    private transient  boolean upis = false;
+    private transient boolean upis = false;
 
     public boolean isUpis() {
         return upis;
@@ -39,8 +44,6 @@ public class Evidencija implements Serializable {
     public void setUpis(boolean upis) {
         this.upis = upis;
     }
-    
-    
 
     public synchronized void dodajUspjesnoObavljenZahtjev()
             throws InterruptedException {
@@ -65,12 +68,11 @@ public class Evidencija implements Serializable {
             wait();
         }
 
-
- setUpis(true);
+        setUpis(true);
         //radi
         this.brojPrkinutihZahtjeva++;
 
- setUpis(false);
+        setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
@@ -82,29 +84,29 @@ public class Evidencija implements Serializable {
             wait();
         }
 
- setUpis(true);
+        setUpis(true);
         //radi
         this.ukupanbrojZahtjeva++;
 
- setUpis(false);
+        setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
 
     public synchronized void dodajNeispravanZahtjev()
             throws InterruptedException {
-       // upis = false;
+        // upis = false;
         while (isUpis()) {
             System.out.println("Netko upisuje");
             wait();
         }
 
- setUpis(true);
+        setUpis(true);
 
         //radi
         this.brojNeispravnihZahtjeva++;
 
- setUpis(false);
+        setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
@@ -116,10 +118,10 @@ public class Evidencija implements Serializable {
             System.out.println("Netko upisuje");
             wait();
         }
- setUpis(true);
- obaviSerijizacijuPoaso(nazivDatotekeZaSerijalizaciju);
+        setUpis(true);
+        obaviSerijizacijuPoaso(nazivDatotekeZaSerijalizaciju);
         this.brojObavljanjaSerijalizacije++;
- setUpis(false);
+        setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
@@ -159,7 +161,29 @@ public class Evidencija implements Serializable {
     }
 
     public Evidencija() {
-         setUpis(false);
+        setUpis(false);
+    }
+
+    /**
+     * Write the object to a Base64 string.
+     */
+    public byte[] toStringser() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        String s = String.format("%-40s%-5d\n", "Ukupan broj zahtjeva:", ukupanbrojZahtjeva);
+        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        s = String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva);
+        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        s = String.format("%-40s%-5d\n", "Broj prekunutih zahtjeva:", brojPrkinutihZahtjeva);
+        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        s = String.format("%-40s%-5d\n", "Broj neispravnih zahtjeva:", brojNeispravnihZahtjeva);
+        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        s = String.format("%-40s%-5d\n", "Broj nedozvoljenih zahtjeva:", brojNedozvoljenihZahtjeva);
+        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        s = String.format("%-40s%-5d\n", "Ukupno vrijeme rada radih dretvi:", ukupnoVrijemeRadaRadnihDretvi);
+        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        s = String.format("%-40s%-5d\n", "Broj obavljanja serijalizacije:", brojObavljanjaSerijalizacije);
+        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        return baos.toByteArray();
     }
 
 }

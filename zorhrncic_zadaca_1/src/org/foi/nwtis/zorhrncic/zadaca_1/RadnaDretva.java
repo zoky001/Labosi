@@ -9,15 +9,25 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -26,7 +36,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.nashorn.internal.parser.TokenType;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaBin;
 import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaJSON;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 
 /**
  *
@@ -313,15 +326,32 @@ public class RadnaDretva extends Thread {
     private void obradaAdminEvidencija(String inputLine, List<String> commandWords) {
         System.out.println("upisan parametar --evidencija datoteka1 pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu korisniku se vraća odgovor OK; ZN-KODOVI kod; DUZINA n<CRLF> i zatim vraća deserijalizirane podatke o evidenciji rada u formatiranom obliku u zadanom skupu kodova znakova iz postavki. n predstavlja broj byte-ova koje zauzima deserijalizirana evidencija rada. Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nešto nije u redu s evidencijom rada vraća se odgovor ERROR 15; tekst (tekst objašnjava razlog pogreške). Ako je evidencija rada u redu admninistrator sprema u datoteku pod nazivom iz opcije.");
         // extractUsernameAndPasswordFromCommand(inputLine, commandWords);
-        try {
-            if (!authenticateUser()) {
-                out.write("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!".getBytes());
-            } else {
-                out.write("ERROR; TODO".getBytes());
+        if (!authenticateUser()) {
+            vratiOdgovorKlijentuString("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!");
+        } else {
+
+            try {
+
+                String str = new String(evidencija.toStringser(), StandardCharsets.UTF_8);
+
+                System.out.println("SER: \n" + str);
+
+                //   ByteBuffer byteBuffer = StandardCharsets.ISO_8859_1.encode(d);
+                String s = "OK; ZN-KODOVI " + StandardCharsets.UTF_8 + "; DUZINA " + evidencija.toStringser().length + "\r\n";//+evidencija.toStringser();
+
+                byte[] b = s.getBytes();
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                outputStream.write(b);
+                outputStream.write(evidencija.toStringser());
+
+                byte c[] = outputStream.toByteArray();
+
+                vratiOdgovorKlijentuByte(c);
 //TODO
+            } catch (IOException ex) {
+                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } catch (IOException ex) {
-            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -444,14 +474,18 @@ public class RadnaDretva extends Thread {
             return gson.fromJson(StringJSON, Uredjaj_A.class);
         } catch (JsonSyntaxException e) {
             System.out.println("JSON: " + e.getMessage());
-            vratiOdgovorKlijentu("ERROR 20; Neispravan format JSON zapisa");
+            vratiOdgovorKlijentuString("ERROR 20; Neispravan format JSON zapisa");
         }
         return null;
     }
 
-    private void vratiOdgovorKlijentu(String odgovor) {
+    private void vratiOdgovorKlijentuString(String odgovor) {
+        vratiOdgovorKlijentuByte(odgovor.getBytes());
+    }
+
+    private void vratiOdgovorKlijentuByte(byte[] odgovor) {
         try {
-            out.write(odgovor.getBytes());
+            out.write(odgovor);
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -461,11 +495,11 @@ public class RadnaDretva extends Thread {
         try {
             String odgovor = iot.addOrUpdateDevice(iotUredjaj);
             if (odgovor.equals(OK_21)) {
-                vratiOdgovorKlijentu(OK_21);
+                vratiOdgovorKlijentuString(OK_21);
             } else if (odgovor.equals(OK_20)) {
-                vratiOdgovorKlijentu(OK_20);
+                vratiOdgovorKlijentuString(OK_20);
             } else {
-                vratiOdgovorKlijentu(ERROR_21 + "Došlo je do greške tjekom dodavanja novog IOT uređaja!!");
+                vratiOdgovorKlijentuString(ERROR_21 + "Došlo je do greške tjekom dodavanja novog IOT uređaja!!");
             }
         } catch (InterruptedException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
