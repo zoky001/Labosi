@@ -332,18 +332,18 @@ public class RadnaDretva extends Thread {
 
             try {
 
-                String str = new String(evidencija.toStringser(), StandardCharsets.UTF_8);
+                String str = new String(evidencija.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))), StandardCharsets.UTF_8);
 
                 System.out.println("SER: \n" + str);
 
                 //   ByteBuffer byteBuffer = StandardCharsets.ISO_8859_1.encode(d);
-                String s = "OK; ZN-KODOVI " + StandardCharsets.UTF_8 + "; DUZINA " + evidencija.toStringser().length + "\r\n";//+evidencija.toStringser();
+                String s = "OK; ZN-KODOVI " + Charset.forName(konfig.dajPostavku("skup.kodova.znakova")) + "; DUZINA " + evidencija.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))).length + "\r\n";//+evidencija.toStringser();
 
                 byte[] b = s.getBytes();
 
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 outputStream.write(b);
-                outputStream.write(evidencija.toStringser());
+                outputStream.write(evidencija.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))));
 
                 byte c[] = outputStream.toByteArray();
 

@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.logging.Level;
@@ -36,6 +37,7 @@ public class Evidencija implements Serializable {
     private long brojObavljanjaSerijalizacije = 0;
 
     private transient boolean upis = false;
+    private Charset charset;
 
     public boolean isUpis() {
         return upis;
@@ -167,22 +169,23 @@ public class Evidencija implements Serializable {
     /**
      * Write the object to a Base64 string.
      */
-    public byte[] toStringser() throws IOException {
+    public byte[] toStringser (Charset charset) throws IOException {
+        //charset = StandardCharsets.ISO_8859_1;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         String s = String.format("%-40s%-5d\n", "Ukupan broj zahtjeva:", ukupanbrojZahtjeva);
-        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        baos.write(charset.encode(s).array());
         s = String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva);
-        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        baos.write(charset.encode(s).array());
         s = String.format("%-40s%-5d\n", "Broj prekunutih zahtjeva:", brojPrkinutihZahtjeva);
-        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        baos.write(charset.encode(s).array());
         s = String.format("%-40s%-5d\n", "Broj neispravnih zahtjeva:", brojNeispravnihZahtjeva);
-        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        baos.write(charset.encode(s).array());
         s = String.format("%-40s%-5d\n", "Broj nedozvoljenih zahtjeva:", brojNedozvoljenihZahtjeva);
-        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        baos.write(charset.encode(s).array());
         s = String.format("%-40s%-5d\n", "Ukupno vrijeme rada radih dretvi:", ukupnoVrijemeRadaRadnihDretvi);
-        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        baos.write(charset.encode(s).array());
         s = String.format("%-40s%-5d\n", "Broj obavljanja serijalizacije:", brojObavljanjaSerijalizacije);
-        baos.write(StandardCharsets.UTF_8.encode(s).array());
+        baos.write(charset.encode(s).array());
         return baos.toByteArray();
     }
 

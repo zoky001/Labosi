@@ -7,6 +7,10 @@ package org.foi.nwtis.zorhrncic.zadaca_1;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,12 +18,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 import sun.misc.IOUtils;
 
@@ -28,6 +35,13 @@ import sun.misc.IOUtils;
  * @author grupa_1
  */
 public class AdministratorSustava extends KorisnikSustava {
+
+    private final String sintaksaAdminEvidencijaIot = "^OK; ZN-KODOVI ([^\\s]+); DUZINA ([0-9]+)\r\n([\\s\\S]+)";
+    private String charset;
+    private int numberOfBytes;
+    private int znak;
+    public final static char CR = (char) 0x0D;
+    public final static char LF = (char) 0x0A;
 
     public AdministratorSustava(Properties upisaniAurumenti) {
         super();
@@ -49,35 +63,19 @@ public class AdministratorSustava extends KorisnikSustava {
                 } else {
                     System.out.println("ERROR 02; komanda nije ispravna");
                 }
-
                 outputStream.flush();
                 socket.shutdownOutput();
-
-                int znak;
-                boolean end = false;
-
-                StringBuffer buffer = new StringBuffer();
+                //StringBuffer buffer = new StringBuffer();
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 while (true) {
                     znak = inputStream.read();
                     if (znak == -1) {
                         break;
                     }
-                    if ((char) znak == (char) 0x0D) {
-                        end = true;
-                    }
-
-                    buffer.append((char) znak);
-
-                    if (end) {
-                        baos.write(znak);
-                    }
-
+                    // buffer.append((char) znak);
+                    baos.write(znak);
                 }
-
-                String str = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-                System.out.println("buffer: " + str);
-
+                obradaOdgovora(baos);
             } catch (IOException ex) {
                 Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -114,6 +112,79 @@ public class AdministratorSustava extends KorisnikSustava {
 
         }
         return commands;
+    }
+
+    public boolean testInputStringAndExtractChasterAdnSize(String string, String sintaksa) {
+        String p = string.trim();
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(p);
+        boolean status = false;
+        status = m.matches();
+        if (status) {
+            if (m.groupCount() == 3) {
+                charset = m.group(1);
+                System.out.println(numberOfBytes = Integer.parseInt(m.group(2)));
+            }
+
+        } else {
+            System.out.println("Ne odgovara!");
+        }
+        return status;
+    }
+
+    private void obradaOdgovora(ByteArrayOutputStream baos) {
+        String str = new String(baos.toByteArray());
+        if (testInputStringAndExtractChasterAdnSize(str, sintaksaAdminEvidencijaIot)) {
+            System.out.println("Vraćen je odgovor sa datotekom:  " + charset + "\n" + numberOfBytes);
+            System.out.println("ODGOVOR:" + str);
+            pohranaDatotekeUZadanomFormatu(baos);
+        } else {
+            System.out.println("buffer: " + str);
+        }
+
+    }
+
+    private void pohranaDatotekeUZadanomFormatu(ByteArrayOutputStream baos) {
+        String nazivDatoteke;
+        if (upisaniArgumenti.containsKey("datotekaEvidencija")) {
+            nazivDatoteke = upisaniArgumenti.getProperty("datotekaEvidencija");
+        } else if (upisaniArgumenti.containsKey("datotekaIot")) {
+            nazivDatoteke = upisaniArgumenti.getProperty("datotekaIot");
+        } else {
+            nazivDatoteke = "datoteka.txt";
+        }
+        // String str = ;//, StandardCharsets.UTF_8);
+        ByteArrayOutputStream baosFile = new ByteArrayOutputStream();
+        boolean upis = false;
+        for (int i = 0; i < baos.toByteArray().length; i++) {          
+            if (upis) {
+                baosFile.write(baos.toByteArray()[i]);
+            }
+            if (i > 1 && (char) baos.toByteArray()[i] == LF && baos.toByteArray()[i - 1] == CR) {
+                upis = true;
+            }
+        }
+        saveByteArrayToFile(nazivDatoteke, new String(baosFile.toByteArray(),Charset.forName(charset)));
+    }
+    
+    private void saveByteArrayToFile(String nazivDatoteke, String baos) {
+        FileOutputStream out = null;
+        try {
+            File outputFile = new File(nazivDatoteke);
+            out = new FileOutputStream(outputFile);
+            int c;
+            out.write(baos.getBytes());
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                out.close();
+            } catch (IOException ex) {
+                Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
 }
