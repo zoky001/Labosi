@@ -87,6 +87,48 @@ public class RadnaDretva extends Thread {
     public static final String OK_20 = "OK 20;";
     public static final String OK_21 = "OK 21;";
 
+    private boolean stop = false;
+    private boolean upis = false;
+
+    public synchronized boolean setKrajRada(boolean b) {
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        if (stop != b) {
+            stop = b;
+            upis = false;
+            serverSustava.smanjiBrojRadnihDretvi();
+            notify();
+            return true;
+        } else {
+            upis = false;
+            notify();
+            return false;
+        }
+    }
+
+    public synchronized boolean isKrajRada() {
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        boolean ret = stop;
+        upis = false;
+        notify();
+        return ret;
+    }
+
     public RadnaDretva(Socket socket, String nazivDretve, Konfiguracija konfig, Evidencija evidencija, ServerSustava serverSustava, IOT iot) {
         super(nazivDretve);
         this.socket = socket;
@@ -127,36 +169,36 @@ public class RadnaDretva extends Thread {
     }*/
     @Override
     public void run() {
-        try (
-                InputStream inputStream = socket.getInputStream();
-                OutputStream outputStream = socket.getOutputStream();) {
-            System.out.println("Pokrenuta dreetva naziva: " + nazivDretve);
-            this.out = outputStream;
-            int znak;
-            StringBuffer buffer = new StringBuffer();
-            String inputLine, outputLine;
+        while (!isKrajRada()) {
+            try (
+                    InputStream inputStream = socket.getInputStream();
+                    OutputStream outputStream = socket.getOutputStream();) {
+                System.out.println("Pokrenuta dreetva naziva: " + nazivDretve);
+                this.out = outputStream;
+                int znak;
+                StringBuffer buffer = new StringBuffer();
+                String inputLine, outputLine;
 
-            while (true) {
-                znak = inputStream.read();
-                if (znak == -1) {
-                    break;
+                while (true) {
+                    znak = inputStream.read();
+                    if (znak == -1) {
+                        break;
+                    }
+                    buffer.append((char) znak);
+
                 }
-                buffer.append((char) znak);
+                System.out.println("Klijent je napisao KOMDANDU: " + buffer.toString());
+                obradaZahtjeva(buffer.toString());
+                //TODO Provjeri ispravnost primljene komande
 
-            }
-            System.out.println("Klijent je napisao KOMDANDU: " + buffer.toString());
-            obradaZahtjeva(buffer.toString());
-            //TODO Provjeri ispravnost primljene komande
-
-        } catch (IOException ex) {
-            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                serverSustava.smanjiBrojRadnihDretvi();
-            } catch (InterruptedException ex) {
+            } catch (IOException ex) {
+                setKrajRada(true);
                 Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                 setKrajRada(true);
             }
         }
+        System.out.println("Dretva " + nazivDretve + "je završila;");
 
 //TODO smanji broj aktivnih radnih dretvi kod ServerSustava
     }
@@ -283,20 +325,10 @@ public class RadnaDretva extends Thread {
     private void obradaAdminZaustavi(String inputLine, List<String> commandWords) {
         System.out.println("upisan parametar --zaustavi pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu prekida prijem komandi, serijalizira evidenciju rada i završava rad. Korisniku se vraća odgovor OK.  Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nešto nije u redu s prekidom rada ili serijalizacijom vraća se odgovor ERROR 13; tekst (tekst objašnjava razlog pogreške). ");
         // extractUsernameAndPasswordFromCommand(inputLine, commandWords);
-        try {
-            if (!authenticateUser()) {
-                out.write("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!".getBytes());
-            } else if (true) {
-                serverSustava.beginStoppingServer(); // TODO dovršti
-                out.write("OK".getBytes());
-            } else {
-                out.write("ERROR;".getBytes());
-//TODO upisan parametar --zaustavi pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu prekida prijem komandi, serijalizira evidenciju rada i završava rad. Korisniku se vraća odgovor OK.  Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nešto nije u redu s prekidom rada ili serijalizacijom vraća se odgovor ERROR 13; tekst (tekst objašnjava razlog pogreške).            
-            }
-        } catch (IOException ex) {
-            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        if (!authenticateUser()) {
+            vratiOdgovorKlijentuString("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!");
+        } else {
+            zaustaviServer();
         }
     }
 
@@ -325,31 +357,22 @@ public class RadnaDretva extends Thread {
 
     private void obradaAdminEvidencija(String inputLine, List<String> commandWords) {
         System.out.println("upisan parametar --evidencija datoteka1 pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu korisniku se vraća odgovor OK; ZN-KODOVI kod; DUZINA n<CRLF> i zatim vraća deserijalizirane podatke o evidenciji rada u formatiranom obliku u zadanom skupu kodova znakova iz postavki. n predstavlja broj byte-ova koje zauzima deserijalizirana evidencija rada. Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nešto nije u redu s evidencijom rada vraća se odgovor ERROR 15; tekst (tekst objašnjava razlog pogreške). Ako je evidencija rada u redu admninistrator sprema u datoteku pod nazivom iz opcije.");
-        // extractUsernameAndPasswordFromCommand(inputLine, commandWords);
         if (!authenticateUser()) {
             vratiOdgovorKlijentuString("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!");
         } else {
-
             try {
-
                 String str = new String(evidencija.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))), StandardCharsets.UTF_8);
-
                 System.out.println("SER: \n" + str);
-
-                //   ByteBuffer byteBuffer = StandardCharsets.ISO_8859_1.encode(d);
                 String s = "OK; ZN-KODOVI " + Charset.forName(konfig.dajPostavku("skup.kodova.znakova")) + "; DUZINA " + evidencija.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))).length + "\r\n";//+evidencija.toStringser();
-
                 byte[] b = s.getBytes();
-
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 outputStream.write(b);
                 outputStream.write(evidencija.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))));
-
                 byte c[] = outputStream.toByteArray();
-
                 vratiOdgovorKlijentuByte(c);
-//TODO
             } catch (IOException ex) {
+                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InterruptedException ex) {
                 Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
@@ -357,16 +380,24 @@ public class RadnaDretva extends Thread {
 
     private void obradaAdminIot(String inputLine, List<String> commandWords) {
         System.out.println("upisan parametar --iot datoteka2 pa provjerava postoji li korisnik i njemu pridružena lozinka u datoteci s postavkama. Ako je u redu korisniku se vraća odgovor OK; ZN-KODOVI kod; DUZINA n<CRLF> i zatim vraća podatke o svim IOT uređajima za koje je primio podatke u formatiranom obliku u zadanom skupu kodova znakova iz postavki. n predstavlja broj byte-ova koje zauzima datoteka. Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nešto nije u redu s evidencijom rada vraća se odgovor ERROR 16; tekst (tekst objašnjava razlog pogreške). Ako je evidencija rada u redu admninistrator sprema u datoteku pod nazivom iz opcije");
-        //  extractUsernameAndPasswordFromCommand(inputLine, commandWords);
-        try {
-            if (!authenticateUser()) {
-                out.write("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!".getBytes());
-            } else {
-                out.write("ERROR; TODO".getBytes());
-//TODO
+        if (!authenticateUser()) {
+            vratiOdgovorKlijentuString("ERROR 10; korisnik nije administrator ili su pogrešni podatc u za prijavu!");
+        } else {
+            try {
+                String str = new String(iot.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))), StandardCharsets.UTF_8);
+                System.out.println("SER: \n" + str);
+                String s = "OK; ZN-KODOVI " + Charset.forName(konfig.dajPostavku("skup.kodova.znakova")) + "; DUZINA " + iot.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))).length + "\r\n";//+evidencija.toStringser();
+                byte[] b = s.getBytes();
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                outputStream.write(b);
+                outputStream.write(iot.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))));
+                byte c[] = outputStream.toByteArray();
+                vratiOdgovorKlijentuByte(c);
+            } catch (IOException ex) {
+                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } catch (IOException ex) {
-            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -395,6 +426,7 @@ public class RadnaDretva extends Thread {
         System.out.println("cekaj + upisan parametar datoteka. Dodaje ili ažurira podatke o IOT uređaju na temelju primljenih podataka u json formatu. Od atributa jedino je obavezan id. Ako je neispravni json format vraća odgovor ERROR 20; tekst (tekst objašnjava razlog pogreške). Ako je došlo do problema tijekom rada vraća mu se odgovor ERROR 21; tekst (tekst objašnjava razlog pogreške). Ako je sve u redu i dodan je novi IOT, vraća mu se odgovor OK 20; Ako je sve u redu i ažuriran je postojeći IOT , vraća mu se odgovor OK 21;");
         System.out.println("upisan parametar --spavanje n . Radna dretva treba čekati zadani broj sekundi pretvorenih u milisekunde. Ako je uspješno odradila čekanje vraća mu se odgovor OK; Ako nije uspjela odraditi čekanje vraća mu se odgovor ERROR 22; tekst (tekst objašnjava razlog pogreške). ");
         try {
+            serverSustava.addDretvaCekaj(this);
             Thread.sleep(vrijemeCekanja * 1000);
             out.write("OK;".getBytes());
             obradaKlijentaIotDatoteka();
@@ -408,6 +440,8 @@ public class RadnaDretva extends Thread {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            serverSustava.removeDretvaCekaj(this);
         }
 
     }
@@ -503,6 +537,17 @@ public class RadnaDretva extends Thread {
             }
         } catch (InterruptedException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void zaustaviServer() {
+        boolean b = serverSustava.zaustaviServer(konfig);
+
+        if (b) {
+            vratiOdgovorKlijentuString("OK");
+        } else {
+            vratiOdgovorKlijentuString("ERROR 13; greška kod zaustavljanja servera.");
+
         }
     }
 

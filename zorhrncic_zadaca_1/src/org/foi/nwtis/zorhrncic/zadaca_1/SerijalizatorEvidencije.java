@@ -32,7 +32,47 @@ public class SerijalizatorEvidencije extends Thread {
     boolean krajRada = false;
     String nazivDatotekeZaSerijalizaciju;
     private Evidencija evidencija;
+    private boolean upis = false;
 
+        public synchronized boolean setKrajRada(boolean b) {
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        if (krajRada != b) {
+            krajRada = b;
+            upis = false;
+            notify();
+            return true;
+        } else {
+            upis = false;
+            notify();
+            return false;
+        }
+    }
+
+    public synchronized boolean isKrajRada() {      
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        boolean ret = krajRada;
+        upis = false;
+        notify();
+        return ret;
+    }
+
+    
     public SerijalizatorEvidencije(String nazivDretve, Konfiguracija konfig, Evidencija e) {
         super(nazivDretve);
 
@@ -53,7 +93,7 @@ public class SerijalizatorEvidencije extends Thread {
         nazivDatotekeZaSerijalizaciju = konfig.dajPostavku("datoteka.evidencije.rada");
         int intervalZaSerijalizuaciju = Integer.parseInt(konfig.dajPostavku("interval.za.serijalizaciju"));
 
-        while (!krajRada) {
+        while (!isKrajRada()) {
             long pocetak = System.currentTimeMillis();
 
             System.out.println("Dretva: " + nazivDretve + "Početak: " + pocetak);

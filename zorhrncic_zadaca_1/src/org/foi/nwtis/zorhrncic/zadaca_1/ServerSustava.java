@@ -13,11 +13,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,12 +47,89 @@ public class ServerSustava {
     private int redniBrojDrete;
     private boolean krajRada;
     private boolean upis = false;
+    private Gson g = new Gson();
+    private List<RadnaDretva> dretveCekaj = new ArrayList<>();
+    private IOT iot;
+    private SerijalizatorEvidencije se;
 
-    public synchronized boolean beginStoppingServer()
-            throws InterruptedException {
+    public synchronized void addDretvaCekaj(RadnaDretva b) {
         while (upis) {
-            System.out.println("Netko upisuje");
-            wait();
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        dretveCekaj.add(b);
+        System.out.println("broj dretvi cekanja: " + dretveCekaj.size());
+        upis = false;
+        notify();
+    }
+
+    public synchronized void removeDretvaCekaj(RadnaDretva b) {
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        dretveCekaj.remove(b);
+        System.out.println("broj dretvi cekanja: " + dretveCekaj.size());
+        upis = false;
+        notify();
+    }
+
+    public synchronized boolean setKrajRada(boolean b) {
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        if (krajRada != b) {
+            krajRada = b;
+            upis = false;
+            notify();
+            return true;
+        } else {
+            upis = false;
+            notify();
+            return false;
+        }
+    }
+
+    public synchronized boolean isKrajRada() {
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        boolean ret = krajRada;
+        upis = false;
+        notify();
+        return ret;
+    }
+
+    public synchronized boolean beginStoppingServer() {
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         upis = true;
         if (stop_request == false) {
@@ -158,32 +238,32 @@ public class ServerSustava {
         maksCekanje = Integer.parseInt(konfig.dajPostavku("maks.broj.zahtjeva.cekanje"));
         datotekaEvidencije = konfig.dajPostavku("datoteka.evidencije.rada");
         maksRadnihDretvi = Integer.parseInt(konfig.dajPostavku("maks.broj.radnih.dretvi"));
-        krajRada = false;
         brojRadnihDretvi = 0;
         redniBrojDrete = 0;
-//TODO Provjeri i kao postoju učitaj evidenciju rada
         postaviEvidencijuRada(datotekaEvidencije);
-
-        Gson g = new Gson();
+        setKrajRada(false);
         System.out.println(g.toJson(evidencija));
-
-        IOT iot = new IOT();
-        SerijalizatorEvidencije se = new SerijalizatorEvidencije("zorhrncic - serijalizator", konfig, evidencija);
+        iot = new IOT();
+        se = new SerijalizatorEvidencije("zorhrncic - serijalizator", konfig, evidencija);
         se.start();
         try {
             ServerSocket serverSocket = new ServerSocket(port, maksCekanje);
-            while (!krajRada) {
+            while (!isKrajRada()) {
+                 System.out.println("Cekam");
                 Socket socket = serverSocket.accept();
+                if (isKrajRada()) {
+                    return;
+                }
                 System.out.println("Korisnik se spojio");
                 evidencija.dodajNoviZahtjev();//test monitor
-
                 if (brojRadnihDretvi >= maksRadnihDretvi) {
-                    evidencija.dodajOdbijenZahtjevJerNemaDretvi();
                     vratiOdgovorDaNemaSlobodnihRadnihDretvi(socket);
+                    evidencija.dodajOdbijenZahtjevJerNemaDretvi();
                 } else {
                     povecajBrojRadnihDretvi();
-                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + Integer.toBinaryString(redniBrojDrete), konfig, evidencija, this,iot);
+                    RadnaDretva radnaDretva = new RadnaDretva(socket, "zorhrncic - " + Integer.toBinaryString(redniBrojDrete), konfig, evidencija, this, iot);
                     radnaDretva.start();
+
                 }
             }
         } catch (IOException ex) {
@@ -195,17 +275,43 @@ public class ServerSustava {
 
     private void vratiOdgovorDaNemaSlobodnihRadnihDretvi(Socket socket) {
         try (
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));) {
-
+                InputStream inputStream = socket.getInputStream();
+                OutputStream outputStream = socket.getOutputStream();) {
+            int znak;
+            StringBuffer buffer = new StringBuffer();
             String inputLine, outputLine;
-
-            out.println("ERROR 01; nema više slobodnih radnih dretvi");
-
+            while (true) {
+                znak = inputStream.read();
+                if (znak == -1) {
+                    break;
+                }
+                buffer.append((char) znak);
+            }
+            System.out.println("Klijent je napisao KOMDANDU: " + buffer.toString());
+            outputStream.write("ERROR 01; nema više slobodnih radnih dretvi".getBytes());
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
         }
 
+        /*try (
+                InputStream inputStream = socket.getInputStream();
+                OutputStream outputStream = socket.getOutputStream();) {         
+            int znak;
+            StringBuffer buffer = new StringBuffer();
+            while (true) {
+                znak = inputStream.read();
+                if (znak == -1) {
+                    break;
+                }
+                buffer.append((char) znak);
+            }
+           outputStream.write("ERROR 01; nema više slobodnih radnih dretvi".getBytes());
+        } catch (IOException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+           
+        }*/
     }
 
     public void ucitajEvidenciju(String datoteka) throws NemaKonfiguracije, NeispravnaKonfiguracija {
@@ -267,19 +373,64 @@ public class ServerSustava {
         notify();
     }
 
-    public synchronized void smanjiBrojRadnihDretvi()
-            throws InterruptedException {
+    public synchronized void smanjiBrojRadnihDretvi() {
         while (upis) {
-            System.out.println("Netko upisuje");
-            wait();
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         upis = true;
         this.brojRadnihDretvi--;
-        evidencija.dodajUspjesnoObavljenZahtjev();
         System.out.println("Smanjen broj radnih dretvi: " + brojRadnihDretvi);
+        if (brojRadnihDretvi == 0 && krajRada) {
+             System.exit(0);
+        }
+        evidencija.dodajUspjesnoObavljenZahtjev();        
         upis = false;
         System.out.println("Posao obavljen");
         notify();
+    }
+
+    public synchronized int getBrojRadnihDretvi() {
+        while (upis) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        upis = true;
+        int b = brojRadnihDretvi;
+        System.out.println("Smanjen broj radnih dretvi: " + brojRadnihDretvi);
+        upis = false;
+        notify();
+        return b;
+    }
+
+    public boolean zaustaviServer(Konfiguracija konfig) {
+        try {
+            beginStoppingServer();
+            for (RadnaDretva radnaDretva : dretveCekaj) {
+                radnaDretva.setKrajRada(true);
+            }
+
+            while (getBrojRadnihDretvi() > 1) {
+                System.out.println("Cekma da zavrse sve dretve;");
+            }
+
+            evidencija.obaviSerijalizaciju(konfig.dajPostavku("datoteka.evidencije.rada"));
+            se.setKrajRada(true);
+            setKrajRada(true);
+         ///   System.exit(0);
+            return true;
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
     }
 
 }

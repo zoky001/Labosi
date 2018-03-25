@@ -5,11 +5,14 @@
  */
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -48,10 +51,14 @@ public class Evidencija implements Serializable {
     }
 
     public synchronized void dodajUspjesnoObavljenZahtjev()
-            throws InterruptedException {
+           {
         while (isUpis()) {
-            System.out.println("Netko upisuje");
-            wait();
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         setUpis(true);
 
@@ -73,7 +80,6 @@ public class Evidencija implements Serializable {
         setUpis(true);
         //radi
         this.brojPrkinutihZahtjeva++;
-
         setUpis(false);
         System.out.println("Posao obavljen");
         notify();
@@ -166,12 +172,44 @@ public class Evidencija implements Serializable {
         setUpis(false);
     }
 
-    /**
-     * Write the object to a Base64 string.
-     */
-    public byte[] toStringser (Charset charset) throws IOException {
-        //charset = StandardCharsets.ISO_8859_1;
+    public synchronized byte[] toStringser(Charset charset) throws InterruptedException, IOException {
+        // upis = false;
+        while (isUpis()) {
+            System.out.println("Netko upisuje");
+            wait();
+        }
+        setUpis(true);
+        byte[] b = toStringserPrivate(charset);
+        setUpis(false);
+        System.out.println("Posao obavljen");
+        notify();
+        return b;
+    }
+
+    private byte[] toStringserPrivate(Charset charset) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        FileWriter out = new FileWriter("tmp");
+        out.write(String.format("%-40s%-5d\n", "Ukupan broj zahtjeva:", ukupanbrojZahtjeva));
+        out.write(String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva));
+        out.write(String.format("%-40s%-5d\n", "Broj prekunutih zahtjeva:", brojPrkinutihZahtjeva));
+        out.write(String.format("%-40s%-5d\n", "Broj neispravnih zahtjeva:", brojNeispravnihZahtjeva));
+        out.write(String.format("%-40s%-5d\n", "Broj nedozvoljenih zahtjeva:", brojNedozvoljenihZahtjeva));
+        out.write(String.format("%-40s%-5d\n", "Ukupno vrijeme rada radih dretvi:", ukupnoVrijemeRadaRadnihDretvi));
+        out.write(String.format("%-40s%-5d\n", "Broj obavljanja serijalizacije:", brojObavljanjaSerijalizacije));
+        out.close();
+        File inputFile = new File("tmp");
+        BufferedReader bf = new BufferedReader(
+                new InputStreamReader(
+                        new FileInputStream(inputFile), charset));
+        String linija = null;
+        while ((linija = bf.readLine()) != null) {
+            String s = linija + "\n";
+            baos.write(s.getBytes(charset));
+        }
+        bf.close();
+
+        //charset = StandardCharsets.ISO_8859_1;
+        /* 
         String s = String.format("%-40s%-5d\n", "Ukupan broj zahtjeva:", ukupanbrojZahtjeva);
         baos.write(charset.encode(s).array());
         s = String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva);
@@ -185,7 +223,7 @@ public class Evidencija implements Serializable {
         s = String.format("%-40s%-5d\n", "Ukupno vrijeme rada radih dretvi:", ukupnoVrijemeRadaRadnihDretvi);
         baos.write(charset.encode(s).array());
         s = String.format("%-40s%-5d\n", "Broj obavljanja serijalizacije:", brojObavljanjaSerijalizacije);
-        baos.write(charset.encode(s).array());
+        baos.write(charset.encode(s).array());*/
         return baos.toByteArray();
     }
 

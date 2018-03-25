@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -156,7 +157,7 @@ public class AdministratorSustava extends KorisnikSustava {
         // String str = ;//, StandardCharsets.UTF_8);
         ByteArrayOutputStream baosFile = new ByteArrayOutputStream();
         boolean upis = false;
-        for (int i = 0; i < baos.toByteArray().length; i++) {          
+        for (int i = 0; i < baos.toByteArray().length; i++) {
             if (upis) {
                 baosFile.write(baos.toByteArray()[i]);
             }
@@ -164,18 +165,14 @@ public class AdministratorSustava extends KorisnikSustava {
                 upis = true;
             }
         }
-        saveByteArrayToFile(nazivDatoteke, new String(baosFile.toByteArray(),Charset.forName(charset)));
+        saveByteArrayToFile(nazivDatoteke, new String(baosFile.toByteArray(), Charset.forName(charset)));
     }
-    
+
     private void saveByteArrayToFile(String nazivDatoteke, String baos) {
-        FileOutputStream out = null;
+        FileWriter out = null;
         try {
-            File outputFile = new File(nazivDatoteke);
-            out = new FileOutputStream(outputFile);
-            int c;
-            out.write(baos.getBytes());
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
+            out = new FileWriter(nazivDatoteke);
+            out.write(baos);
         } catch (IOException ex) {
             Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
