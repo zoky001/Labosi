@@ -24,7 +24,7 @@ public class KorisnikSustava {
             + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
             + "([01]?\\d\\d?|2[0-4]\\d|25[0-5]))|((?:http(?:s)?\\:\\/\\/)?[a-zA-Z0-9_-]+(?:.[a-zA-Z0-9_-]+)*.[a-zA-Z]{2,4}(?:\\/[a-zA-Z0-9_]+)*(?:\\/[a-zA-Z0-9_]+.[a-zA-Z]{2,4}(?:\\?[a-zA-Z0-9_]+\\=[a-zA-Z0-9_]+)?)?(?:\\&[a-zA-Z0-9_]+\\=[a-zA-Z0-9_]+)*)$";
 
-    String sintaksaClientSaSpavanjem = "^-s ([^\\s]+) -p ([8-9][0-9][0-9][0-9]) (?:--spavanje (0?[1-9]|[1-9][0-9]|[1-5][0-9][0-9]|[6-6][0-0][0-0]))? ([^\\s]+\\.(?i)(txt|xml|json|bin))";// (--spavanje ([^\\s]+) | --ne )";// ([^\\s]+\\.(?i)txt|xml|json)";
+    String sintaksaClientSaSpavanjem = "^-s ([^\\s]+) -p ([8-9][0-9][0-9][0-9]) (?:--spavanje (0?[1-9]|[1-9][0-9]|[1-5][0-9][0-9]|[6-6][0-0][0-0]))?";// (--spavanje ([^\\s]+) | --ne )";// ([^\\s]+\\.(?i)txt|xml|json)";
     String sintaksaClientBezSpavanja = "^-s ([^\\s]+) -p ([8-9][0-9][0-9][0-9]) ([^\\s]+\\.(?i)(txt|xml|json|bin))";
     String sintaksaAdmin = "^-k ([^[a-zA-Z0-9_-]]{3,10}) -l ([^[a-zA-Z0-9[#!]_-]]{3,10}) -s ([^\\s]+) -p ([8-9][0-9][0-9][0-9]) (--pauza|--kreni|--zaustavi|--stanje|--evidencija ([^\\s]+\\.(?i)(txt|xml|json|bin))|--iot ([^\\s]+\\.(?i)(txt|xml|json|bin)))";
 
@@ -141,7 +141,7 @@ public class KorisnikSustava {
             if (testInputString(sintaksaIP_URL, args[1])) {
                 upisaniArgumenti.setProperty("adresa", args[1]);
                 upisaniArgumenti.setProperty("port", args[3]);
-                upisaniArgumenti.setProperty("datotekaIotClient", args[6]);
+               // upisaniArgumenti.setProperty("datotekaIotClient", args[6]);
                 upisaniArgumenti.setProperty("spavanje", args[5]);
                 return true;
             }

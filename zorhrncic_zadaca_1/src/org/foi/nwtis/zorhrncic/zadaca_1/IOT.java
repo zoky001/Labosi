@@ -85,18 +85,27 @@ public class IOT {
         }
     }
 
-    public synchronized byte[] toStringser(Charset charset) throws InterruptedException, IOException {
-        // upis = false;
-        while (isUpis()) {
-            System.out.println("Netko upisuje");
-            wait();
+    public synchronized byte[] toStringser(Charset charset) {
+        try {
+            // upis = false;
+            while (isUpis()) {
+                try {
+                    System.out.println("Netko upisuje");
+                    wait();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(IOT.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            setUpis(true);
+            byte[] b = toStringserPrivate(charset);
+            setUpis(false);
+            System.out.println("Posao obavljen");
+            notify();
+            return b;
+        } catch (IOException ex) {
+            Logger.getLogger(IOT.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
-        setUpis(true);
-        byte[] b = toStringserPrivate(charset);
-        setUpis(false);
-        System.out.println("Posao obavljen");
-        notify();
-        return b;
     }
 
     private byte[] toStringserPrivate(Charset charset) throws IOException {

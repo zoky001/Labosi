@@ -5,22 +5,13 @@
  */
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -28,8 +19,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
-import sun.misc.IOUtils;
 
 /**
  *
@@ -51,35 +40,9 @@ public class AdministratorSustava extends KorisnikSustava {
     }
 
     public void preuzmiKontrolu() {
-
         try {
             Socket socket = new Socket(upisaniArgumenti.getProperty("adresa"), Integer.parseInt(upisaniArgumenti.getProperty("port")));
-            try (
-                    InputStream inputStream = socket.getInputStream();
-                    OutputStream outputStream = socket.getOutputStream();) {
-                if (getCommand().size() > 0) {
-                    for (String command : getCommand()) {
-                        outputStream.write(command.getBytes());
-                    }
-                } else {
-                    System.out.println("ERROR 02; komanda nije ispravna");
-                }
-                outputStream.flush();
-                socket.shutdownOutput();
-                //StringBuffer buffer = new StringBuffer();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                while (true) {
-                    znak = inputStream.read();
-                    if (znak == -1) {
-                        break;
-                    }
-                    // buffer.append((char) znak);
-                    baos.write(znak);
-                }
-                obradaOdgovora(baos);
-            } catch (IOException ex) {
-                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            handle(socket);
         } catch (IOException ex) {
             Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -181,6 +144,34 @@ public class AdministratorSustava extends KorisnikSustava {
             } catch (IOException ex) {
                 Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+    }
+
+    private void handle(Socket socket) {
+        try (InputStream inputStream = socket.getInputStream();
+                OutputStream outputStream = socket.getOutputStream();) {
+            if (getCommand().size() > 0) {
+                for (String command : getCommand()) {
+                    outputStream.write(command.getBytes());
+                }
+            } else {
+                System.out.println("ERROR 02; komanda nije ispravna");
+            }
+            outputStream.flush();
+            socket.shutdownOutput();
+            //StringBuffer buffer = new StringBuffer();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            while (true) {
+                znak = inputStream.read();
+                if (znak == -1) {
+                    break;
+                }
+                // buffer.append((char) znak);
+                baos.write(znak);
+            }
+            obradaOdgovora(baos);
+        } catch (IOException ex) {
+            Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

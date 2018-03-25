@@ -50,8 +50,7 @@ public class Evidencija implements Serializable {
         this.upis = upis;
     }
 
-    public synchronized void dodajUspjesnoObavljenZahtjev()
-           {
+    public synchronized void dodajUspjesnoObavljenZahtjev() {
         while (isUpis()) {
             try {
                 System.out.println("Netko upisuje");
@@ -70,13 +69,15 @@ public class Evidencija implements Serializable {
         notify();
     }
 
-    public synchronized void dodajOdbijenZahtjevJerNemaDretvi()
-            throws InterruptedException {
+    public synchronized void dodajOdbijenZahtjevJerNemaDretvi() {
         while (isUpis()) {
-            System.out.println("Netko upisuje");
-            wait();
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-
         setUpis(true);
         //radi
         this.brojPrkinutihZahtjeva++;
@@ -85,52 +86,62 @@ public class Evidencija implements Serializable {
         notify();
     }
 
-    public synchronized void dodajNoviZahtjev()
-            throws InterruptedException {
+    public synchronized void dodajNoviZahtjev(){
         while (isUpis()) {
-            System.out.println("Netko upisuje");
-            wait();
+            try {
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-
         setUpis(true);
         //radi
         this.ukupanbrojZahtjeva++;
+        setUpis(false);
+        notify();
+    }
 
+    public synchronized void dodajNeispravanZahtjev() {
+        while (isUpis()) {
+            try {
+                System.out.println("Netko upisuje");
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        setUpis(true);
+        //radi
+        this.brojNeispravnihZahtjeva++;
         setUpis(false);
         System.out.println("Posao obavljen");
         notify();
     }
-
-    public synchronized void dodajNeispravanZahtjev()
-            throws InterruptedException {
-        // upis = false;
+    
+       public synchronized void dodajVrijemeRadaDretve(long sec) {
         while (isUpis()) {
-            System.out.println("Netko upisuje");
-            wait();
+            try {
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-
         setUpis(true);
-
         //radi
-        this.brojNeispravnihZahtjeva++;
-
+        this.ukupnoVrijemeRadaRadnihDretvi = this.ukupnoVrijemeRadaRadnihDretvi + sec;
         setUpis(false);
-        System.out.println("Posao obavljen");
         notify();
     }
 
     public synchronized void obaviSerijalizaciju(String nazivDatotekeZaSerijalizaciju)
             throws InterruptedException {
-        //upis = false;
         while (isUpis()) {
-            System.out.println("Netko upisuje");
             wait();
         }
         setUpis(true);
         obaviSerijizacijuPoaso(nazivDatotekeZaSerijalizaciju);
         this.brojObavljanjaSerijalizacije++;
         setUpis(false);
-        System.out.println("Posao obavljen");
         notify();
     }
 
@@ -145,12 +156,6 @@ public class Evidencija implements Serializable {
                 FileOutputStream out = new FileOutputStream(nazivDatotekeZaSerijalizaciju);
                 s = new ObjectOutputStream(out);
                 s.writeObject(this);
-                // os = Files.newOutputStream(datKonf.toPath(), StandardOpenOption.CREATE);
-                // Gson gsonObj = new Gson();
-                //  String strJson = gsonObj.toJson(evidencija);
-                //System.out.println(strJson);
-                //os.write(strJson.getBytes());
-                //this.postavke.storeToXML(os, "Konfiguracija NWTIS grupa 2");
             } catch (IOException ex) {
                 throw new NeispravnaKonfiguracija("Problem kod učitavanja datoteke " + datKonf.getAbsolutePath());
             }
@@ -158,32 +163,35 @@ public class Evidencija implements Serializable {
             Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
-                // os.close();
                 s.close();
             } catch (IOException ex) {
                 Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        //radi
-
     }
 
     public Evidencija() {
         setUpis(false);
     }
 
-    public synchronized byte[] toStringser(Charset charset) throws InterruptedException, IOException {
-        // upis = false;
-        while (isUpis()) {
-            System.out.println("Netko upisuje");
-            wait();
+    public synchronized byte[] toStringser(Charset charset) {
+        try {
+            while (isUpis()) {
+                try {
+                    wait();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            setUpis(true);
+            byte[] b = toStringserPrivate(charset);
+            setUpis(false);
+            notify();
+            return b;
+        } catch (IOException ex) {
+            Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
-        setUpis(true);
-        byte[] b = toStringserPrivate(charset);
-        setUpis(false);
-        System.out.println("Posao obavljen");
-        notify();
-        return b;
     }
 
     private byte[] toStringserPrivate(Charset charset) throws IOException {
@@ -207,24 +215,21 @@ public class Evidencija implements Serializable {
             baos.write(s.getBytes(charset));
         }
         bf.close();
-
-        //charset = StandardCharsets.ISO_8859_1;
-        /* 
-        String s = String.format("%-40s%-5d\n", "Ukupan broj zahtjeva:", ukupanbrojZahtjeva);
-        baos.write(charset.encode(s).array());
-        s = String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva);
-        baos.write(charset.encode(s).array());
-        s = String.format("%-40s%-5d\n", "Broj prekunutih zahtjeva:", brojPrkinutihZahtjeva);
-        baos.write(charset.encode(s).array());
-        s = String.format("%-40s%-5d\n", "Broj neispravnih zahtjeva:", brojNeispravnihZahtjeva);
-        baos.write(charset.encode(s).array());
-        s = String.format("%-40s%-5d\n", "Broj nedozvoljenih zahtjeva:", brojNedozvoljenihZahtjeva);
-        baos.write(charset.encode(s).array());
-        s = String.format("%-40s%-5d\n", "Ukupno vrijeme rada radih dretvi:", ukupnoVrijemeRadaRadnihDretvi);
-        baos.write(charset.encode(s).array());
-        s = String.format("%-40s%-5d\n", "Broj obavljanja serijalizacije:", brojObavljanjaSerijalizacije);
-        baos.write(charset.encode(s).array());*/
         return baos.toByteArray();
+    }
+
+    public synchronized void dodajNedozvoljeniZahtjev() {
+        while (isUpis()) {
+            try {
+                wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        setUpis(true);
+        this.brojNedozvoljenihZahtjeva++;
+        setUpis(false);
+        notify();
     }
 
 }
