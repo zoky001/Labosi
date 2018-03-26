@@ -29,18 +29,25 @@ import org.junit.Ignore;
  */
 public class ServerSustavaTest {
 
-    private final String nazivKonfiguracije = "konfiguracija.txt";
-    private final String nazivEvidencijeTest = "evidencijaTest.bin";
+    private static final String nazivKonfiguracije = "konfiguracija.txt";
+    private static final String nazivEvidencijeTest = "evidencijaTest.bin";
     private Evidencija evidencija;
     private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
     private Konfiguracija konf;
+    ServerSustava serverSustava;
 
     public ServerSustavaTest() {
     }
+    
+
 
     @BeforeClass
     public static void setUpClass() {
+        /*createKonfig();
+        ServerSustava serverSustava = new ServerSustava();
+        serverSustava.pokreniPosluzitelj(ServerSustavaTest.createKonfig());
+ServerSustavaTest ss = new ServerSustavaTest(serverSustava);*/
     }
 
     @AfterClass
@@ -49,8 +56,8 @@ public class ServerSustavaTest {
 
     @Before
     public void setUp() {
-        createKonfig();
-     
+        this.konf=createKonfig();
+
         createEvidencija();
     }
 
@@ -68,7 +75,7 @@ public class ServerSustavaTest {
 
     @After
     public void tearDown() {
-         try {
+        try {
 
             File file = new File(nazivKonfiguracije);
 
@@ -283,22 +290,22 @@ public class ServerSustavaTest {
     @Test
     public void testZaustaviServer() {
         System.out.println("zaustaviServer");
-      //  ServerSustava instance = new ServerSustava();
-    
-      //  instance.pokreniPosluzitelj(konf);
-       // System.out.println("KONF: " + konf.dajPostavku("port"));
-      //  instance.setEvidencija(evidencija);
+        //  ServerSustava instance = new ServerSustava();
+
+        //  instance.pokreniPosluzitelj(konf);
+        // System.out.println("KONF: " + konf.dajPostavku("port"));
+        //  instance.setEvidencija(evidencija);
         boolean expResult = true;
-      //  boolean result = instance.zaustaviServer(konf);
+        //  boolean result = instance.zaustaviServer(konf);
         //assertEquals(expResult, result);
-    
+
     }
 
-    private void createKonfig() {
+    private static Konfiguracija createKonfig() {
 
         try {
             KonfiguracijaApstraktna.kreirajKonfiguraciju(nazivKonfiguracije);
-           konf = KonfiguracijaApstraktna.preuzmiKonfiguraciju(nazivKonfiguracije);
+            Konfiguracija konf = KonfiguracijaApstraktna.preuzmiKonfiguraciju(nazivKonfiguracije);
             konf.spremiPostavku("port", "8000");
             konf.spremiPostavku("maks.broj.zahtjeva.cekanje", "50");
             konf.spremiPostavku("maks.broj.radnih.dretvi", "50");
@@ -314,10 +321,12 @@ public class ServerSustavaTest {
             konf.spremiKonfiguraciju();
             System.out.println("Property NAme: " + konf.dajPostavku("maks.broj.radnih.dretvi"));
             System.out.println("Property NAme: " + konf.dajPostavku("port"));
-
+            return konf;
         } catch (NemaKonfiguracije | NeispravnaKonfiguracija ex) {
-           
+
         }
+
+        return null;
     }
 
     private void createEvidencija() {

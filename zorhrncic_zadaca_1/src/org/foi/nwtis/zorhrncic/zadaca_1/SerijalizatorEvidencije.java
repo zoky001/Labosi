@@ -44,6 +44,9 @@ public class SerijalizatorEvidencije extends Thread {
         }
     }
 
+    public SerijalizatorEvidencije() {
+    }
+
     public synchronized boolean isKrajRada() {      
         while (upis) {
             try {

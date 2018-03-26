@@ -97,6 +97,18 @@ public class RadnaDretva extends Thread {
         }
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public int getVrijemeCekanja() {
+        return vrijemeCekanja;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
     public RadnaDretva() {
     }
 
@@ -156,6 +168,10 @@ public class RadnaDretva extends Thread {
             }
         }
         evidencija.dodajVrijemeRadaDretve(System.currentTimeMillis() - pocetak);
+    }
+
+    public String getStringJSON() {
+        return StringJSON;
     }
 
     @Override
@@ -352,14 +368,6 @@ public class RadnaDretva extends Thread {
         if (a != null) {
             addOrUpdateDEvice(a);
         }
-    }
-
-    public boolean testInputArgs(String sintaksa, List<String> args) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < args.size(); i++) {
-            sb.append(args.get(i)).append(" ");
-        }
-        return testInputStringAndExtractUsernameAdnPassword(sintaksa, sb.toString());
     }
 
     public boolean testInputStringAndExtractUsernameAdnPassword(String string, String sintaksa) {
