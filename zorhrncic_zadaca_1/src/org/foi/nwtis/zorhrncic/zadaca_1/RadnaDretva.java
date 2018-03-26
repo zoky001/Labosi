@@ -97,6 +97,9 @@ public class RadnaDretva extends Thread {
         }
     }
 
+    public RadnaDretva() {
+    }
+
     public synchronized boolean isKrajRada() {
         while (upis) {
             try {

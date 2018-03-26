@@ -48,6 +48,12 @@ public class ServerSustava {
     private IOT iot;
     private SerijalizatorEvidencije se;
 
+    public List<RadnaDretva> getDretveCekaj() {
+        return dretveCekaj;
+    }
+    
+    
+
     private void onShutDown(Evidencija k, Konfiguracija konfig) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
@@ -227,7 +233,7 @@ public class ServerSustava {
     public static void main(String[] args) {
         String datotekaKonfig;
         if (args.length != 1) {
-            System.out.println("Premalo ili previše argumenata");
+            System.out.println("Premalo ili previše argumenata\n");
             return;
         }
         datotekaKonfig = args[0];
@@ -244,7 +250,7 @@ public class ServerSustava {
         }
     }
 
-    private void pokreniPosluzitelj(Konfiguracija konfig) {
+    public void pokreniPosluzitelj(Konfiguracija konfig) {
         port = Integer.parseInt(konfig.dajPostavku("port"));
         maksCekanje = Integer.parseInt(konfig.dajPostavku("maks.broj.zahtjeva.cekanje"));
         datotekaEvidencije = konfig.dajPostavku("datoteka.evidencije.rada");
@@ -301,6 +307,10 @@ public class ServerSustava {
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(KonfiguracijaBin.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public Evidencija getEvidencija() {
+        return evidencija;
     }
 
     private void postaviEvidencijuRada(String datotekaEvidencije) {
@@ -394,6 +404,10 @@ public class ServerSustava {
             Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
+    }
+
+    public void setEvidencija(Evidencija evidencija) {
+        this.evidencija = evidencija;
     }
 
     private void handleRequest(Konfiguracija konfig) {
