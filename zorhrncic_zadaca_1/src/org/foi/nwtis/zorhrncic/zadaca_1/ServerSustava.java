@@ -32,18 +32,6 @@ import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
  */
 public class ServerSustava {
 
-    private void onShutDown(Evidencija k, Konfiguracija konfig) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                try {
-                    k.obaviSerijalizaciju(konfig.dajPostavku("datoteka.evidencije.rada"));
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-    }
-
     private boolean pause_state = false;
     private boolean stop_request = false;
     private Evidencija evidencija;
@@ -59,6 +47,18 @@ public class ServerSustava {
     private List<RadnaDretva> dretveCekaj = new ArrayList<>();
     private IOT iot;
     private SerijalizatorEvidencije se;
+
+    private void onShutDown(Evidencija k, Konfiguracija konfig) {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                try {
+                    k.obaviSerijalizaciju(konfig.dajPostavku("datoteka.evidencije.rada"));
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+    }
 
     public synchronized void addDretvaCekaj(RadnaDretva b) {
         while (upis) {
@@ -378,6 +378,7 @@ public class ServerSustava {
             beginStoppingServer();
             for (RadnaDretva radnaDretva : dretveCekaj) {
                 radnaDretva.setKrajRada(true);
+                evidencija.dodajOdbijenZahtjevJerNemaDretvi();
             }
             while (getBrojRadnihDretvi() > 1) {
                 System.out.println("Cekma da zavrse sve dretve;");

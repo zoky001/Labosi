@@ -32,12 +32,12 @@ public class KlijentSustava extends KorisnikSustava {
 
     public KlijentSustava(Properties upisaniAurumenti) {
         super();
-        this.upisaniArgumenti = upisaniAurumenti;
+        this.uA = upisaniAurumenti;
     }
 
     public void preuzmiKontrolu() {
         try {
-            Socket socket = new Socket(upisaniArgumenti.getProperty("adresa"), Integer.parseInt(upisaniArgumenti.getProperty("port")));
+            Socket socket = new Socket(uA.getProperty("adresa"), Integer.parseInt(uA.getProperty("port")));
             handle(socket);
         } catch (IOException ex) {
             Logger.getLogger(KlijentSustava.class.getName()).log(Level.SEVERE, null, ex);
@@ -45,12 +45,12 @@ public class KlijentSustava extends KorisnikSustava {
     }
 
     private String[] getCommand() {
-        if (upisaniArgumenti.containsKey("spavanje")) {
-            String[] retValue = {"CEKAJ " + upisaniArgumenti.getProperty("spavanje") + ";"};
+        if (uA.containsKey("spavanje")) {
+            String[] retValue = {"CEKAJ " + uA.getProperty("spavanje") + ";"};
             return retValue;
-        } else if (upisaniArgumenti.containsKey("datotekaIotClient")) {
+        } else if (uA.containsKey("datotekaIotClient")) {
             //           System.out.println("JSON:  "+getJsonFile(upisaniArgumenti.getProperty("datotekaIotClient")));
-            String[] retValue = {"IOT " + getJsonFile(upisaniArgumenti.getProperty("datotekaIotClient")) + ";"};
+            String[] retValue = {"IOT " + getJsonFile(uA.getProperty("datotekaIotClient")) + ";"};
             return retValue;
         } else {
             return null;
@@ -68,20 +68,13 @@ public class KlijentSustava extends KorisnikSustava {
             } else if (datKonf.isDirectory()) {
                 throw new NeispravnaKonfiguracija(datoteka + " nije datoteka već direktorij");
             }
-            try {
-                byte[] encoded = Files.readAllBytes(Paths.get(datoteka));
-                return new String(encoded, StandardCharsets.UTF_8);
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(KonfiguracijaJSON.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                Logger.getLogger(KlijentSustava.class.getName()).log(Level.SEVERE, null, ex);
-            }
+           return readFromFile(datoteka);
         } catch (NemaKonfiguracije ex) {
             System.out.println("Nema datoteke sa IOT podatcima");
         } catch (NeispravnaKonfiguracija ex) {
             System.out.println("Nema datoteke sa IOT podatcima");
         }
-        return "Kraj";
+        return null;
     }
 
     private void handle(Socket socket) {
@@ -109,5 +102,17 @@ public class KlijentSustava extends KorisnikSustava {
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private String readFromFile(String datoteka) {
+        try {
+            byte[] encoded = Files.readAllBytes(Paths.get(datoteka));
+            return new String(encoded, StandardCharsets.UTF_8);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(KonfiguracijaJSON.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(KlijentSustava.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 }

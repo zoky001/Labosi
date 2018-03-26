@@ -47,7 +47,6 @@ public class SerijalizatorEvidencije extends Thread {
     public synchronized boolean isKrajRada() {      
         while (upis) {
             try {
-                System.out.println("Netko upisuje");
                 wait();
             } catch (InterruptedException ex) {
                 Logger.getLogger(ServerSustava.class.getName()).log(Level.SEVERE, null, ex);

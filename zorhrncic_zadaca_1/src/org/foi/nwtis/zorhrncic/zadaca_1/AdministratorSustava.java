@@ -36,12 +36,12 @@ public class AdministratorSustava extends KorisnikSustava {
     public AdministratorSustava(Properties upisaniAurumenti) {
         super();
 
-        this.upisaniArgumenti = upisaniAurumenti;
+        this.uA = upisaniAurumenti;
     }
 
     public void preuzmiKontrolu() {
         try {
-            Socket socket = new Socket(upisaniArgumenti.getProperty("adresa"), Integer.parseInt(upisaniArgumenti.getProperty("port")));
+            Socket socket = new Socket(uA.getProperty("adresa"), Integer.parseInt(uA.getProperty("port")));
             handle(socket);
         } catch (IOException ex) {
             Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
@@ -49,31 +49,24 @@ public class AdministratorSustava extends KorisnikSustava {
     }
 
     private List<String> getCommand() {
-        List<String> commands = new ArrayList();
-
-        if (upisaniArgumenti.containsKey("pauza") && "1".equals(upisaniArgumenti.getProperty("pauza")) && upisaniArgumenti.containsKey("korisnik") && upisaniArgumenti.containsKey("lozinka")) {
-            commands.add("KORISNIK " + upisaniArgumenti.getProperty("korisnik") + "; LOZINKA " + upisaniArgumenti.getProperty("lozinka") + "; PAUZA;");
-            System.out.println("pauza");
-        } else if (upisaniArgumenti.containsKey("kreni") && "1".equals(upisaniArgumenti.getProperty("kreni")) && upisaniArgumenti.containsKey("korisnik") && upisaniArgumenti.containsKey("lozinka")) {
-            commands.add("KORISNIK " + upisaniArgumenti.getProperty("korisnik") + "; LOZINKA " + upisaniArgumenti.getProperty("lozinka") + "; KRENI;");
-            System.out.println("kreni");
-
-        } else if (upisaniArgumenti.containsKey("zaustavi") && "1".equals(upisaniArgumenti.getProperty("zaustavi")) && upisaniArgumenti.containsKey("korisnik") && upisaniArgumenti.containsKey("lozinka")) {
-            commands.add("KORISNIK " + upisaniArgumenti.getProperty("korisnik") + "; LOZINKA " + upisaniArgumenti.getProperty("lozinka") + "; ZAUSTAVI;");
-            System.out.println("zaustavi");
-
-        } else if (upisaniArgumenti.containsKey("stanje") && "1".equals(upisaniArgumenti.getProperty("stanje")) && upisaniArgumenti.containsKey("korisnik") && upisaniArgumenti.containsKey("lozinka")) {
-            commands.add("KORISNIK " + upisaniArgumenti.getProperty("korisnik") + "; LOZINKA " + upisaniArgumenti.getProperty("lozinka") + "; STANJE;");
-            System.out.println("stanje");
-
-        } else if (upisaniArgumenti.containsKey("datotekaEvidencija") && upisaniArgumenti.getProperty("datotekaEvidencija") != null && upisaniArgumenti.containsKey("korisnik") && upisaniArgumenti.containsKey("lozinka")) {
-            commands.add("KORISNIK " + upisaniArgumenti.getProperty("korisnik") + "; LOZINKA " + upisaniArgumenti.getProperty("lozinka") + "; EVIDENCIJA;");
-            System.out.println("evidencija");
-
-        } else if (upisaniArgumenti.containsKey("datotekaIot") && upisaniArgumenti.getProperty("datotekaIot") != null && upisaniArgumenti.containsKey("korisnik") && upisaniArgumenti.containsKey("lozinka")) {
-            commands.add("KORISNIK " + upisaniArgumenti.getProperty("korisnik") + "; LOZINKA " + upisaniArgumenti.getProperty("lozinka") + "; IOT;");
-            System.out.println("iot");
-
+        commands = new ArrayList<>();          
+        if (uA.containsKey("pauza") && "1".equals(uA.getProperty("pauza")) && uA.containsKey("korisnik") && uA.containsKey("lozinka")) {
+            commands.add("KORISNIK " + uA.getProperty("korisnik") + "; LOZINKA " + uA.getProperty("lozinka") + "; PAUZA;");
+        } else if (uA.containsKey("kreni") && "1".equals(uA.getProperty("kreni")) && uA.containsKey("korisnik") 
+                && uA.containsKey("lozinka")) {
+            commands.add("KORISNIK " + uA.getProperty("korisnik") + "; LOZINKA " + uA.getProperty("lozinka") + "; KRENI;");
+        } else if (uA.containsKey("zaustavi") && "1".equals(uA.getProperty("zaustavi")) && uA.containsKey("korisnik") 
+                && uA.containsKey("lozinka")) {
+            commands.add("KORISNIK " + uA.getProperty("korisnik") + "; LOZINKA " + uA.getProperty("lozinka") + "; ZAUSTAVI;");
+        } else if (uA.containsKey("stanje") && "1".equals(uA.getProperty("stanje")) && uA.containsKey("korisnik") 
+                && uA.containsKey("lozinka")) {
+            commands.add("KORISNIK " + uA.getProperty("korisnik") + "; LOZINKA " + uA.getProperty("lozinka") + "; STANJE;");
+        } else if (uA.containsKey("datotekaEvidencija") && uA.getProperty("datotekaEvidencija") != null 
+                && uA.containsKey("korisnik") && uA.containsKey("lozinka")) {
+            commands.add("KORISNIK " + uA.getProperty("korisnik") + "; LOZINKA " + uA.getProperty("lozinka") + "; EVIDENCIJA;");
+        } else if (uA.containsKey("datotekaIot") && uA.getProperty("datotekaIot") != null && uA.containsKey("korisnik") 
+                && uA.containsKey("lozinka")) {
+            commands.add("KORISNIK " + uA.getProperty("korisnik") + "; LOZINKA " + uA.getProperty("lozinka") + "; IOT;");
         }
         return commands;
     }
@@ -110,10 +103,10 @@ public class AdministratorSustava extends KorisnikSustava {
 
     private void pohranaDatotekeUZadanomFormatu(ByteArrayOutputStream baos) {
         String nazivDatoteke;
-        if (upisaniArgumenti.containsKey("datotekaEvidencija")) {
-            nazivDatoteke = upisaniArgumenti.getProperty("datotekaEvidencija");
-        } else if (upisaniArgumenti.containsKey("datotekaIot")) {
-            nazivDatoteke = upisaniArgumenti.getProperty("datotekaIot");
+        if (uA.containsKey("datotekaEvidencija")) {
+            nazivDatoteke = uA.getProperty("datotekaEvidencija");
+        } else if (uA.containsKey("datotekaIot")) {
+            nazivDatoteke = uA.getProperty("datotekaIot");
         } else {
             nazivDatoteke = "datoteka.txt";
         }
@@ -166,7 +159,6 @@ public class AdministratorSustava extends KorisnikSustava {
                 if (znak == -1) {
                     break;
                 }
-                // buffer.append((char) znak);
                 baos.write(znak);
             }
             obradaOdgovora(baos);

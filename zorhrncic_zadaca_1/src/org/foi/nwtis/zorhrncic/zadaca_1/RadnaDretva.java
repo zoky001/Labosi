@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -135,8 +134,7 @@ public class RadnaDretva extends Thread {
         while (!isKrajRada()) {
             try (
                     InputStream inputStream = socket.getInputStream();
-                    OutputStream outputStream = socket.getOutputStream();) {
-                System.out.println("Pokrenuta dreetva naziva: " + nazivDretve);
+                    OutputStream outputStream = socket.getOutputStream();) {//                System.out.println("Pokrenuta dreetva naziva: " + nazivDretve);
                 this.out = outputStream;
                 int znak;
                 StringBuffer buffer = new StringBuffer();
@@ -150,7 +148,6 @@ public class RadnaDretva extends Thread {
                 obradaZahtjeva(buffer.toString());
             } catch (IOException ex) {
                 setKrajRada(true);
-                Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             } finally {
                 setKrajRada(true);
             }
@@ -170,14 +167,12 @@ public class RadnaDretva extends Thread {
         }
         if (commandWords.size() > 1) {
             if (serverSustava.isStopRequest()) { //server is stopped              
-                if (!obradaZahtjevaAdmina(inputLine, commandWords, serverSustava.isStopRequest())) {
-                    //prima samo zahtjeve admina, treba li vratiti odgovor ako je zahtjev od klijenta
+                if (!obradaZahtjevaAdmina(inputLine, commandWords, serverSustava.isStopRequest())) { //prima samo zahtjeve admina, treba li vratiti odgovor ako je zahtjev od klijenta
                     vratiOdgovorKlijentuString(ERROR_02 + " komanda nije ispravna");
                     evidencija.dodajNeispravanZahtjev();
                 }
             } else if (serverSustava.isPause()) {
-                if (!obradaZahtjevaAdmina(inputLine, commandWords, serverSustava.isStopRequest())) {
-                    //prima samo zahtjeve admina, treba li vratiti odgovor ako je zahtjev od klijenta
+                if (!obradaZahtjevaAdmina(inputLine, commandWords, serverSustava.isStopRequest())) { //prima samo zahtjeve admina, treba li vratiti odgovor ako je zahtjev od klijenta
                     vratiOdgovorKlijentuString(ERROR_02 + " komanda nije ispravna");
                     evidencija.dodajNeispravanZahtjev();
                 }
@@ -198,8 +193,7 @@ public class RadnaDretva extends Thread {
         } else if (!stopped && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaZaustavi)) {
             obradaAdminZaustavi(inputLine, commandWords);
             return true;
-        } else if (commandWords.size() == 5 && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaStanje)) {
-            //without stopped
+        } else if (commandWords.size() == 5 && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaStanje)) {//without stopped
             obradaAdminStanje(inputLine, commandWords);
             return true;
         } else if (!stopped && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaEvidencija)) {

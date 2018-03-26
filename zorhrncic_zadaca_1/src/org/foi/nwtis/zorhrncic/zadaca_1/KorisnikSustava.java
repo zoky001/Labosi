@@ -47,45 +47,40 @@ public class KorisnikSustava {
     private final String parametarSpavanje = "--spavanje";
     private final String parametarEvidencija = "--evidencija";
     private final String parametarIot = "--iot";
+    private final String ERROR_02 = "ERROR 02; greška u komandi \n\n Dozvoljene komande:\n\n  ADMINISTRATOR: \n\n -k korisnik -l lozinka -s [ipadresa | adresa] -p port [--pauza | --kreni | --zaustavi | --stanje | --evidencija datoteka1 | --iot datoteka2] \n\n - korisnik (min 3, maks 10 znakova) može sadržavati mala i velika slova, brojeve i znakove: _, -  \n - lozinka (min 3, maks 10 znakova) može sadržavati mala i velika slova, brojeve i znakove: _, -, #, ! \n - ipadresa je adresa IPv4 (npr. 127.0.0.1, 192.168.15.1) \n - adresa je opisni naziv poslužitelja (npr. localhost, dkermek.nwtis.foi.hr) \n - port može biti u intervalu između 8000 i 9999. \n - datoteka1 - datoteka u koju se provodi deserijalizacija evidencije rada. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. evidencija.txt, d:\\NWTiS\\evidencija.txt,...) \n - datoteka2 - datoteka u koju se sprema trenutno stanje iot uređaja. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. iot.txt, d:\\NWTiS\\iot.txt,...) \n\n KLIJENT: \n\n -s [ipadresa | adresa] -p port [--spavanje nnn] datoteka \n\n - nnn je broj sekundi koje čeka radna dretva prije nego što završi rad, može biti u intervalu 1 do 600 \n - datoteka - datoteka s podacima jednog iot uređaja u json formatu. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. iot.txt, d:\\NWTiS\\iot.txt,...).";
 
+    protected List<String> commands = new ArrayList();
 
-
-
-    protected Properties upisaniArgumenti = new Properties();
+    protected Properties uA = new Properties();
 
     public KorisnikSustava() {
- 
 
     }
 
     public static void main(String[] args) {
-
         KorisnikSustava ks = new KorisnikSustava();
         if (ks.preuzmiPostavke(args)) {
             ks.args = args;
             if (ks.administrator) {
-                AdministratorSustava anAdministratorSustava = new AdministratorSustava( ks.upisaniArgumenti);
+                AdministratorSustava anAdministratorSustava = new AdministratorSustava(ks.uA);
                 anAdministratorSustava.preuzmiKontrolu();
-
             } else {
-                KlijentSustava klijentSustava = new KlijentSustava(ks.upisaniArgumenti);
+                KlijentSustava klijentSustava = new KlijentSustava(ks.uA);
                 klijentSustava.preuzmiKontrolu();
-
             }
         }
-
     }
 
     private boolean preuzmiPostavke(String[] args) {
         administrator = ucitajUlazneParametreAdmina(args);
         client = ucitajUlazneParametreKlijenta(args);
-        for (Map.Entry<Object, Object> entry : upisaniArgumenti.entrySet()) {
+        for (Map.Entry<Object, Object> entry : uA.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
             System.out.println(key + " - " + value + "");
         }
         if (!administrator && !client) {
-            System.out.println("ERROR 02; greška u komandi \n\n Dozvoljene komande:\n\n  ADMINISTRATOR: \n\n -k korisnik -l lozinka -s [ipadresa | adresa] -p port [--pauza | --kreni | --zaustavi | --stanje | --evidencija datoteka1 | --iot datoteka2] \n\n - korisnik (min 3, maks 10 znakova) može sadržavati mala i velika slova, brojeve i znakove: _, -  \n - lozinka (min 3, maks 10 znakova) može sadržavati mala i velika slova, brojeve i znakove: _, -, #, ! \n - ipadresa je adresa IPv4 (npr. 127.0.0.1, 192.168.15.1) \n - adresa je opisni naziv poslužitelja (npr. localhost, dkermek.nwtis.foi.hr) \n - port može biti u intervalu između 8000 i 9999. \n - datoteka1 - datoteka u koju se provodi deserijalizacija evidencije rada. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. evidencija.txt, d:\\NWTiS\\evidencija.txt,...) \n - datoteka2 - datoteka u koju se sprema trenutno stanje iot uređaja. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. iot.txt, d:\\NWTiS\\iot.txt,...) \n\n KLIJENT: \n\n -s [ipadresa | adresa] -p port [--spavanje nnn] datoteka \n\n - nnn je broj sekundi koje čeka radna dretva prije nego što završi rad, može biti u intervalu 1 do 600 \n - datoteka - datoteka s podacima jednog iot uređaja u json formatu. Datoteka je lokalna, s apsolutnim ili relativnim nazivom (npr. iot.txt, d:\\NWTiS\\iot.txt,...).");
+            System.out.println(ERROR_02);
             return false;
         }
         return true;
@@ -94,12 +89,11 @@ public class KorisnikSustava {
     private boolean ucitajUlazneParametreAdmina(String[] args) {
         if (testInputArgs(sintaksaAdmin, args)) {
             if (testInputString(sintaksaIP_URL, args[5])) {
-                upisaniArgumenti.setProperty("korisnik", args[1]);
-                upisaniArgumenti.setProperty("lozinka", args[3]);
-                upisaniArgumenti.setProperty("adresa", args[5]);
-                upisaniArgumenti.setProperty("port", args[7]);
+                uA.setProperty("korisnik", args[1]);
+                uA.setProperty("lozinka", args[3]);
+                uA.setProperty("adresa", args[5]);
+                uA.setProperty("port", args[7]);
                 return setOtherArguments(args);
-
             }
         }
         return false;
@@ -108,22 +102,22 @@ public class KorisnikSustava {
     private boolean setOtherArguments(String[] args) {
         switch (args[8]) {
             case parametarPauza:
-                upisaniArgumenti.setProperty("pauza", "1");
+                uA.setProperty("pauza", "1");
                 return true;
             case parametarStanje:
-                upisaniArgumenti.setProperty("stanje", "1");
+                uA.setProperty("stanje", "1");
                 return true;
             case parametarKreni:
-                upisaniArgumenti.setProperty("kreni", "1");
+                uA.setProperty("kreni", "1");
                 return true;
             case parametarZaustavi:
-                upisaniArgumenti.setProperty("zaustavi", "1");
+                uA.setProperty("zaustavi", "1");
                 return true;
             case parametarEvidencija:
-                upisaniArgumenti.setProperty("datotekaEvidencija", args[9]);
+                uA.setProperty("datotekaEvidencija", args[9]);
                 return true;
             case parametarIot:
-                upisaniArgumenti.setProperty("datotekaIot", args[9]);
+                uA.setProperty("datotekaIot", args[9]);
                 return true;
         }
         return false;
@@ -132,17 +126,16 @@ public class KorisnikSustava {
     private boolean ucitajUlazneParametreKlijenta(String[] args) {
         if (testInputArgs(sintaksaClientBezSpavanja, args)) {
             if (testInputString(sintaksaIP_URL, args[1])) {
-                upisaniArgumenti.setProperty("adresa", args[1]);
-                upisaniArgumenti.setProperty("port", args[3]);
-                upisaniArgumenti.setProperty("datotekaIotClient", args[4]);
+                uA.setProperty("adresa", args[1]);
+                uA.setProperty("port", args[3]);
+                uA.setProperty("datotekaIotClient", args[4]);
                 return true;
             }
         } else if (testInputArgs(sintaksaClientSaSpavanjem, args)) {
             if (testInputString(sintaksaIP_URL, args[1])) {
-                upisaniArgumenti.setProperty("adresa", args[1]);
-                upisaniArgumenti.setProperty("port", args[3]);
-               // upisaniArgumenti.setProperty("datotekaIotClient", args[6]);
-                upisaniArgumenti.setProperty("spavanje", args[5]);
+                uA.setProperty("adresa", args[1]);
+                uA.setProperty("port", args[3]);
+                uA.setProperty("spavanje", args[5]);
                 return true;
             }
         }

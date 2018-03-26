@@ -27,7 +27,7 @@ public class Uredjaj_A {
         this.ID = ID;
     }
 
-    public int getTemperatura() {
+    public int getTemp() {
         return temperatura;
     }
 
@@ -43,7 +43,7 @@ public class Uredjaj_A {
         this.vlaga = vlaga;
     }
 
-    public int getSvjetlost() {
+    public int getSvje() {
         return svjetlost;
     }
 

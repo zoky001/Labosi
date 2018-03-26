@@ -31,6 +31,8 @@ public class IOT {
     private List<Uredjaj_A> popisUredjaja = new ArrayList<>();
     private OutputStream os;
     private boolean upis = false;
+    private String formatIspisa = "|%-20s|%-20s|%-20s|%-20s|%-20s|%-20s|\n";
+    private String line20 = "--------------------";
 
     public boolean isUpis() {
         return upis;
@@ -87,10 +89,8 @@ public class IOT {
 
     public synchronized byte[] toStringser(Charset charset) {
         try {
-            // upis = false;
             while (isUpis()) {
                 try {
-                    System.out.println("Netko upisuje");
                     wait();
                 } catch (InterruptedException ex) {
                     Logger.getLogger(IOT.class.getName()).log(Level.SEVERE, null, ex);
@@ -99,7 +99,6 @@ public class IOT {
             setUpis(true);
             byte[] b = toStringserPrivate(charset);
             setUpis(false);
-            System.out.println("Posao obavljen");
             notify();
             return b;
         } catch (IOException ex) {
@@ -111,10 +110,10 @@ public class IOT {
     private byte[] toStringserPrivate(Charset charset) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         FileWriter out = new FileWriter("tmp");
-         out.write(String.format("|%-20s|%-20s|%-20s|%-20s|%-20s|%-20s|\n", "ID","Buka","Svjetlost","Temperatura","Vjetar","Vlaga"));
-         out.write(String.format("|%-20s|%-20s|%-20s|%-20s|%-20s|%-20s|\n", "--------------------", "--------------------", "--------------------", "--------------------", "--------------------", "--------------------"));
-        for (Uredjaj_A uredjaj_A : popisUredjaja) {
-                  out.write(String.format("|%-20s|%-20s|%-20s|%-20s|%-20s|%-20s|\n", uredjaj_A.getID(), uredjaj_A.getBuka(), uredjaj_A.getSvjetlost(), uredjaj_A.getTemperatura(), uredjaj_A.getVjetar(), uredjaj_A.getVlaga()));
+         out.write(String.format(formatIspisa, "ID","Buka","Svjetlost","Temperatura","Vjetar","Vlaga"));
+         out.write(String.format(formatIspisa, line20, line20, line20, line20,line20, line20));
+        for (Uredjaj_A uA : popisUredjaja) {
+       out.write(String.format(formatIspisa, uA.getID(), uA.getBuka(), uA.getSvje(), uA.getTemp(), uA.getVjetar(), uA.getVlaga()));
         }
         out.close();
         File inputFile = new File("tmp");
@@ -127,18 +126,6 @@ public class IOT {
             baos.write(s.getBytes(charset));
         }
         bf.close();
-
-        /*
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        //%-40s
-           String s = String.format("%-20s%-20s%-20s%-20s%-20s%-20s\n", "ID","Buka","Svjetlost","Temperatura","Vjetar","Vlaga");
-            baos.write(charset.encode(s).array());
-               s = String.format("%-20s%-20s%-20s%-20s%-20s%-20s\n", "--------------------", "--------------------", "--------------------", "--------------------", "--------------------", "--------------------");
-            baos.write(charset.encode(s).array());
-        for (Uredjaj_A uredjaj_A : popisUredjaja) {
-            s = String.format("%-20s%-20s%-20s%-20s%-20s%-20s\n", uredjaj_A.getID(),uredjaj_A.getBuka(),uredjaj_A.getSvjetlost(),uredjaj_A.getTemperatura(),uredjaj_A.getVjetar(),uredjaj_A.getVlaga());
-            baos.write(charset.encode(s).array());
-        }*/
         return baos.toByteArray();
     }
 

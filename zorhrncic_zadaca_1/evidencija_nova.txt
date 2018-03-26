@@ -1,5 +1,5 @@
 Ukupan broj zahtjeva:                   39   
-Broj uspješnih zahtjeva:                22   
+Broj uspjeÅ¡nih zahtjeva:                22   
 Broj prekunutih zahtjeva:               4    
 Broj neispravnih zahtjeva:              3    
 Broj nedozvoljenih zahtjeva:            7    

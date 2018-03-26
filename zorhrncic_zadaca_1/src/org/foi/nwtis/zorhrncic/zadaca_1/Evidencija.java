@@ -13,12 +13,9 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
@@ -53,26 +50,21 @@ public class Evidencija implements Serializable {
     public synchronized void dodajUspjesnoObavljenZahtjev() {
         while (isUpis()) {
             try {
-                System.out.println("Netko upisuje");
                 wait();
             } catch (InterruptedException ex) {
                 Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         setUpis(true);
-
         //radi
         this.brojUspjesnihZahtjeva++;
-
         setUpis(false);
-        System.out.println("Posao obavljen");
         notify();
     }
 
     public synchronized void dodajOdbijenZahtjevJerNemaDretvi() {
         while (isUpis()) {
             try {
-                System.out.println("Netko upisuje");
                 wait();
             } catch (InterruptedException ex) {
                 Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
@@ -82,7 +74,6 @@ public class Evidencija implements Serializable {
         //radi
         this.brojPrkinutihZahtjeva++;
         setUpis(false);
-        System.out.println("Posao obavljen");
         notify();
     }
 
@@ -104,7 +95,6 @@ public class Evidencija implements Serializable {
     public synchronized void dodajNeispravanZahtjev() {
         while (isUpis()) {
             try {
-                System.out.println("Netko upisuje");
                 wait();
             } catch (InterruptedException ex) {
                 Logger.getLogger(Evidencija.class.getName()).log(Level.SEVERE, null, ex);
@@ -114,7 +104,6 @@ public class Evidencija implements Serializable {
         //radi
         this.brojNeispravnihZahtjeva++;
         setUpis(false);
-        System.out.println("Posao obavljen");
         notify();
     }
     
@@ -198,7 +187,7 @@ public class Evidencija implements Serializable {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         FileWriter out = new FileWriter("tmp");
         out.write(String.format("%-40s%-5d\n", "Ukupan broj zahtjeva:", ukupanbrojZahtjeva));
-        out.write(String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva));
+        out.write(String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva+1));
         out.write(String.format("%-40s%-5d\n", "Broj prekunutih zahtjeva:", brojPrkinutihZahtjeva));
         out.write(String.format("%-40s%-5d\n", "Broj neispravnih zahtjeva:", brojNeispravnihZahtjeva));
         out.write(String.format("%-40s%-5d\n", "Broj nedozvoljenih zahtjeva:", brojNedozvoljenihZahtjeva));
