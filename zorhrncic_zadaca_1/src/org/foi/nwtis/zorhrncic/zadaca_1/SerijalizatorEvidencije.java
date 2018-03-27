@@ -105,7 +105,7 @@ public class SerijalizatorEvidencije extends Thread {
             try {
                 Thread.sleep((intervalZaSerijalizuaciju * 1000 - razlika)+(long)(koef*(intervalZaSerijalizuaciju * 1000 - razlika)));
             } catch (InterruptedException ex) {
-                Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
+                //Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }

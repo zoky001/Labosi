@@ -6,6 +6,7 @@
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
 import com.google.gson.Gson;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 public class KlijentSustava extends KorisnikSustava {
 
     private Gson gson = new Gson();
+    private Socket socket;
 
     public KlijentSustava(Properties upisaniAurumenti) {
         super();
@@ -37,11 +39,15 @@ public class KlijentSustava extends KorisnikSustava {
 
     public void preuzmiKontrolu() {
         try {
-            Socket socket = new Socket(uA.getProperty("adresa"), Integer.parseInt(uA.getProperty("port")));
+            socket = new Socket(uA.getProperty("adresa"), Integer.parseInt(uA.getProperty("port")));
             handle(socket);
         } catch (IOException ex) {
             Logger.getLogger(KlijentSustava.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public Socket getSocket() {
+        return socket;
     }
 
     private String[] getCommand() {
@@ -68,7 +74,7 @@ public class KlijentSustava extends KorisnikSustava {
             } else if (datKonf.isDirectory()) {
                 throw new NeispravnaKonfiguracija(datoteka + " nije datoteka već direktorij");
             }
-           return readFromFile(datoteka);
+            return readFromFile(datoteka);
         } catch (NemaKonfiguracije ex) {
             System.out.println("Nema datoteke sa IOT podatcima");
         } catch (NeispravnaKonfiguracija ex) {
@@ -90,15 +96,15 @@ public class KlijentSustava extends KorisnikSustava {
             }
             socket.shutdownOutput();
             int znak;
-            StringBuffer buffer = new StringBuffer();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             while (true) {
                 znak = inputStream.read();
                 if (znak == -1) {
                     break;
                 }
-                buffer.append((char)znak);
+                baos.write(znak);
             }
-            System.out.println(buffer.toString());
+            System.out.println(new String(baos.toByteArray()));
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }

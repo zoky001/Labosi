@@ -14,6 +14,7 @@ import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -260,7 +261,7 @@ public class ServerSustava {
         postaviEvidencijuRada(datotekaEvidencije);
         onShutDown(evidencija, konfig);
         setKrajRada(false);
-        System.out.println(g.toJson(evidencija));
+        System.out.println("Evidencija: \n"+ g.toJson(evidencija));
         iot = new IOT();
         se = new SerijalizatorEvidencije("zorhrncic - serijalizator", konfig, evidencija);
         se.start();
@@ -280,7 +281,7 @@ public class ServerSustava {
                 }
                 buffer.append((char) znak);
             }
-            outputStream.write("ERROR 01; nema više slobodnih radnih dretvi".getBytes());
+            outputStream.write("ERROR 01; nema više slobodnih radnih dretvi".getBytes(Charset.forName("UTF-8")));
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
@@ -396,7 +397,9 @@ public class ServerSustava {
                 System.out.println("Cekma da zavrse sve dretve;");
             }
             evidencija.obaviSerijalizaciju(konfig.dajPostavku("datoteka.evidencije.rada"));
+           
             se.setKrajRada(true);
+             se.interrupt();
             setKrajRada(true);
             if (getBrojRadnihDretvi() == 0) {
                 System.exit(0);

@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class IOT {
 
-    private List<Uredjaj_A> popisUredjaja = new ArrayList<>();
+
     private List<Properties> popisUredjajaNew = new ArrayList<>();
     private OutputStream os;
     private boolean upis = false;
@@ -50,22 +50,6 @@ public class IOT {
         this.upis = upis;
     }
 
-//TODO Definirati strukturu i klasu za podatke pojedinog IOT uređaja
-    public void createMOckJsonFile() {
-
-        try {
-            Uredjaj_A ua = new Uredjaj_A(0, 32, 23, 26, 12, 2);
-            File datKonf = new File("proba.json");
-            os = Files.newOutputStream(datKonf.toPath(), StandardOpenOption.CREATE);
-            Gson gsonObj = new Gson();
-            String strJson = gsonObj.toJson(ua);
-            System.out.println(strJson);
-            os.write(strJson.getBytes());
-        } catch (IOException ex) {
-            Logger.getLogger(IOT.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-    }
 
     public synchronized String addOrUpdateDevice(String iotUredjaj)
             throws InterruptedException {
@@ -80,20 +64,15 @@ public class IOT {
         return s;
     }
 
-    private String addOrUpdateDevice_privat(Uredjaj_A iotUredjaj) {
-        try {
-            for (Uredjaj_A uredjaj_A : popisUredjaja) {
-                if (uredjaj_A.getID() == iotUredjaj.getID()) {
-                    uredjaj_A = iotUredjaj;
-                    return RadnaDretva.OK_21;
-                }
-            }
-            popisUredjaja.add(iotUredjaj);
-            return RadnaDretva.OK_20;
-        } catch (Exception e) {
-            return RadnaDretva.ERROR_21;
-        }
+    public List<Properties> getPopisUredjajaNew() {
+        return popisUredjajaNew;
     }
+
+    public void setPopisUredjajaNew(List<Properties> popisUredjajaNew) {
+        this.popisUredjajaNew = popisUredjajaNew;
+    }
+
+
 
     public synchronized byte[] toStringser(Charset charset) {
         try {
@@ -161,10 +140,8 @@ public class IOT {
     private int getIDIfExist(JsonObject jsonObject) {
         try {
             if (jsonObject.get("id") != null) {
-                System.out.println("ID - postoji:  " + jsonObject.get("id"));
                 return Integer.parseInt(jsonObject.get("id").toString());
             } else if (jsonObject.get("ID") != null) {
-                System.out.println("ID - postoji:  " + jsonObject.get("ID"));
                 return Integer.parseInt(jsonObject.get("ID").toString());
             } else {
                 return -1;//error 21
@@ -192,9 +169,9 @@ public class IOT {
             Properties prop = new Properties();
             for (String en : jsonObject.keySet()) {
                 if (en.equals("id") || en.equals("ID")) {
-                    prop.put(en.toLowerCase(), jsonObject.get(en).toString());
+                    prop.put(en.toLowerCase(), jsonObject.get(en).getAsString());
                 } else {
-                    prop.put(en, jsonObject.get(en).toString());
+                    prop.put(en, jsonObject.get(en).getAsString());
                 }
             }
             popisUredjajaNew.add(prop);
@@ -208,9 +185,9 @@ public class IOT {
         try {
             for (String en : jsonObject.keySet()) {
                 if (en.equals("id") || en.equals("ID")) {
-                    device.put(en.toLowerCase(), jsonObject.get(en).toString());
+                    device.put(en.toLowerCase(), jsonObject.get(en).getAsString());
                 } else {
-                    device.put(en, jsonObject.get(en).toString());
+                    device.put(en, jsonObject.get(en).getAsString());
                 }
 
             }

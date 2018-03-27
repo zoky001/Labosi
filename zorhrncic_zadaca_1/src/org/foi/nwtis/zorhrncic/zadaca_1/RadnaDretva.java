@@ -54,7 +54,6 @@ public class RadnaDretva extends Thread {
     private String StringJSON;
     private int vrijemeCekanja;
     private Gson gson = new Gson();
-    private Uredjaj_A iotUredjaj;
     private IOT iot;
 
     public static final String ERROR_12 = "ERROR 12;";
@@ -334,7 +333,9 @@ public class RadnaDretva extends Thread {
                 outputStream.write(iot.toStringser(Charset.forName(konfig.dajPostavku("skup.kodova.znakova"))));
                 byte c[] = outputStream.toByteArray();
                 vratiOdgovorKlijentuByte(c);
+                evidencija.dodajUspjesnoObavljenZahtjev();
             } catch (IOException ex) {
+                evidencija.dodajNedozvoljeniZahtjev();
                 Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
             }
         }

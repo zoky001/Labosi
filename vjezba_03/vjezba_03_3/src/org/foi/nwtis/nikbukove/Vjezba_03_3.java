@@ -34,14 +34,14 @@ admin.4.nikbukovec=123456
 admin.5.dkermek=123456
              */
             konf.spremiPostavku("port", "8000");
-            konf.spremiPostavku("maks.broj.zahtjeva.cekanje", "50");
-            konf.spremiPostavku("maks.broj.radnih.dretvi", "50");
+            konf.spremiPostavku("maks.broj.zahtjeva.cekanje", "3");
+            konf.spremiPostavku("maks.broj.radnih.dretvi", "5");
             konf.spremiPostavku("datoteka.evidencije.rada", "NWTis_zorhrncic_evidencija_rada.bin");
-            konf.spremiPostavku("interval.za.serijalizaciju", "60");
+            konf.spremiPostavku("interval.za.serijalizaciju", "10");
             konf.spremiPostavku("admin.1.zorgrdjan", "123456");
             konf.spremiPostavku("admin.0.zorhrncic", "123456");
             konf.spremiPostavku("admin.2.ivicelig", "123456");
-
+konf.spremiPostavku("skup.kodova.znakova","UTF-8");
             konf.spremiPostavku("admin.3.matbodulusic", "123456");
             konf.spremiPostavku("admin.4.nikbukovec", "123456");
             konf.spremiPostavku("admin.5.dkermek", "123456");

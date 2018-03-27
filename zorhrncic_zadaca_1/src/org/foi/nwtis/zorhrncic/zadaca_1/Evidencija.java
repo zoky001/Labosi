@@ -47,6 +47,38 @@ public class Evidencija implements Serializable {
         this.upis = upis;
     }
 
+    public long getUkupanbrojZahtjeva() {
+        return ukupanbrojZahtjeva;
+    }
+
+    public long getBrojPrkinutihZahtjeva() {
+        return brojPrkinutihZahtjeva;
+    }
+
+    public long getBrojUspjesnihZahtjeva() {
+        return brojUspjesnihZahtjeva;
+    }
+
+    public long getBrojNeispravnihZahtjeva() {
+        return brojNeispravnihZahtjeva;
+    }
+
+    public long getBrojNedozvoljenihZahtjeva() {
+        return brojNedozvoljenihZahtjeva;
+    }
+
+    public long getUkupnoVrijemeRadaRadnihDretvi() {
+        return ukupnoVrijemeRadaRadnihDretvi;
+    }
+
+    public long getBrojObavljanjaSerijalizacije() {
+        return brojObavljanjaSerijalizacije;
+    }
+
+    public Charset getCharset() {
+        return charset;
+    }
+
     public synchronized void dodajUspjesnoObavljenZahtjev() {
         while (isUpis()) {
             try {

@@ -27,6 +27,13 @@ import java.util.regex.Pattern;
 public class AdministratorSustava extends KorisnikSustava {
 
     private final String sintaksaAdminEvidencijaIot = "^OK; ZN-KODOVI ([^\\s]+); DUZINA ([0-9]+)\r\n([\\s\\S]+)";
+
+    public AdministratorSustava() {
+    }
+
+    public String getCharset() {
+        return charset;
+    }
     private String charset;
     private int numberOfBytes;
     private int znak;
@@ -161,6 +168,8 @@ public class AdministratorSustava extends KorisnikSustava {
                 }
                 baos.write(znak);
             }
+            
+            
             obradaOdgovora(baos);
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
