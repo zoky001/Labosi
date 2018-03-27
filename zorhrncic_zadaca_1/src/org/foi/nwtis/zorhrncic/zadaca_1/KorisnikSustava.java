@@ -71,6 +71,11 @@ public class KorisnikSustava {
         }
     }
 
+    /**
+     * Ucitava ulazne postavke iz agrumenata prosljedjenih u main
+     * @param args argumenti prosljedjeni prilikom pokretanja programa
+     * @return razultat uspjeha
+     */
     private boolean preuzmiPostavke(String[] args) {
         administrator = ucitajUlazneParametreAdmina(args);
         client = ucitajUlazneParametreKlijenta(args);
@@ -85,6 +90,11 @@ public class KorisnikSustava {
         return true;
     }
 
+    /**
+     * Iz argumenata ucitava ulazne parametre administatora i pohranjuje iste u porperties
+     * @param args ulazni argumeni programa
+     * @return rezultat uspjeha
+     */
     private boolean ucitajUlazneParametreAdmina(String[] args) {
         if (testInputArgs(sintaksaAdmin, args)) {
             if (testInputString(sintaksaIP_URL, args[5])) {
@@ -98,6 +108,11 @@ public class KorisnikSustava {
         return false;
     }
 
+    /**
+     * Postavljanje ulaznih argumenata za daljnu obradu
+     * @param args
+     * @return 
+     */
     private boolean setOtherArguments(String[] args) {
         switch (args[8]) {
             case parametarPauza:
@@ -122,6 +137,11 @@ public class KorisnikSustava {
         return false;
     }
 
+    /**
+     * Ucitavanje ulaznih parametara iz poziva porgrama i upisaivanje istih u properties uA
+     * @param args ulazni parametri kod pokretanja programa
+     * @return rezultat uspjeha
+     */
     private boolean ucitajUlazneParametreKlijenta(String[] args) {
         if (testInputArgs(sintaksaClientBezSpavanja, args)) {
             if (testInputString(sintaksaIP_URL, args[1])) {
@@ -141,6 +161,12 @@ public class KorisnikSustava {
         return false;
     }
 
+    /**
+     * Usporedjivanje dali ulazni parametru zadovoljavaju definirani REGex uzorak
+     * @param sintaksa regex
+     * @param args niz parametara
+     * @return rezultat uspjeha
+     */
     public static boolean testInputArgs(String sintaksa, String[] args) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < args.length; i++) {
@@ -149,6 +175,12 @@ public class KorisnikSustava {
         return testInputString(sintaksa, sb.toString());
     }
 
+    /**
+     * Usporedjivanje dali ulazni parametru zadovoljavaju definirani REGex uzorak
+     * @param sintaksa regex
+     * @param string string koji sadrzi parametre
+     * @return rezultat uspjeha
+     */
     public static boolean testInputString(String sintaksa, String string) {
         String p = string.trim();
         Pattern pattern = Pattern.compile(sintaksa);

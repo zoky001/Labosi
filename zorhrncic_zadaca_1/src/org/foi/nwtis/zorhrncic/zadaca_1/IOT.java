@@ -17,11 +17,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -29,11 +25,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Klasa vodi evidenciju svih ITO uredjaja, brije o njihovom upisivanju i
+ * azuriranju, te kreira datoteku s popisom svih.
  *
- * @author grupa_1
+ * @author Zoran Hrncic
  */
 public class IOT {
-
 
     private List<Properties> popisUredjajaNew = new ArrayList<>();
     private OutputStream os;
@@ -50,7 +47,15 @@ public class IOT {
         this.upis = upis;
     }
 
-
+    /**
+     * Medjusobno iskljucivo pokrece dodavanje ili azuriranje uredjaja na
+     * temelju primljenoh JSON zapisa.
+     *
+     * @param iotUredjaj json zapis koji sadrzi podatke o jednom uredjaju, mora
+     * sadrzavati polje "id"
+     * @return opis usjeha upisa
+     * @throws InterruptedException iznimka
+     */
     public synchronized String addOrUpdateDevice(String iotUredjaj)
             throws InterruptedException {
         while (isUpis()) {
@@ -72,8 +77,14 @@ public class IOT {
         this.popisUredjajaNew = popisUredjajaNew;
     }
 
-
-
+    /**
+     * Medusobno iskljucivo poziva kriranje bytecode zapisa datoteke sa
+     * podatciam o svim iot uredjajima
+     *
+     * @param charset zadani charset
+     * @return bytecode datoteke u zadanom charsetu
+     *
+     */
     public synchronized byte[] toStringser(Charset charset) {
         try {
             while (isUpis()) {
@@ -94,6 +105,14 @@ public class IOT {
         }
     }
 
+    /**
+     * Kreira foramtiranu datoteku na temelju stanja trenutnog objekta i vraca
+     * je u obliku bytecode-a
+     *
+     * @param charset zadani charset
+     * @return bytecode datoteke u zadanom charsetu
+     * @throws IOException iznimka
+     */
     private byte[] toStringserPrivate(Charset charset) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         FileWriter out = new FileWriter("tmp");
@@ -112,6 +131,13 @@ public class IOT {
         return baos.toByteArray();
     }
 
+    
+    /**
+     * Dodaje uredjaj u listu, ili azurira postojei ako postoji isti.
+     * Uredjaji se razlikuju jedino po polju "id"
+     * @param string Json zapis objekta
+     * @return status uspjeha
+     */
     private String addDeviceFromJson(String string) {
         try {
             JsonObject jsonObject = new JsonParser().parse(string).getAsJsonObject();
@@ -137,6 +163,12 @@ public class IOT {
         }
     }
 
+    /**
+     * Provjerava postoji li polje "id" u primljeno JSON zapisu,
+     * ako postoji vraza Id, ako ne postoji vraca -1
+     * @param jsonObject json zapis uredjaja
+     * @return id zapisa
+     */
     private int getIDIfExist(JsonObject jsonObject) {
         try {
             if (jsonObject.get("id") != null) {
@@ -151,6 +183,12 @@ public class IOT {
         }
     }
 
+    /**
+     * Dohvaca potoji uredjaj prema prosljedjenom ID-u i vraca uredjaj.
+     * ako uredjaj ne postoji, vraca null
+     * @param id id trazenog uredjaja
+     * @return trazeni uredjaj
+     */
     private Properties getDeviceWithIdIfExist(int id) {
         try {
             for (Properties properties : popisUredjajaNew) {
@@ -164,6 +202,11 @@ public class IOT {
         }
     }
 
+    /**
+     * Dodaje novi uredjaj u listu
+     * @param jsonObject json uredjaja
+     * @return true - ako je uspjeh, false - ako je neuspjeh
+     */
     private boolean addDevice(JsonObject jsonObject) {
         try {
             Properties prop = new Properties();
@@ -181,6 +224,12 @@ public class IOT {
         }
     }
 
+    /**
+     * Azurira postojeci uredjaj sa novim podatcima
+     * @param device postojeci uredjaj
+     * @param jsonObject json zapis sa novim podatcima
+     * @return true -a ako je uspjesno, false - ako nije uspjeh
+     */
     private boolean updateDevice(Properties device, JsonObject jsonObject) {
         try {
             for (String en : jsonObject.keySet()) {
@@ -197,6 +246,11 @@ public class IOT {
         }
     }
 
+    /**
+     * Kreira foramtiranu datoteku sa svim podatcima o uredjajima. Vraza rezultat klijentu
+     * @param out outWriter
+     * @throws IOException 
+     */
     private void printAllDevice(FileWriter out) throws IOException {
         int i = 0;
         // out.write(String.format(formatIspisa, "ID", "Buka", "Svjetlost", "Temperatura", "Vjetar", "Vlaga"));
@@ -221,7 +275,5 @@ public class IOT {
         }
 
     }
-
-   
 
 }

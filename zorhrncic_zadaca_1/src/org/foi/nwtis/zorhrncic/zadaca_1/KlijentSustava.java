@@ -37,6 +37,10 @@ public class KlijentSustava extends KorisnikSustava {
         this.uA = upisaniAurumenti;
     }
 
+    /**
+     * Kreira socket i povezuje se na server, te otvara ulazni stream za odgovor
+     * na server.
+     */
     public void preuzmiKontrolu() {
         try {
             socket = new Socket(uA.getProperty("adresa"), Integer.parseInt(uA.getProperty("port")));
@@ -50,6 +54,12 @@ public class KlijentSustava extends KorisnikSustava {
         return socket;
     }
 
+    /**
+     * Na temelju upisanih argumentata, koji su prosljedjeni u konstruktoru,
+     * kreira komandu koja se salje na server.
+     *
+     * @return Lista komandi koje su prepoznate na temelju ulaznih argumenata.
+     */
     private String[] getCommand() {
         if (uA.containsKey("spavanje")) {
             String[] retValue = {"CEKAJ " + uA.getProperty("spavanje") + ";"};
@@ -63,6 +73,12 @@ public class KlijentSustava extends KorisnikSustava {
         }
     }
 
+    /**
+     * Cita json zapis iz datoteke.
+     *
+     * @param datoteka naziv datoteke koja sadrzi json zapis
+     * @return string koji sadrzi json zapis
+     */
     private String getJsonFile(String datoteka) {
         try {
             if (datoteka == null || datoteka.length() == 0) {
@@ -83,6 +99,12 @@ public class KlijentSustava extends KorisnikSustava {
         return null;
     }
 
+    /**
+     * Nakon kreiranja socketa, salje komandu serveru i ceka odgovor. Po
+     * primitku odgovora, salje na daljnju obradu.
+     *
+     * @param socket socket pomocu kojeg se spaja na server
+     */
     private void handle(Socket socket) {
         try (InputStream inputStream = socket.getInputStream();
                 OutputStream outputStream = socket.getOutputStream();) {
@@ -110,6 +132,11 @@ public class KlijentSustava extends KorisnikSustava {
         }
     }
 
+    /**
+     * cita zapis iz datoteke
+     * @param datoteka nazv datoteke
+     * @return zapis iz datoteke
+     */
     private String readFromFile(String datoteka) {
         try {
             byte[] encoded = Files.readAllBytes(Paths.get(datoteka));

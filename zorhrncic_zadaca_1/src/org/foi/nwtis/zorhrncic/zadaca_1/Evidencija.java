@@ -21,21 +21,20 @@ import java.util.logging.Logger;
 import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
 
 /**
+ * Klasa u kojoj se vodi evidencija rada servera. Pohranjuju se brojcani podatci
+ * o svim zahtjevima. Obavlja se serijalizacija podataka u datoteku.
  *
- * @author grupa_1
+ * @author Zoran Hrncic
  */
 public class Evidencija implements Serializable {
 
     private long ukupanbrojZahtjeva = 0; // broj svih tahteva na serveru
     private long brojPrkinutihZahtjeva = 0; // broj zahtjeva koji su odbijeni jer nema slobodnih radnih dretvi
     private long brojUspjesnihZahtjeva = 0;//broj uspješno izvršenih zahteva
-
     private long brojNeispravnihZahtjeva = 0; // pogrešna komanda
     private long brojNedozvoljenihZahtjeva = 0; //pogrešna lozinka
-
     private long ukupnoVrijemeRadaRadnihDretvi = 0;
     private long brojObavljanjaSerijalizacije = 0;
-
     private transient boolean upis = false;
     private Charset charset;
 
@@ -79,6 +78,9 @@ public class Evidencija implements Serializable {
         return charset;
     }
 
+    /**
+     * Medjusobno iskljucivo se povecava brojac uspjesno obavljenih zahtjeva.
+     */
     public synchronized void dodajUspjesnoObavljenZahtjev() {
         while (isUpis()) {
             try {
@@ -94,6 +96,9 @@ public class Evidencija implements Serializable {
         notify();
     }
 
+    /**
+     * Medjusobno iskljucivo se povecava brojac uspjesno odbijenih zahtjeva.
+     */
     public synchronized void dodajOdbijenZahtjevJerNemaDretvi() {
         while (isUpis()) {
             try {
@@ -109,7 +114,10 @@ public class Evidencija implements Serializable {
         notify();
     }
 
-    public synchronized void dodajNoviZahtjev(){
+    /**
+     * Medjusobno iskljucivo se povecava brojac svih zahtjeva.
+     */
+    public synchronized void dodajNoviZahtjev() {
         while (isUpis()) {
             try {
                 wait();
@@ -124,6 +132,9 @@ public class Evidencija implements Serializable {
         notify();
     }
 
+    /**
+     * Medjusobno iskljucivo se povecava brojac neispravnih azhtjeva.
+     */
     public synchronized void dodajNeispravanZahtjev() {
         while (isUpis()) {
             try {
@@ -138,8 +149,14 @@ public class Evidencija implements Serializable {
         setUpis(false);
         notify();
     }
-    
-       public synchronized void dodajVrijemeRadaDretve(long sec) {
+
+    /**
+     * Medjusobno iskljucivo se pribraja ukuprnom vremenu, vrijeme rada dretve
+     * zadano u milisekundama.
+     *
+     * @param sec vrijeme rada dretve milisekundama
+     */
+    public synchronized void dodajVrijemeRadaDretve(long sec) {
         while (isUpis()) {
             try {
                 wait();
@@ -154,6 +171,13 @@ public class Evidencija implements Serializable {
         notify();
     }
 
+    /**
+     * Obavlja serijalizaciju trenutnog stanja objeta u datoteku.
+     *
+     * @param nazivDatotekeZaSerijalizaciju naziv datoteke u koju se obavlja
+     * serijalizacija
+     * @throws InterruptedException - iznimka u slucaju prekida
+     */
     public synchronized void obaviSerijalizaciju(String nazivDatotekeZaSerijalizaciju)
             throws InterruptedException {
         while (isUpis()) {
@@ -166,6 +190,11 @@ public class Evidencija implements Serializable {
         notify();
     }
 
+    /**
+     * Vrsi serijalizaciju.
+     *
+     * @param nazivDatotekeZaSerijalizaciju
+     */
     private void obaviSerijizacijuPoaso(String nazivDatotekeZaSerijalizaciju) {
         ObjectOutputStream s = null;
         try {
@@ -195,6 +224,13 @@ public class Evidencija implements Serializable {
         setUpis(false);
     }
 
+    /**
+     * Medusobno iskljucivo poziva kriranje bytecode zapisa datoteke sa
+     * podatciam o evidenciji
+     *
+     * @param charset zadani charset
+     * @return bytecode datoteke u zadanom charsetu
+     */
     public synchronized byte[] toStringser(Charset charset) {
         try {
             while (isUpis()) {
@@ -215,11 +251,19 @@ public class Evidencija implements Serializable {
         }
     }
 
+    /**
+     * Kreira foramtiranu datoteku na temelju stanja trenutnog objekta i vraca
+     * je u obliku bytecode-a
+     *
+     * @param charset zadani charset
+     * @return bytecode datoteke u zadanom charsetu
+     * @throws IOException iznimka
+     */
     private byte[] toStringserPrivate(Charset charset) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         FileWriter out = new FileWriter("tmp");
         out.write(String.format("%-40s%-5d\n", "Ukupan broj zahtjeva:", ukupanbrojZahtjeva));
-        out.write(String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva+1));
+        out.write(String.format("%-40s%-5d\n", "Broj uspješnih zahtjeva:", brojUspjesnihZahtjeva + 1));
         out.write(String.format("%-40s%-5d\n", "Broj prekunutih zahtjeva:", brojPrkinutihZahtjeva));
         out.write(String.format("%-40s%-5d\n", "Broj neispravnih zahtjeva:", brojNeispravnihZahtjeva));
         out.write(String.format("%-40s%-5d\n", "Broj nedozvoljenih zahtjeva:", brojNedozvoljenihZahtjeva));
@@ -239,6 +283,9 @@ public class Evidencija implements Serializable {
         return baos.toByteArray();
     }
 
+    /**
+     * Medjusobno iskljucivo povecava brojac nedozvoljenih zahtjeva
+     */
     public synchronized void dodajNedozvoljeniZahtjev() {
         while (isUpis()) {
             try {

@@ -21,8 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
- * @author grupa_1
+ * Klasa obavlja sve funkcije potrebne za komuikaciju Administratora sa serverom, te upravlja odgovorom.
+ * @author Zoran Hrncic
  */
 public class AdministratorSustava extends KorisnikSustava {
 
@@ -46,6 +46,9 @@ public class AdministratorSustava extends KorisnikSustava {
         this.uA = upisaniAurumenti;
     }
 
+    /**
+     * Kreira socket kojim se spaja na server na temelju adrese i porta prosljedjenog u konstruktoru.
+     */
     public void preuzmiKontrolu() {
         try {
             Socket socket = new Socket(uA.getProperty("adresa"), Integer.parseInt(uA.getProperty("port")));
@@ -55,6 +58,11 @@ public class AdministratorSustava extends KorisnikSustava {
         }
     }
 
+    /**
+     * Na temelju upisanih argumentata, koji su prosljedjeni u konstruktoru, kreira komandu koja se salje na server.
+     * 
+     * @return Lista komandi koje su prepoznate na temelju ulaznih argumenata.
+     */
     private List<String> getCommand() {
         commands = new ArrayList<>();          
         if (uA.containsKey("pauza") && "1".equals(uA.getProperty("pauza")) && uA.containsKey("korisnik") && uA.containsKey("lozinka")) {
@@ -78,6 +86,14 @@ public class AdministratorSustava extends KorisnikSustava {
         return commands;
     }
 
+    /**
+     * Sluzi za testiranje odgovora primljenog od servera.
+     * Testira odgovor primljen nakon adminova zahtjeva za evidencijom ili popisom IOT uredjaja.
+     * Ako je odgovor zadovoljen, pohranjuje CHARSET u varijablu charset
+     * @param string odgovor servera u obliku stringa
+     * @param sintaksa zadani RegEx koji definira oblik odgovora
+     * @return 
+     */
     public boolean testInputStringAndExtractChasterAdnSize(String string, String sintaksa) {
         String p = string.trim();
         Pattern pattern = Pattern.compile(sintaksa);
@@ -96,6 +112,11 @@ public class AdministratorSustava extends KorisnikSustava {
         return status;
     }
 
+    /**
+     * Vrsi obradu odgovora primljenog od servera. 
+     * Ispisuje odgovor korisniku, odnosno salje ga na daljnju obradu.
+     * @param baos niz byte-ova primljen od servera
+     */
     private void obradaOdgovora(ByteArrayOutputStream baos) {
         String str = new String(baos.toByteArray());
         if (testInputStringAndExtractChasterAdnSize(str, sintaksaAdminEvidencijaIot)) {
@@ -107,7 +128,10 @@ public class AdministratorSustava extends KorisnikSustava {
         }
 
     }
-
+/**
+ * Pohranjuje niz byte-ova u datoteku pod nazivom definiranim u argumentima priljenim kroz konstruktor
+ * @param baos niz byte-ova datoteke
+ */
     private void pohranaDatotekeUZadanomFormatu(ByteArrayOutputStream baos) {
         String nazivDatoteke;
         if (uA.containsKey("datotekaEvidencija")) {
@@ -131,6 +155,11 @@ public class AdministratorSustava extends KorisnikSustava {
         saveByteArrayToFile(nazivDatoteke, new String(baosFile.toByteArray(), Charset.forName(charset)));
     }
 
+    /**
+     * Pohranjuje text u datoteku.
+     * @param nazivDatoteke - naziv datoteke u koju se pohranjuje/kreira
+     * @param baos -text koji se pohranjuje
+     */
     private void saveByteArrayToFile(String nazivDatoteke, String baos) {
         FileWriter out = null;
         try {
@@ -147,6 +176,11 @@ public class AdministratorSustava extends KorisnikSustava {
         }
     }
 
+    /**
+     * Nakon kreiranja socketa, salje komandu serveru i ceka odgovor.
+     * Po primitku odgovora, salje na daljnju obradu.
+     * @param socket socket pomocu kojeg se spaja na server
+     */
     private void handle(Socket socket) {
         try (InputStream inputStream = socket.getInputStream();
                 OutputStream outputStream = socket.getOutputStream();) {

@@ -10,8 +10,8 @@ import java.util.logging.Logger;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 
 /**
- *
- * @author grupa_1
+ * Klasa koja okida metodu obaviEvidenciju  nakon definiranog intervala sekundi iz konfiguracije
+ * @author Zoran Hrncic
  */
 public class SerijalizatorEvidencije extends Thread {
 
@@ -27,6 +27,12 @@ public class SerijalizatorEvidencije extends Thread {
     private double koef = 0.01666666666;
     private int razlikaMedju;
 
+    
+    /**
+     * Postavlja zastavicu "kraj rada" na true
+     * @param b true/false
+     * @return rez. uspjeha
+     */
         public synchronized boolean setKrajRada(boolean b) {
         while (upis) {
             try {
@@ -52,6 +58,7 @@ public class SerijalizatorEvidencije extends Thread {
     public SerijalizatorEvidencije() {
     }
 
+    
     public synchronized boolean isKrajRada() {      
         while (upis) {
             try {
@@ -82,6 +89,9 @@ public class SerijalizatorEvidencije extends Thread {
 
     }
 
+    /**
+     * Pokreće dretvu koja vrsi serijalizaciju evidencije svakih n sekundi
+     */
     @Override
     public void run() {
         nazivDatotekeZaSerijalizaciju = konfig.dajPostavku("datoteka.evidencije.rada");
