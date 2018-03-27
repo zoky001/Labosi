@@ -77,7 +77,6 @@ public class KorisnikSustava {
         for (Map.Entry<Object, Object> entry : uA.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
-            System.out.println(key + " - " + value + "");
         }
         if (!administrator && !client) {
             System.out.println(ERROR_02);

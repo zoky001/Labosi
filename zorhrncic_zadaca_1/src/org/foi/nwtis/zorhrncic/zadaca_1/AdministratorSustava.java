@@ -80,11 +80,11 @@ public class AdministratorSustava extends KorisnikSustava {
         if (status) {
             if (m.groupCount() == 3) {
                 charset = m.group(1);
-                System.out.println(numberOfBytes = Integer.parseInt(m.group(2)));
+             //   System.out.println(numberOfBytes = Integer.parseInt(m.group(2)));
             }
 
         } else {
-            System.out.println("Ne odgovara!");
+           
         }
         return status;
     }
@@ -92,11 +92,11 @@ public class AdministratorSustava extends KorisnikSustava {
     private void obradaOdgovora(ByteArrayOutputStream baos) {
         String str = new String(baos.toByteArray());
         if (testInputStringAndExtractChasterAdnSize(str, sintaksaAdminEvidencijaIot)) {
-            System.out.println("Vraćen je odgovor sa datotekom:  " + charset + "\n" + numberOfBytes);
-            System.out.println("ODGOVOR:" + str);
+           // System.out.println("Vraćen je odgovor sa datotekom:  " + charset + "\n" + numberOfBytes);
+            System.out.println(str);
             pohranaDatotekeUZadanomFormatu(baos);
         } else {
-            System.out.println("buffer: " + str);
+            System.out.println(str);
         }
 
     }

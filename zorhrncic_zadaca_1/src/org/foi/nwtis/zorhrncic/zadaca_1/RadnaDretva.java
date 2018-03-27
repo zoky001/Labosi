@@ -87,7 +87,7 @@ public class RadnaDretva extends Thread {
         if (stop != b) {
             stop = b;
             upis = false;
-            serverSustava.smanjiBrojRadnihDretvi();
+           // serverSustava.smanjiBrojRadnihDretvi();
             notify();
             return true;
         } else {
@@ -140,6 +140,7 @@ public class RadnaDretva extends Thread {
     @Override
     public void interrupt() {
         super.interrupt();
+               
 
     }
 
@@ -149,7 +150,7 @@ public class RadnaDretva extends Thread {
         while (!isKrajRada()) {
             try (
                     InputStream inputStream = socket.getInputStream();
-                    OutputStream outputStream = socket.getOutputStream();) {//                System.out.println("Pokrenuta dreetva naziva: " + nazivDretve);
+                    OutputStream outputStream = socket.getOutputStream();) {
                 this.out = outputStream;
                 int znak;
                 StringBuffer buffer = new StringBuffer();
@@ -167,7 +168,9 @@ public class RadnaDretva extends Thread {
                 setKrajRada(true);
             }
         }
+        System.out.println("kraj rada dretve : " + nazivDretve);
         evidencija.dodajVrijemeRadaDretve(System.currentTimeMillis() - pocetak);
+        serverSustava.smanjiBrojRadnihDretvi();
     }
 
     public String getStringJSON() {
@@ -231,7 +234,7 @@ public class RadnaDretva extends Thread {
             obradaKlijenataCekaj_ObradaIot();
             return true;
         } else if (testInputStringAndExtractSleepTimeAndJSON(inputLine, sintaksaSadrzajDatoteke, false)) {
-            obradaKlijentaIotDatoteka();
+            addOrUpdateDEvice();
             return true;
         } else {
             return false;
@@ -356,19 +359,14 @@ public class RadnaDretva extends Thread {
             evidencija.dodajUspjesnoObavljenZahtjev();
         } catch (InterruptedException ex) {
             vratiOdgovorKlijentuString(ERROR_22 + " Dretva je prekinuta ");
-            evidencija.dodajNedozvoljeniZahtjev();
+             evidencija.dodajOdbijenZahtjevJerNemaDretvi();
         } finally {
             serverSustava.removeDretvaCekaj(this);
         }
 
     }
 
-    private void obradaKlijentaIotDatoteka() {
-        Uredjaj_A a = obradiJsonZapisUredjaja(StringJSON);
-        if (a != null) {
-            addOrUpdateDEvice(a);
-        }
-    }
+
 
     public boolean testInputStringAndExtractUsernameAdnPassword(String string, String sintaksa) {
         String p = string.trim();
@@ -401,17 +399,8 @@ public class RadnaDretva extends Thread {
         return status;
     }
 
-    private Uredjaj_A obradiJsonZapisUredjaja(String StringJSON) {
-        try {
-            return gson.fromJson(StringJSON, Uredjaj_A.class);
-        } catch (JsonSyntaxException e) {
-            vratiOdgovorKlijentuString(ERROR_20 + " Neispravan format JSON zapisa");
-        }
-        return null;
-    }
-
     private void vratiOdgovorKlijentuString(String odgovor) {
-        vratiOdgovorKlijentuByte(odgovor.getBytes());
+        vratiOdgovorKlijentuByte(odgovor.getBytes(Charset.forName("UTF-8")));
     }
 
     private void vratiOdgovorKlijentuByte(byte[] odgovor) {
@@ -422,15 +411,23 @@ public class RadnaDretva extends Thread {
         }
     }
 
-    private void addOrUpdateDEvice(Uredjaj_A iotUredjaj) {
+    private void addOrUpdateDEvice() {
         try {
-            String odgovor = iot.addOrUpdateDevice(iotUredjaj);
+            String string = StringJSON;
+            String odgovor = iot.addOrUpdateDevice(string);
             if (odgovor.equals(OK_21)) {
                 vratiOdgovorKlijentuString(OK_21);
+                evidencija.dodajUspjesnoObavljenZahtjev();
             } else if (odgovor.equals(OK_20)) {
                 vratiOdgovorKlijentuString(OK_20);
-            } else {
-                vratiOdgovorKlijentuString(ERROR_21 + "Došlo je do greške tjekom dodavanja novog IOT uređaja!!");
+                evidencija.dodajUspjesnoObavljenZahtjev();
+            } else if (odgovor.equals(ERROR_20)) {
+                vratiOdgovorKlijentuString(ERROR_20 + " Pogrešan JSON format!");
+                evidencija.dodajNeispravanZahtjev();
+            }else {
+                vratiOdgovorKlijentuString(ERROR_21 + "Došlo je do greške tjekom dodavanja novog IOT uređaja!!"
+                        + "\n Mora sadržavati ID oblika pozitivne cjelobrojna vrijednost");
+                evidencija.dodajNeispravanZahtjev();
             }
         } catch (InterruptedException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);

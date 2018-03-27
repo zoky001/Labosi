@@ -1,7 +1,8 @@
-Ukupan broj zahtjeva:                   6    
-Broj uspješnih zahtjeva:                2    
-Broj prekunutih zahtjeva:               0    
-Broj neispravnih zahtjeva:              0    
-Broj nedozvoljenih zahtjeva:            0    
-Ukupno vrijeme rada radih dretvi:       19   
-Broj obavljanja serijalizacije:         22   
+|--------------------|--------------------|
+|ID                  |3                   |
+|--------------------|--------------------|
+|buka                |22                  |
+|temperatura         |322.244             |
+|vlaga               |0                   |
+|vjetar              |12                  |
+|svjetlost           |26                  |

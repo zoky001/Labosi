@@ -21,6 +21,11 @@ public class SerijalizatorEvidencije extends Thread {
     String nazivDatotekeZaSerijalizaciju;
     private Evidencija evidencija;
     private boolean upis = false;
+    private long razlika = 0;
+    private long pocetak = 0;
+    private long kraj = 0;
+    private double koef = 0.01666666666;
+    private int razlikaMedju;
 
         public synchronized boolean setKrajRada(boolean b) {
         while (upis) {
@@ -82,17 +87,23 @@ public class SerijalizatorEvidencije extends Thread {
         nazivDatotekeZaSerijalizaciju = konfig.dajPostavku("datoteka.evidencije.rada");
         int intervalZaSerijalizuaciju = Integer.parseInt(konfig.dajPostavku("interval.za.serijalizaciju"));
         while (!isKrajRada()) {
-            long pocetak = System.currentTimeMillis();
-            System.out.println("Dretva: " + nazivDretve + "Početak: " + pocetak);
+            pocetak = System.currentTimeMillis();
+            if (kraj != 0) { /*0.01666666666;*/
+
+                System.out.println("Razlika od prosle serijalizacije: "+ (pocetak-kraj)/1000 + " sec");                         
+            }
+            
+            //System.out.println("Dretva: " + nazivDretve + "Početak: " + pocetak);
             try {
                 evidencija.obaviSerijalizaciju(nazivDatotekeZaSerijalizaciju);  
             } catch (InterruptedException ex) {
                 Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
             }
-            long kraj = System.currentTimeMillis();
-            long razlika = kraj - pocetak;
+            kraj = System.currentTimeMillis();
+            razlika = kraj - pocetak;
+            
             try {
-                Thread.sleep(intervalZaSerijalizuaciju * 1000 - razlika);
+                Thread.sleep((intervalZaSerijalizuaciju * 1000 - razlika)+(long)(koef*(intervalZaSerijalizuaciju * 1000 - razlika)));
             } catch (InterruptedException ex) {
                 Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
             }

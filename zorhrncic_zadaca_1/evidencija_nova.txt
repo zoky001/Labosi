@@ -1,7 +1,7 @@
-Ukupan broj zahtjeva:                   6    
-Broj uspjeÅ¡nih zahtjeva:                2    
-Broj prekunutih zahtjeva:               0    
-Broj neispravnih zahtjeva:              0    
-Broj nedozvoljenih zahtjeva:            0    
-Ukupno vrijeme rada radih dretvi:       19   
-Broj obavljanja serijalizacije:         22   
+Ukupan broj zahtjeva:                   56   
+Broj uspjeÅ¡nih zahtjeva:                23   
+Broj prekunutih zahtjeva:               24   
+Broj neispravnih zahtjeva:              1    
+Broj nedozvoljenih zahtjeva:            3    
+Ukupno vrijeme rada radih dretvi:       250357
+Broj obavljanja serijalizacije:         56   

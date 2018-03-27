@@ -96,9 +96,9 @@ public class KlijentSustava extends KorisnikSustava {
                 if (znak == -1) {
                     break;
                 }
-                buffer.append((char) znak);
+                buffer.append((char)znak);
             }
-            System.out.println("buffer: " + buffer.toString());
+            System.out.println(buffer.toString());
         } catch (IOException ex) {
             Logger.getLogger(RadnaDretva.class.getName()).log(Level.SEVERE, null, ex);
         }

@@ -387,8 +387,10 @@ public class ServerSustava {
         try {
             beginStoppingServer();
             for (RadnaDretva radnaDretva : dretveCekaj) {
+              
                 radnaDretva.setKrajRada(true);
-                evidencija.dodajOdbijenZahtjevJerNemaDretvi();
+                //evidencija.dodajOdbijenZahtjevJerNemaDretvi();
+                radnaDretva.interrupt();
             }
             while (getBrojRadnihDretvi() > 1) {
                 System.out.println("Cekma da zavrse sve dretve;");
