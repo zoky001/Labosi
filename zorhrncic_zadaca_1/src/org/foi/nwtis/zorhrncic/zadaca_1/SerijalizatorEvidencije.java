@@ -10,7 +10,9 @@ import java.util.logging.Logger;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 
 /**
- * Klasa koja okida metodu obaviEvidenciju  nakon definiranog intervala sekundi iz konfiguracije
+ * Klasa koja okida metodu obaviEvidenciju nakon definiranog intervala sekundi
+ * iz konfiguracije
+ *
  * @author Zoran Hrncic
  */
 public class SerijalizatorEvidencije extends Thread {
@@ -27,13 +29,13 @@ public class SerijalizatorEvidencije extends Thread {
     private double koef = 0.01666666666;
     private int razlikaMedju;
 
-    
     /**
      * Postavlja zastavicu "kraj rada" na true
+     *
      * @param b true/false
      * @return rez. uspjeha
      */
-        public synchronized boolean setKrajRada(boolean b) {
+    public synchronized boolean setKrajRada(boolean b) {
         while (upis) {
             try {
                 System.out.println("Netko upisuje");
@@ -58,8 +60,7 @@ public class SerijalizatorEvidencije extends Thread {
     public SerijalizatorEvidencije() {
     }
 
-    
-    public synchronized boolean isKrajRada() {      
+    public synchronized boolean isKrajRada() {
         while (upis) {
             try {
                 wait();
@@ -74,7 +75,6 @@ public class SerijalizatorEvidencije extends Thread {
         return ret;
     }
 
-    
     public SerijalizatorEvidencije(String nazivDretve, Konfiguracija konfig, Evidencija e) {
         super(nazivDretve);
         this.nazivDretve = nazivDretve;
@@ -96,27 +96,21 @@ public class SerijalizatorEvidencije extends Thread {
     public void run() {
         nazivDatotekeZaSerijalizaciju = konfig.dajPostavku("datoteka.evidencije.rada");
         int intervalZaSerijalizuaciju = Integer.parseInt(konfig.dajPostavku("interval.za.serijalizaciju"));
-        while (!isKrajRada()) {
-            pocetak = System.currentTimeMillis();
-            if (kraj != 0) { /*0.01666666666;*/
+        try {
+            while (!isKrajRada()) {
+                pocetak = System.currentTimeMillis();
+                if (kraj != 0) {
+                    /*0.01666666666;*/
 
-                System.out.println("Razlika od prosle serijalizacije: "+ (pocetak-kraj)/1000 + " sec");                         
+                    System.out.println("Razlika od prosle serijalizacije: " + (pocetak - kraj) / 1000 + " sec");
+                }
+                evidencija.obaviSerijalizaciju(nazivDatotekeZaSerijalizaciju);
+                kraj = System.currentTimeMillis();
+                razlika = kraj - pocetak;
+                Thread.sleep((intervalZaSerijalizuaciju * 1000 - razlika) + (long) (koef * (intervalZaSerijalizuaciju * 1000 - razlika)));
             }
-            
-            //System.out.println("Dretva: " + nazivDretve + "Početak: " + pocetak);
-            try {
-                evidencija.obaviSerijalizaciju(nazivDatotekeZaSerijalizaciju);  
-            } catch (InterruptedException ex) {
-                Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            kraj = System.currentTimeMillis();
-            razlika = kraj - pocetak;
-            
-            try {
-                Thread.sleep((intervalZaSerijalizuaciju * 1000 - razlika)+(long)(koef*(intervalZaSerijalizuaciju * 1000 - razlika)));
-            } catch (InterruptedException ex) {
-                //Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        } catch (InterruptedException ex) {
+            //Logger.getLogger(SerijalizatorEvidencije.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

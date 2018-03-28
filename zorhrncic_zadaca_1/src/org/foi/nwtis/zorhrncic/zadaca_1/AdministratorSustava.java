@@ -53,7 +53,10 @@ public class AdministratorSustava extends KorisnikSustava {
         try {
             Socket socket = new Socket(uA.getProperty("adresa"), Integer.parseInt(uA.getProperty("port")));
             handle(socket);
-        } catch (IOException ex) {
+            
+        } catch(java.net.ConnectException e){
+            System.out.println("Server ne postoji ili nije aktivan!!");
+        }catch (IOException ex) {
             Logger.getLogger(AdministratorSustava.class.getName()).log(Level.SEVERE, null, ex);
         }
     }

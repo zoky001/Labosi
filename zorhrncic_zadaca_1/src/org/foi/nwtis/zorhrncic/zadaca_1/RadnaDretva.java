@@ -6,7 +6,6 @@
 package org.foi.nwtis.zorhrncic.zadaca_1;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,8 +21,10 @@ import java.util.regex.Pattern;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 
 /**
+ * Klasa koja izvrsava ulogu radne dretve. svakom korisniku se po spajanju na
+ * server dodjeljuje jedna radna dretva koja onda izvrsava njegov zahtjev.
  *
- * @author grupa_1
+ * @author Zoran Hrncic
  */
 public class RadnaDretva extends Thread {
 
@@ -74,6 +75,13 @@ public class RadnaDretva extends Thread {
     private boolean stop = false;
     private boolean upis = false;
 
+    /**
+     * Medjusobno iskljucivo postavlja varijablju, zastavicu za rad dretve na
+     * false za gasenje dretve, odnosno na true kada dretva radi.
+     *
+     * @param b
+     * @return
+     */
     public synchronized boolean setKrajRada(boolean b) {
         while (upis) {
             try {
@@ -86,7 +94,6 @@ public class RadnaDretva extends Thread {
         if (stop != b) {
             stop = b;
             upis = false;
-           // serverSustava.smanjiBrojRadnihDretvi();
             notify();
             return true;
         } else {
@@ -111,6 +118,11 @@ public class RadnaDretva extends Thread {
     public RadnaDretva() {
     }
 
+    /**
+     * Testiranje varijable stop. vraca njezinu vrijednost.
+     *
+     * @return
+     */
     public synchronized boolean isKrajRada() {
         while (upis) {
             try {
@@ -139,7 +151,6 @@ public class RadnaDretva extends Thread {
     @Override
     public void interrupt() {
         super.interrupt();
-               
 
     }
 
@@ -152,7 +163,7 @@ public class RadnaDretva extends Thread {
                     OutputStream outputStream = socket.getOutputStream();) {
                 this.out = outputStream;
                 int znak;
-                StringBuffer buffer = new StringBuffer();
+                StringBuilder buffer = new StringBuilder();
                 while (true) {
                     znak = inputStream.read();
                     if (znak == -1) {
@@ -181,6 +192,12 @@ public class RadnaDretva extends Thread {
         super.start();
     }
 
+    /**
+     * Na temlju komande primljenen od korisnika i trenutnog stanja servera
+     * odredjuje koja ce se operacija izvrsavati.
+     *
+     * @param inputLine primljena komanda od korinika
+     */
     private void obradaZahtjeva(String inputLine) {
         List<String> commandWords = new ArrayList<>();
         for (String retval : inputLine.split(" ")) {
@@ -197,38 +214,53 @@ public class RadnaDretva extends Thread {
                     vratiOdgovorKlijentuString(ERROR_02 + " komanda nije ispravna");
                     evidencija.dodajNeispravanZahtjev();
                 }
-            } else if (!obradaZahtjevaAdmina(inputLine, commandWords, serverSustava.isStopRequest()) && !obradaZahtjevaKlijenata(inputLine, commandWords)) {
+            } else if (!obradaZahtjevaAdmina(inputLine, commandWords, serverSustava.isStopRequest()) && !obradaZahtjevaKlijenata(inputLine)) {
                 vratiOdgovorKlijentuString(ERROR_02 + " komanda nije ispravna");
                 evidencija.dodajNeispravanZahtjev();
             }
         }
     }
 
+    /**
+     * Prepoznavanje komande, pripada li adminu i koju radnju treba izvrsiti.
+     *
+     * @param inputLine komanda
+     * @param commandWords komanda kao list odvojenih stringova
+     * @param stopped zastavica koja nam govori jeli kod servera postoji zahtjev
+     * za zaustavljanjem
+     * @return rezulat o uspehu true - ako je usojesno inace false
+     */
     private boolean obradaZahtjevaAdmina(String inputLine, List<String> commandWords, boolean stopped) {
         if (!stopped && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaPauza)) {
-            obradaAdminPauza(inputLine, commandWords);
+            obradaAdminPauza();
             return true;
         } else if (!stopped && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaKreni)) {
-            obradaAdminKreni(inputLine, commandWords);
+            obradaAdminKreni();
             return true;
         } else if (!stopped && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaZaustavi)) {
-            obradaAdminZaustavi(inputLine, commandWords);
+            obradaAdminZaustavi();
             return true;
         } else if (commandWords.size() == 5 && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaStanje)) {//without stopped
-            obradaAdminStanje(inputLine, commandWords);
+            obradaAdminStanje();
             return true;
         } else if (!stopped && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaEvidencija)) {
-            obradaAdminEvidencija(inputLine, commandWords);
+            obradaAdminEvidencija();
             return true;
         } else if (!stopped && testInputStringAndExtractUsernameAdnPassword(inputLine, sintaksaIot)) {
-            obradaAdminIot(inputLine, commandWords);
+            obradaAdminIot();
             return true;
         } else {
             return false;
         }
     }
 
-    private boolean obradaZahtjevaKlijenata(String inputLine, List<String> commandWords) {
+    /**
+     * Prepoznavanje komande, pripada li klijentu i koju radnju treba izvrsiti.
+     *
+     * @param inputLine komanda
+     * @return rezulat o uspehu true - ako je usojesno inace false
+     */
+    private boolean obradaZahtjevaKlijenata(String inputLine) {
         if (testInputStringAndExtractSleepTimeAndJSON(inputLine, sintaksaSadrzajDatotekeCekaj, true)) {
             obradaKlijenataCekaj_ObradaIot();
             return true;
@@ -240,7 +272,12 @@ public class RadnaDretva extends Thread {
         }
     }
 
-    private void obradaAdminPauza(String inputLine, List<String> commandWords) {
+    /**
+     * Izvrsava adminov zahtev za pauzom te stavlja server u stanje pauze.
+     * server vise ne prima korisnikove komande.
+     *
+     */
+    private void obradaAdminPauza() {
         if (authenticateUser() && serverSustava.setServerPause()) {
             vratiOdgovorKlijentuString(OK);
             evidencija.dodajUspjesnoObavljenZahtjev();
@@ -255,7 +292,11 @@ public class RadnaDretva extends Thread {
         }
     }
 
-    private void obradaAdminKreni(String inputLine, List<String> commandWords) {
+    /**
+     * Izvrsava adminovu komandu za pokretanje servera iz stanja pauze.
+     *
+     */
+    private void obradaAdminKreni() {
         if (authenticateUser() && serverSustava.setServerStart()) {
             vratiOdgovorKlijentuString(OK);
             evidencija.dodajUspjesnoObavljenZahtjev();
@@ -270,7 +311,13 @@ public class RadnaDretva extends Thread {
         }
     }
 
-    private void obradaAdminZaustavi(String inputLine, List<String> commandWords) {
+    /**
+     * Izvrsava adminovu komandu za potpunim zaustavljanjem servera.
+     *
+     * Ugasi server.
+     *
+     */
+    private void obradaAdminZaustavi() {
         if (!authenticateUser()) {
             vratiOdgovorKlijentuString(ERROR_10 + " korisnik nije administrator ili su pogrešni podatc u za prijavu!");
             evidencija.dodajNedozvoljeniZahtjev();
@@ -279,7 +326,12 @@ public class RadnaDretva extends Thread {
         }
     }
 
-    private void obradaAdminStanje(String inputLine, List<String> commandWords) {
+    /**
+     * Izvrsava adminovu komandu za dohvat informacije o trenutnom stanju
+     * servera
+     *
+     */
+    private void obradaAdminStanje() {
         if (!authenticateUser()) {
             vratiOdgovorKlijentuString(ERROR_10 + " korisnik nije administrator ili su pogrešni podatc u za prijavu!");
             evidencija.dodajNedozvoljeniZahtjev();
@@ -297,7 +349,11 @@ public class RadnaDretva extends Thread {
         }
     }
 
-    private void obradaAdminEvidencija(String inputLine, List<String> commandWords) {
+    /**
+     * Izvrsava adminovu komandu za dohvacanje podataka iz evidencije rada.
+     *
+     */
+    private void obradaAdminEvidencija() {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         if (!authenticateUser()) {
             vratiOdgovorKlijentuString(ERROR_10 + " korisnik nije administrator ili su pogrešni podatc u za prijavu!");
@@ -319,7 +375,10 @@ public class RadnaDretva extends Thread {
         }
     }
 
-    private void obradaAdminIot(String inputLine, List<String> commandWords) {
+    /**
+     * Izvrsava obradu adminove naredbe za dohvat podataka o iot uredjajima
+     */
+    private void obradaAdminIot() {
         if (!authenticateUser()) {
             vratiOdgovorKlijentuString(ERROR_10 + " korisnik nije administrator ili su pogrešni podatc u za prijavu!");
             evidencija.dodajNedozvoljeniZahtjev();
@@ -341,6 +400,12 @@ public class RadnaDretva extends Thread {
         }
     }
 
+    /**
+     * Autentificira korisika na temelju prosljedjenih podataka.
+     *
+     * @return true - ako postoje podatci u konfiguraciji, false - ako ne
+     * postoje podatci
+     */
     private boolean authenticateUser() {
         for (int i = 0; i < 10; i++) {
             if (konfig.dajPostavku("admin." + i + "." + username) != null && konfig.dajPostavku("admin." + i + "." + username).equals(password)) {
@@ -351,7 +416,11 @@ public class RadnaDretva extends Thread {
         return false;
     }
 
-    //client
+    /**
+     * Vrsi obradu clijentovog zahtjeva za spavanjem odredjeni broj sekundi.
+     * Nakon uspjesno odradjenog zadatka vraca odgovor, ednosno gresku ako je
+     * doslo do prekida.
+     */
     private void obradaKlijenataCekaj_ObradaIot() {
         try {
             serverSustava.addDretvaCekaj(this);
@@ -360,15 +429,21 @@ public class RadnaDretva extends Thread {
             evidencija.dodajUspjesnoObavljenZahtjev();
         } catch (InterruptedException ex) {
             vratiOdgovorKlijentuString(ERROR_22 + " Dretva je prekinuta ");
-             evidencija.dodajOdbijenZahtjevJerNemaDretvi();
+            evidencija.dodajOdbijenZahtjevJerNemaDretvi();
         } finally {
             serverSustava.removeDretvaCekaj(this);
         }
 
     }
 
-
-
+    /**
+     * Usporedjuje ulazni string sa sintaksom REGex izraza. ako je
+     * zadovoljavajuce, onda pohranjuje u varijable username ipasseord.
+     *
+     * @param string ulazni text/string
+     * @param sintaksa regex izraz
+     * @return true - ako zadovoljava, false - ako ne zadovoljava
+     */
     public boolean testInputStringAndExtractUsernameAdnPassword(String string, String sintaksa) {
         String p = string.trim();
         Pattern pattern = Pattern.compile(sintaksa);
@@ -384,6 +459,16 @@ public class RadnaDretva extends Thread {
         return status;
     }
 
+    /**
+     * Usporedjuje ulazni string sa sintaksom REGex izraza. ako je
+     * zadovoljavajuce, onda pohranjuje u varijable vrijeme spavanja dretve,
+     * odnosno JSON zapis iot uredjaja
+     *
+     * @param string ulazni text/string
+     * @param sintaksa regex izraz
+     * @param cekaj vrijeme spavanje dretve
+     * @return true - ako zadovoljava, false - ako ne zadovoljava
+     */
     public boolean testInputStringAndExtractSleepTimeAndJSON(String string, String sintaksa, boolean cekaj) {
         String p = string.trim();
         Pattern pattern = Pattern.compile(sintaksa);
@@ -400,10 +485,20 @@ public class RadnaDretva extends Thread {
         return status;
     }
 
+    /**
+     * Vraca korisniku odgovor.
+     *
+     * @param odgovor string odgovora
+     */
     private void vratiOdgovorKlijentuString(String odgovor) {
         vratiOdgovorKlijentuByte(odgovor.getBytes(Charset.forName("UTF-8")));
     }
 
+    /**
+     * Vraca klijentu odgovor.
+     *
+     * @param odgovor bytecode odgovora
+     */
     private void vratiOdgovorKlijentuByte(byte[] odgovor) {
         try {
             out.write(odgovor);
@@ -412,6 +507,11 @@ public class RadnaDretva extends Thread {
         }
     }
 
+    /**
+     * Izvrsava klijentovu radnju za dodavanje, odnosno azuriranjem IOT
+     * uredjaja.
+     *
+     */
     private void addOrUpdateDEvice() {
         try {
             String string = StringJSON;
@@ -425,7 +525,7 @@ public class RadnaDretva extends Thread {
             } else if (odgovor.equals(ERROR_20)) {
                 vratiOdgovorKlijentuString(ERROR_20 + " Pogrešan JSON format!");
                 evidencija.dodajNeispravanZahtjev();
-            }else {
+            } else {
                 vratiOdgovorKlijentuString(ERROR_21 + "Došlo je do greške tjekom dodavanja novog IOT uređaja!!"
                         + "\n Mora sadržavati ID oblika pozitivne cjelobrojna vrijednost");
                 evidencija.dodajNeispravanZahtjev();
@@ -435,6 +535,10 @@ public class RadnaDretva extends Thread {
         }
     }
 
+    /**
+     * Izvrsava adminov zahtjev za zaustavljanjem servera. Pokrece zaustavljanje
+     * servera i gasenje aktivnoh dretvi (cekaj)
+     */
     private void zaustaviServer() {
         boolean b = serverSustava.zaustaviServer(konfig);
         if (b) {

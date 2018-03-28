@@ -24,12 +24,15 @@ import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 
 /**
+ * Klasa koja je zadizena za komunikaciju koorisnika (klijenta) sa serverom.
+ * Salje zahtjeve u obliku komandi prema serveru, te ceka odgovor, i obradjuje
+ * isti. Ispisuje odgovo korinsiku na ekran.
  *
- * @author grupa_1
+ * @author Zoran Hrncic
  */
 public class KlijentSustava extends KorisnikSustava {
 
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
     private Socket socket;
 
     public KlijentSustava(Properties upisaniAurumenti) {
@@ -45,6 +48,8 @@ public class KlijentSustava extends KorisnikSustava {
         try {
             socket = new Socket(uA.getProperty("adresa"), Integer.parseInt(uA.getProperty("port")));
             handle(socket);
+        } catch (java.net.ConnectException e) {
+            System.out.println("Server ne postoji ili nije aktivan!!");
         } catch (IOException ex) {
             Logger.getLogger(KlijentSustava.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -91,9 +96,7 @@ public class KlijentSustava extends KorisnikSustava {
                 throw new NeispravnaKonfiguracija(datoteka + " nije datoteka već direktorij");
             }
             return readFromFile(datoteka);
-        } catch (NemaKonfiguracije ex) {
-            System.out.println("Nema datoteke sa IOT podatcima");
-        } catch (NeispravnaKonfiguracija ex) {
+        } catch (NemaKonfiguracije | NeispravnaKonfiguracija ex) {
             System.out.println("Nema datoteke sa IOT podatcima");
         }
         return null;
@@ -134,6 +137,7 @@ public class KlijentSustava extends KorisnikSustava {
 
     /**
      * cita zapis iz datoteke
+     *
      * @param datoteka nazv datoteke
      * @return zapis iz datoteke
      */

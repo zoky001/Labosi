@@ -14,8 +14,10 @@ import java.util.regex.Pattern;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 
 /**
+ * Glavna klasa koja vrsi glavnu ulogu kod pokretanja korisnickog djela aplikacije. 
+ * Na temelju ulaznih argumenata se propuznaje o koojoj vrsti korisinika je rijec, te se tako dalje kreiraju potrebni objekti klasa. 
  *
- * @author grupa_1
+ * @author Zoran Hrncic
  */
 public class KorisnikSustava {
 
@@ -57,6 +59,10 @@ public class KorisnikSustava {
 
     }
 
+    /**
+     * Glavna metoda kojom pokreće korisnicka aplikacija.
+     * @param args ovisno o zeljenim aktivnostima
+     */
     public static void main(String[] args) {
         KorisnikSustava ks = new KorisnikSustava();
         if (ks.preuzmiPostavke(args)) {
@@ -79,13 +85,16 @@ public class KorisnikSustava {
     private boolean preuzmiPostavke(String[] args) {
         administrator = ucitajUlazneParametreAdmina(args);
         client = ucitajUlazneParametreKlijenta(args);
-        for (Map.Entry<Object, Object> entry : uA.entrySet()) {
+        uA.entrySet().stream().map((entry) -> {
             Object key = entry.getKey();
+            return entry;
+        }).forEachOrdered((entry) -> {
             Object value = entry.getValue();
-        }
+        });
         if (!administrator && !client) {
             System.out.println(ERROR_02);
             return false;
+        } else {
         }
         return true;
     }
@@ -169,8 +178,8 @@ public class KorisnikSustava {
      */
     public static boolean testInputArgs(String sintaksa, String[] args) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < args.length; i++) {
-            sb.append(args[i]).append(" ");
+        for (String arg : args) {
+            sb.append(arg).append(" ");
         }
         return testInputString(sintaksa, sb.toString());
     }
