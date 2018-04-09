@@ -5,6 +5,10 @@
  */
 package org.foi.nwtis.nikbukove.konfiguracije;
 
+import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaApstraktna;
 import java.util.Properties;
 import org.junit.After;
 import org.junit.AfterClass;

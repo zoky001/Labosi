@@ -1,0 +1,42 @@
+pITANJA ZA nwtis
+
+U nazivu radne dretve mora biti LDAP korisničko ime autora, "-" i redni broj dretve 
+(duljina 6 bitova, samo pozitivne vrijednosti) koji se ne ponavlja osim ako dođe do 
+okretanja vrijednosti tj. prijelaza preko najveće vrijednosti zadanog tipa podatka).
+
+
+Za podatke u evidenciji rada treba koristiti vlastitu klasu koja se može serijalizirati. 
+STATIČKA??
+
+Kada je server u pauzzi? jel vraća odgovro?
+
+
+
+KORISNIKkorisnik; LOZINKA lozinka; EVIDENCIJA;
+upisan parametar --evidencija datoteka1 pa provjerava postoji li korisnik i njemu pridružena 
+lozinka u datoteci s postavkama. Ako je u redu korisniku se vraća odgovor OK; ZN-KODOVI kod; 
+DUZINA n<CRLF> i zatim vraća deserijalizirane podatke o evidenciji rada u formatiranom obliku 
+u zadanom skupu kodova znakova iz postavki. n predstavlja broj byte-ova koje zauzima deserijalizirana 
+evidencija rada. Kada nije u redu, korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor
+ ERROR 10; tekst (tekst objašnjava razlog pogreške). Ako nešto nije u redu s evidencijom rada vraća se 
+ odgovor ERROR 15; tekst (tekst objašnjava razlog pogreške). Ako je evidencija rada u redu admninistrator
+ sprema u datoteku pod nazivom iz opcije.
+ 
+ 
+KORISNIKkorisnik; LOZINKA lozinka; IOT;
+upisan parametar --iot datoteka2 pa provjerava postoji li korisnik i njemu pridružena lozinka 
+u datoteci s postavkama. Ako je u redu korisniku se vraća odgovor OK; ZN-KODOVI kod; DUZINA n<CRLF> i
+ zatim vraća podatke o svim IOT uređajima za koje je primio podatke u formatiranom obliku u zadanom 
+ skupu kodova znakova iz postavki. n predstavlja broj byte-ova koje zauzima datoteka. Kada nije u redu, 
+ korisnik nije administrator ili lozinka ne odgovara, vraća se odgovor ERROR 10; tekst (tekst objašnjava 
+ razlog pogreške). Ako nešto nije u redu s evidencijom rada vraća se odgovor ERROR 16; tekst (tekst 
+ objašnjava razlog pogreške). Ako je evidencija rada u redu admninistrator sprema u datoteku pod nazivom iz opcije.
+ 
+ IOT datoteka;  
+upisan parametar datoteka. Dodaje ili ažurira podatke o IOT uređaju na temelju primljenih podataka u json formatu. 
+Od atributa jedino je obavezan id. Ako je neispravni json format vraća odgovor ERROR 20; tekst (tekst objašnjava 
+razlog pogreške). Ako je došlo do problema tijekom rada vraća mu se odgovor ERROR 21; tekst (tekst objašnjava 
+razlog pogreške). Ako je sve u redu i dodan je novi IOT, vraća mu se odgovor OK 20; Ako je sve u redu i ažuriran 
+je postojeći IOT , vraća mu se odgovor OK 21;
+
+sERIJALIZACIJA??
