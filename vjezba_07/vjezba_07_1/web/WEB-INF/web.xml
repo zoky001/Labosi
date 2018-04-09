@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+    <servlet>
+        <servlet-name>Vjezba_07_1</servlet-name>
+        <servlet-class>org.foi.nwtis.zorhrncic.web.Vjezba_07_1</servlet-class>
+        <init-param>
+            <param-name>korisnickoIme</param-name>
+            <param-value>zorhrncic</param-value>
+        </init-param>
+        <init-param>
+            <param-name>lozinka</param-name>
+            <param-value>123456</param-value>
+        </init-param>
+    </servlet>
+    <servlet>
+        <servlet-name>Vjezba_07_3</servlet-name>
+        <servlet-class>org.foi.nwtis.zorhrncic.web.Vjezba_07_3</servlet-class>
+        <init-param>
+            <param-name>interval</param-name>
+            <param-value>7</param-value>
+        </init-param>
+        <init-param>
+            <param-name>klasa</param-name>
+            <param-value>org.foi.nwtis.zorhrncic.web.Brojac_1</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Vjezba_07_1</servlet-name>
+        <url-pattern>/Vjezba_07_1</url-pattern>
+        <url-pattern>/zorhrncic</url-pattern>
+        <url-pattern>/vjezba_07_1</url-pattern>
+        <url-pattern>/pero</url-pattern>
+    </servlet-mapping>
+    <session-config>
+        <session-timeout>
+            30
+        </session-timeout>
+    </session-config>
+</web-app>
