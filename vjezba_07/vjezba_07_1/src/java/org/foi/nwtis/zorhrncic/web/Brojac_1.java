@@ -44,10 +44,10 @@ public class Brojac_1 implements Brojaci {
 
     @Override
     public void run() {
-        System.out.println("Klasa je = " + getClass());
+       /* System.out.println("Klasa je = " + getClass());
         Random r = new Random(System.nanoTime());
         int slucBroj = r.nextInt(100);
-        setRedniBroj(slucBroj);
+        setRedniBroj(slucBroj);*/
     }
 
 }

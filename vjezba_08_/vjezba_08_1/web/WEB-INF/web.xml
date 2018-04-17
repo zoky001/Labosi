@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+    <context-param>
+        <param-name>konfiguracija</param-name>
+        <param-value>NWTiS.db.config_1.xml</param-value>
+    </context-param>
+    <listener>
+        <description>ServletContextListener</description>
+        <listener-class>org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije</listener-class>
+    </listener>
+    <listener>
+        <description>HttpSessionListener, HttpSessionAttributeListener</description>
+        <listener-class>org.foi.nwtis.zorhrncic.web.slusaci.SlusacSesije</listener-class>
+    </listener>
+    <session-config>
+        <session-timeout>
+            30
+        </session-timeout>
+    </session-config>
+    <welcome-file-list>
+        <welcome-file>jsp/index.html</welcome-file>
+    </welcome-file-list>
+    <error-page>
+        <exception-type>org.foi.nwtis.zorhrncic.web.kontrole.NeuspjesnaPrijava</exception-type>
+        <location>/jsp/login.jsp</location>
+    </error-page>
+    <security-constraint>
+        <display-name>Constraint1</display-name>
+        <web-resource-collection>
+            <web-resource-name>Administrator</web-resource-name>
+            <description>admin</description>
+            <url-pattern>/admin/*</url-pattern>
+            <url-pattern>/IspisAktivnihKorisnika</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <description>admin</description>
+            <role-name>nwtis</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <login-config>
+        <auth-method>BASIC</auth-method>
+        <realm-name>Administrator</realm-name>
+    </login-config>
+    <security-role>
+        <description/>
+        <role-name>admin</role-name>
+    </security-role>
+    <security-role>
+        <description/>
+        <role-name>nwtis</role-name>
+    </security-role>
+</web-app>
