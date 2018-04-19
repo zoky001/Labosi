@@ -38,7 +38,7 @@ private Message[] messages = null;
 
     @Override
     public void run() {
-int broj = 0;
+
         while (!kraj) {
 
             try {
@@ -68,10 +68,7 @@ int broj = 0;
         folder.close(false);
         store.close();
         
-        
-                System.out.println("Gotova obrada: " + broj++);
                 //todo korigiraj vrijeme spavanja
-                spavanje = 30000;
                 sleep(spavanje);
             } catch (Exception e) {
                 System.out.println("org.foi.nwtis.zorhrncic.web.dretve.ObradaPoruka.run(): " + e.getMessage());

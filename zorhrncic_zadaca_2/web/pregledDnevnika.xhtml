@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <h:head>
+        <title>#{p['pregledDnevnika.title']}</title>
+    </h:head>
+    <h:form>
+
+
+        <h:commandLink value="#{p['pregledDnevnika.veza_promjenaJezika']}" action="#{pregledDnevnika.promjenaJezika()}"/>
+        &nbsp;&nbsp;
+        <h:commandLink value="#{p['pregledDnevnika.slanjePoruke']}" action="#{pregledDnevnika.saljiPoruku()}"/>
+        &nbsp;&nbsp;
+        <h:commandLink value="#{p['pregledDnevnika.veza_pregledPoruka']}" action="#{pregledDnevnika.pregledPoruka()}"/>
+
+
+        <br></br>
+
+        <h:outputLabel value="#{p['pregledDnevnika.od']}"></h:outputLabel>
+        <h:inputText value="#{pregledDnevnika.odDatuma}"></h:inputText>
+        <br></br>
+        <h:outputLabel value="#{p['pregledDnevnika.od']}"></h:outputLabel>
+        <h:inputText value="#{pregledDnevnika.doDatuma}"></h:inputText>
+        <br></br>
+        <h:commandButton  value="#{p['pregledDnevnika.prikaz']}" action="#{pregledDnevnika.promjenaIntervala()}"/>
+        <br></br>
+
+
+        <br></br>
+
+
+        <h:dataTable value="#{pregledDnevnika.preuzetiZapisniciDnevnika}" var="item">
+            <h:column>
+                <!-- column header -->
+                <f:facet name="header">#{p['pregledDnevnika.id']}</f:facet>
+                <!-- row record -->
+                <h:outputText value="#{item.id}"></h:outputText>
+
+            </h:column>
+            <h:column>
+                <!-- column header -->
+                <f:facet name="header">#{p['pregledDnevnika.sadrzaj']}</f:facet>
+                <!-- row record -->
+                <h:outputText value="#{item.sadrzaj}"></h:outputText>
+
+            </h:column>
+
+            <h:column>
+                <!-- column header -->
+                <f:facet name="header">#{p['pregledDnevnika.vrijeme']}</f:facet>
+                <!-- row record -->
+                <h:outputText value="#{item.vrijemeZapisa}">
+                    <f:convertDateTime pattern="d. M. yyyy" />
+                </h:outputText>
+
+            </h:column>
+
+        </h:dataTable>
+
+
+        <br></br>
+
+        <h:outputLabel value="#{p['pregledDnevnika.ukupno']}:"></h:outputLabel>
+        &nbsp;&nbsp;
+        <h:inputText value="#{pregledDnevnika.ukupanBrojZapisa}"></h:inputText>
+        <br></br>
+        <h:commandButton  value="#{p['pregledDnevnika.prethodno']}" action="#{pregledDnevnika.prethodniZapisi()}"/>
+        <br></br>
+        <h:commandButton  value="#{p['pregledDnevnika.sljedece']}" action="#{pregledDnevnika.sljedeciZapisi()}"/>
+        <br></br>
+
+
+    </h:form>
+</html>
+

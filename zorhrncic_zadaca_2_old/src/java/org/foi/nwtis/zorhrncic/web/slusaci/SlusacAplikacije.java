@@ -35,9 +35,9 @@ public class SlusacAplikacije implements ServletContextListener {
         context.setAttribute("BP_Konfig", konfiguracija);
 
         obradaPoruka = new ObradaPoruka();
-
+       
 //TODO mkani kom nakon što james bude instaliran, i konfiguriran        
-        obradaPoruka.start();
+//obradaPoruka.start();
 
     }
 

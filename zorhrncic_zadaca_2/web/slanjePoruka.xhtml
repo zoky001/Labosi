@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <h:head>
+        <title>Slanje poruka</title>
+    </h:head>
+    <h:body>
+        <h:form>
+
+
+            <h:commandLink value="#{p['slanjePoruka.veza_promjenaJezika']}" action="#{slanjePoruka.promjenaJezika()}"/>
+            &nbsp;&nbsp;
+            <h:commandLink value="#{p['slanjePoruka.veza_pregledPoruka']}" action="#{slanjePoruka.pregledPoruka()}"/>
+            &nbsp;&nbsp;
+            <h:commandLink value="#{p['slanjePoruka.veza_pregledDnevnika']}" action="#{slanjePoruka.pregledDnevnika()}"/>
+
+
+            <br></br>
+
+            <h:outputLabel value="Prima: "></h:outputLabel>
+            <h:inputText value="#{slanjePoruka.prima}"></h:inputText>
+            <br></br>
+            <h:outputLabel value="Salje: "></h:outputLabel>
+            <h:inputText value="#{slanjePoruka.salje}"></h:inputText>
+            <br></br>
+            <h:outputLabel value="Predmet: "></h:outputLabel>
+            <h:inputText value="#{slanjePoruka.predmet}"></h:inputText>
+            <br></br>
+            <h:panelGrid columns="2">
+                <h:inputTextarea rows="5" cols="70" value="#{slanjePoruka.privitak}"></h:inputTextarea>
+                <h:selectOneListbox value="#{slanjePoruka.odabranaDatoteka}" size="5">
+
+                    <f:selectItems value="#{slanjePoruka.nizDatoteka}" var="d" itemLabel="#{d}" itemValue="#{d}" />
+
+                </h:selectOneListbox>
+
+                <h:commandButton value="Šalji poruku " action="#{slanjePoruka.saljiPoruku()}"/>
+                 &nbsp;&nbsp;
+                <h:commandButton value="Obriši " action="#{slanjePoruka.obrisiPrivitak()}"/>
+                 &nbsp;&nbsp;
+                <h:commandButton value="Preuzmi sadržaj " action="#{slanjePoruka.preuzmiSadrzaj()}"/>
+            </h:panelGrid>
+        </h:form>
+
+
+    </h:body>
+</html>
+
