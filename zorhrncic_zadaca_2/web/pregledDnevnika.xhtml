@@ -6,23 +6,40 @@
     <h:head>
         <title>#{p['pregledDnevnika.title']}</title>
     </h:head>
+    
+    
     <h:form>
-
-
-        <h:commandLink value="#{p['pregledDnevnika.veza_promjenaJezika']}" action="#{pregledDnevnika.promjenaJezika()}"/>
+            <h:commandLink value="#{p['pregledDnevnika.veza_promjenaJezika']}" action="#{pregledDnevnika.promjenaJezika()}"/>
         &nbsp;&nbsp;
         <h:commandLink value="#{p['pregledDnevnika.slanjePoruke']}" action="#{pregledDnevnika.saljiPoruku()}"/>
         &nbsp;&nbsp;
         <h:commandLink value="#{p['pregledDnevnika.veza_pregledPoruka']}" action="#{pregledDnevnika.pregledPoruka()}"/>
 
+    </h:form>
+    
+    <h:form>
+
+
+    
 
         <br></br>
 
         <h:outputLabel value="#{p['pregledDnevnika.od']}"></h:outputLabel>
-        <h:inputText value="#{pregledDnevnika.odDatuma}"></h:inputText>
+        <h:inputText  value="#{pregledDnevnika.odDatuma}" id="od" required="true" 
+                      requiredMessage="#{p['pregledDnevnika.datumObavezan']}" validatorMessage="#{p['pregledDnevnika.datumFormat']}">
+            <f:validateRegex pattern="(0[1-9]|[12][0-9]|3[01]).(0[1-9]|1[012]).((19|2[0-9])[0-9]{2}) (0[0-9]|[1][0-9]|2[0-3]):(0[0-9]|[1-5][0-9]):(0[0-9]|[1-5][0-9])" for="od" />
+        </h:inputText>
+        
+         <h:message id="m1" for="od" style="color:red"/>
         <br></br>
         <h:outputLabel value="#{p['pregledDnevnika.od']}"></h:outputLabel>
-        <h:inputText value="#{pregledDnevnika.doDatuma}"></h:inputText>
+        <h:inputText value="#{pregledDnevnika.doDatuma}"
+        id="do"  required="true" requiredMessage="#{p['pregledDnevnika.datumObavezan']}"
+        validatorMessage="#{p['pregledDnevnika.datumFormat']}">
+            <f:validateRegex pattern="(0[1-9]|[12][0-9]|3[01]).(0[1-9]|1[012]).((19|2[0-9])[0-9]{2}) (0[0-9]|[1][0-9]|2[0-3]):(0[0-9]|[1-5][0-9]):(0[0-9]|[1-5][0-9])" for="do" />
+        </h:inputText>
+        
+         <h:message id="m2" for="do" style="color:red"/>
         <br></br>
         <h:commandButton  value="#{p['pregledDnevnika.prikaz']}" action="#{pregledDnevnika.promjenaIntervala()}"/>
         <br></br>
@@ -66,9 +83,20 @@
         &nbsp;&nbsp;
         <h:inputText value="#{pregledDnevnika.ukupanBrojZapisa}"></h:inputText>
         <br></br>
-        <h:commandButton  value="#{p['pregledDnevnika.prethodno']}" action="#{pregledDnevnika.prethodniZapisi()}"/>
+        
+            <h:outputLabel value="From:"></h:outputLabel>
+        &nbsp;&nbsp;
+        <h:inputText value="#{pregledDnevnika.pozicijaOd}"></h:inputText>
         <br></br>
-        <h:commandButton  value="#{p['pregledDnevnika.sljedece']}" action="#{pregledDnevnika.sljedeciZapisi()}"/>
+            <h:outputLabel value="To:"></h:outputLabel>
+        &nbsp;&nbsp;
+        <h:inputText value="#{pregledDnevnika.pozicijaDo}"></h:inputText>
+        <br></br>
+        
+          
+        <h:commandButton  value="#{p['pregledDnevnika.prethodno']}" action="#{pregledDnevnika.prethodniZapisi()}"  />
+        <br></br>
+        <h:commandButton  value="#{p['pregledDnevnika.sljedece']}" action="#{pregledDnevnika.sljedeciZapisi()}" />
         <br></br>
 
 

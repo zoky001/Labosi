@@ -35,9 +35,11 @@ import org.foi.nwtis.zorhrncic.web.kontrole.Dnevnik;
 public class PregledDnevnika {
 
     private List<Dnevnik> preuzetiZapisniciDnevnika;
-    private int ukupanBrojZapisa, brojZapisaZaPrikaz, pozicijaOd = 0, pozicijaDo;
+    //TODO broj zapisa za prikazati
+    //TODO renderiranje buttona
+    private int ukupanBrojZapisa, brojZapisaZaPrikaz = 5, pozicijaOd = 0, pozicijaDo = 0;
     private String odDatuma, doDatuma;
-     private Date fromDate, toDate;
+    private Date fromDate, toDate;
     private String datoteka;
     private BP_Konfiguracija konfiguracija;
     private String usernameAdmin;
@@ -45,6 +47,7 @@ public class PregledDnevnika {
     private String url;
     private String upit;
     private String uprProgram;
+    private String patternDateTimeSQL = "yyyy-MM-dd H:m:s";
 
     /**
      * Creates a new instance of PregledDnevnika
@@ -75,11 +78,12 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         usernameAdmin = konfiguracija.getUserUsername();
         lozinka = konfiguracija.getUserPassword();
         url = konfiguracija.getServerDatabase() + konfiguracija.getUserDatabase();
-         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-          
-            
-        
-        upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '"+df.format(fromDate)+"'";// + df.format(fromDate)+"'";
+        DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
+
+        if (fromDate == null || toDate == null) {
+            return;
+        }
+        upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '" + df.format(fromDate) + "' AND `vrijeme` < '" + df.format(toDate) + "'";
         uprProgram = konfiguracija.getDriverDatabase();
 
         try {
@@ -87,25 +91,44 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(PregledDnevnika.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(upit);) {
+            ukupanBrojZapisa = 0;
+            while (rs.next()) {
+                ukupanBrojZapisa++;
+            }
+
+            rs.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+
+        }
+
+        upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '" + df.format(fromDate) + "' AND `vrijeme` < '" + df.format(toDate) + "' ORDER BY `vrijeme` DESC LIMIT " + pozicijaOd + "," + brojZapisaZaPrikaz;
+
         try (
                 Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(upit);) {
 
-            ukupanBrojZapisa = 0;
+            
             while (rs.next()) {
                 String id = rs.getString("id");
                 String sadrzaj = rs.getString("sadrzaj");
                 String vrijeme = rs.getString("vrijeme");
 
-                String pattern = "yyyy-MM-dd H:m:s";
-
-               df = new SimpleDateFormat(pattern);
+                df = new SimpleDateFormat(patternDateTimeSQL);
                 Date today = df.parse(vrijeme);
 
                 preuzetiZapisniciDnevnika.add(new Dnevnik(Integer.valueOf(id), sadrzaj, today));
-                ukupanBrojZapisa++;
+                pozicijaDo++;
             }
+
             rs.close();
             stmt.close();
             con.close();
@@ -116,22 +139,20 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
     }
     //getter and setter
 
-  
-
     public void setOdDatuma(String odDatuma) {
         try {
-            String s = (String)odDatuma;
-            String pattern = "dd.MM.yyyy";
-            
+            String s = (String) odDatuma;
+            String pattern = "dd.MM.yyyy H:m:s";
+
             DateFormat df = new SimpleDateFormat(pattern);
             Date today = df.parse(s);
             this.fromDate = today;
-            
+
             this.odDatuma = s;//today;
         } catch (ParseException ex) {
             Logger.getLogger(PregledDnevnika.class.getName()).log(Level.SEVERE, null, ex);
         }
-        preuzmiZapise();
+
     }
 
     public String getOdDatuma() {
@@ -143,10 +164,21 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
     }
 
     public void setDoDatuma(String doDatuma) {
-        this.doDatuma = doDatuma;
+        try {
+            String s = (String) doDatuma;
+            String pattern = "dd.MM.yyyy H:m:s";
+
+            DateFormat df = new SimpleDateFormat(pattern);
+            Date today = df.parse(s);
+            this.toDate = today;
+
+            this.doDatuma = s;//today;
+        } catch (ParseException ex) {
+            Logger.getLogger(PregledDnevnika.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 
- 
     public int getBrojZapisaZaPrikaz() {
 
         return brojZapisaZaPrikaz;
@@ -177,26 +209,45 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
     }
 
     public void setPozicijaOd(int pozicijaOd) {
-       
+
         this.pozicijaOd = pozicijaOd;
-         preuzmiZapise();
+
     }
 
     public void setPozicijaDo(int pozicijaDo) {
         this.pozicijaDo = pozicijaDo;
-        
+
     }
 
     //navigacija
     public String promjenaIntervala() {
+        pozicijaDo = 0;
+        pozicijaOd = 0;
+        preuzmiZapise();
         return "PromjenaIntervala";
     }
 
     public String prethodniZapisi() {
+        
+         pozicijaOd = pozicijaOd-brojZapisaZaPrikaz;
+        
+         if (pozicijaOd < 0) {
+            pozicijaOd = 0;
+        }
+          pozicijaDo = pozicijaOd;
+        preuzmiZapise();
         return "PrethodniZapisi";
     }
 
     public String sljedeciZapisi() {
+        if (pozicijaDo < ukupanBrojZapisa) {
+             pozicijaOd = pozicijaDo;
+        }
+        
+        pozicijaDo = pozicijaOd;
+       
+       
+        preuzmiZapise();
         return "SljedeciZapisi";
     }
 
@@ -205,7 +256,7 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
     }
 
     public String saljiPoruku() {
-        return "saljiPoruku";
+        return "saljiPoruke";
     }
 
     public String pregledPoruka() {

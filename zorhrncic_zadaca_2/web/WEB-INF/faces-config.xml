@@ -104,8 +104,8 @@
         </navigation-case>
         
         <navigation-case>
-            <from-action>#pregledDnevnika.saljiPoruku()}</from-action>
-            <from-outcome>saljiPoruku</from-outcome>
+            <from-action>#{pregledDnevnika.saljiPoruku()}</from-action>
+            <from-outcome>saljiPoruke</from-outcome>
             <to-view-id>slanjePoruka.xhtml</to-view-id>
         </navigation-case>
         
