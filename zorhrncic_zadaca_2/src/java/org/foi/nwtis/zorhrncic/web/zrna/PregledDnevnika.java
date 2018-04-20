@@ -23,6 +23,11 @@ import java.util.logging.Logger;
 import javax.inject.Named;
 import javax.enterprise.context.RequestScoped;
 import javax.faces.context.FacesContext;
+import javax.servlet.ServletContext;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaApstraktna;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
 import org.foi.nwtis.zorhrncic.web.kontrole.Dnevnik;
 
@@ -41,19 +46,32 @@ public class PregledDnevnika {
     private String odDatuma, doDatuma;
     private Date fromDate, toDate;
     private String datoteka;
-    private BP_Konfiguracija konfiguracija;
+    private BP_Konfiguracija konfiguracijaBaza;
     private String usernameAdmin;
     private String lozinka;
     private String url;
     private String upit;
     private String uprProgram;
     private String patternDateTimeSQL = "yyyy-MM-dd H:m:s";
+    private Konfiguracija konfiguracija;
 
     /**
      * Creates a new instance of PregledDnevnika
      */
     public PregledDnevnika() {
+        preuzmiKonfiuraciju();
         //preuzmiZapise();
+    }
+
+    private void preuzmiKonfiuraciju() {
+        ServletContext servletContext = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
+        konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
+        konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
+        
+        usernameAdmin = konfiguracijaBaza.getUserUsername();
+        lozinka = konfiguracijaBaza.getUserPassword();
+        url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getUserDatabase();
+        brojZapisaZaPrikaz = Integer.parseInt(konfiguracija.dajPostavku("mail.numLogItemsToShow"));
     }
 
     void preuzmiZapise() {
@@ -71,20 +89,13 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         preuzetiZapisniciDnevnika.add(new Dnevnik(i++, "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Senzor temperature', 'vrijeme': '2018.04.08 11:20:45'}", new Date()));
         preuzetiZapisniciDnevnika.add(new Dnevnik(i++, "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Senzor temperature', 'vrijeme': '2018.04.08 11:20:45'}", new Date()));
          */
-        datoteka = FacesContext.getCurrentInstance().getExternalContext().getInitParameter("konfiguracija");
-        String putanja = FacesContext.getCurrentInstance().getExternalContext().getRealPath("/WEB-INF") + java.io.File.separator;
-        konfiguracija = new BP_Konfiguracija(putanja + datoteka);
-
-        usernameAdmin = konfiguracija.getUserUsername();
-        lozinka = konfiguracija.getUserPassword();
-        url = konfiguracija.getServerDatabase() + konfiguracija.getUserDatabase();
         DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
 
         if (fromDate == null || toDate == null) {
             return;
         }
         upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '" + df.format(fromDate) + "' AND `vrijeme` < '" + df.format(toDate) + "'";
-        uprProgram = konfiguracija.getDriverDatabase();
+        uprProgram = konfiguracijaBaza.getDriverDatabase();
 
         try {
             Class.forName(uprProgram);
@@ -116,7 +127,6 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
                 Statement stmt = con.createStatement();
                 ResultSet rs = stmt.executeQuery(upit);) {
 
-            
             while (rs.next()) {
                 String id = rs.getString("id");
                 String sadrzaj = rs.getString("sadrzaj");
@@ -137,8 +147,8 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
 
         }
     }
-    //getter and setter
 
+    //getter and setter
     public void setOdDatuma(String odDatuma) {
         try {
             String s = (String) odDatuma;
@@ -228,25 +238,24 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
     }
 
     public String prethodniZapisi() {
-        
-         pozicijaOd = pozicijaOd-brojZapisaZaPrikaz;
-        
-         if (pozicijaOd < 0) {
+
+        pozicijaOd = pozicijaOd - brojZapisaZaPrikaz;
+
+        if (pozicijaOd < 0) {
             pozicijaOd = 0;
         }
-          pozicijaDo = pozicijaOd;
+        pozicijaDo = pozicijaOd;
         preuzmiZapise();
         return "PrethodniZapisi";
     }
 
     public String sljedeciZapisi() {
         if (pozicijaDo < ukupanBrojZapisa) {
-             pozicijaOd = pozicijaDo;
+            pozicijaOd = pozicijaDo;
         }
-        
+
         pozicijaDo = pozicijaOd;
-       
-       
+
         preuzmiZapise();
         return "SljedeciZapisi";
     }

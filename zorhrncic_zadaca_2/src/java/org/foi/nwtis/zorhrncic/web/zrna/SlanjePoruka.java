@@ -5,19 +5,42 @@
  */
 package org.foi.nwtis.zorhrncic.web.zrna;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 import javax.inject.Named;
 import javax.enterprise.context.RequestScoped;
+import javax.faces.context.FacesContext;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.SendFailedException;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+import javax.servlet.ServletContext;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaJSON;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
+import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
 
 /**
  *
@@ -27,87 +50,115 @@ import javax.mail.internet.MimeMessage;
 @RequestScoped
 public class SlanjePoruka {
 
-    private String posluzitelj, prima, salje, predmet, privitak, odabranaDatoteka;
-
-    public String getPrivitak() {
-        return privitak;
-    }
-
-    public void setPrivitak(String privitak) {
-        this.privitak = privitak;
-    }
-    private List<String> nizDatoteka;
+    private String posluziteljAddress, prima, salje, predmet, privitak, odabranaDatoteka;
+    private BP_Konfiguracija konfiguracijaBaza;
+    private Konfiguracija konfiguracija;
+    private List<String> naziviDatoteka;
+    private Integer posluziteljPort;
+    private final String sintaksaJSON = "([^\\s]+\\.(?i)(json|json))";
+    private String odabranaDatotekaPath;
+    private String nazivAttachmenta;
 
     /**
      * Creates a new instance of SlanjePoruka
      */
     public SlanjePoruka() {
         //todo preuzeti iz postavki
-        posluzitelj = "127.0.0.1";
-        prima = "servis@nwtis.nastava.foi.hr";
-        salje = "admin@nwtis.nastava.foi.hr";
-        predmet = "IOT poruka";
-        privitak = "{}";
+        preuzmiKonfiuraciju();
         osvjeziNizDatoteka();
 
     }
 
+    private void preuzmiKonfiuraciju() {
+        ServletContext servletContext = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
+        konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
+        konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
+
+        posluziteljAddress = konfiguracija.dajPostavku("mail.server");
+        posluziteljPort = Integer.valueOf(konfiguracija.dajPostavku("mail.imap.port"));
+        prima = konfiguracija.dajPostavku("mail.usernameThread");
+        salje = konfiguracija.dajPostavku("mail.usernameEmailAddress");
+        predmet = konfiguracija.dajPostavku("mail.subjectEmail");
+        nazivAttachmenta = konfiguracija.dajPostavku("mail.attachmentFilename");
+        privitak = "{}";
+
+    }
+
     private void osvjeziNizDatoteka() {
-        nizDatoteka = new ArrayList<>();
-//TODO preuzmi nazive datoteka .jsno s web inf direktorija
-        nizDatoteka.add("primjer1.json");
-        nizDatoteka.add("primjer2.json");
-        nizDatoteka.add("primjer3.json");
-        nizDatoteka.add("primjer4.json");
-        nizDatoteka.add("primjer5.json");
-        nizDatoteka.add("primjer6.json");
-        nizDatoteka.add("primjer7.json");
+        naziviDatoteka = new ArrayList<>();
+        ServletContext context = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
+        String putanja = context.getRealPath("/WEB-INF") + java.io.File.separator;
+        final File folder = new File(putanja);
+        for (final File fileEntry : folder.listFiles()) {
+            if (fileEntry.isDirectory()) {
+            } else {
+                System.out.println(fileEntry.getName());
+                if (testInputString(sintaksaJSON, fileEntry.getName())) {
+                    naziviDatoteka.add(fileEntry.getName());
+                }
+            }
+        }
+
     }
 
     public String preuzmiSadrzaj() {
 //todo preuzmoi sadrzaj datoteke ciji je naziv u varijabli odabrana datoteka i pridruzi varijabli privitak
-        privitak = odabranaDatoteka;
-
+        ServletContext context = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
+        String putanja = context.getRealPath("/WEB-INF") + java.io.File.separator;
+        privitak = getJsonFile(putanja + odabranaDatoteka);
+        odabranaDatotekaPath = putanja + odabranaDatoteka;
+        //odabranaDatoteka;
+System.out.println("dat: " + odabranaDatotekaPath);
         return "";
 
     }
 
     public String saljiPoruku() {
+        preuzmiSadrzaj();
         try {
             // Create the JavaMail session
             java.util.Properties properties = System.getProperties();
-            properties.put("mail.smtp.host", posluzitelj);
-
-            Session session
-                    = Session.getInstance(properties, null);
-
+            properties.put("mail.smtp.host", posluziteljAddress);
+            Session session = Session.getInstance(properties, null);
             // Construct the message
             MimeMessage message = new MimeMessage(session);
-
             // Set the from address
             Address fromAddress = new InternetAddress(salje);
             message.setFrom(fromAddress);
-
             // Parse and set the recipient addresses
             Address[] toAddresses = InternetAddress.parse(prima);
             message.setRecipients(Message.RecipientType.TO, toAddresses);
-/*
-            Address[] ccAddresses = InternetAddress.parse(cc);
-            message.setRecipients(Message.RecipientType.CC, ccAddresses);
-*/
-           /* Address[] bccAddresses = InternetAddress.parse(bcc);
-            message.setRecipients(Message.RecipientType.BCC, bccAddresses);
-*/
             // Set the subject and text
             message.setSubject(predmet);
             message.setText("");
-            
-            //TODO treba kreirati privitaki u njega staviti sadržaj varijable privitak
 
+            //TODO treba kreirati privitaki u njega staviti sadržaj varijable privitak
+            // Create a multipar message
+            Multipart multipart = new MimeMultipart();
+            MimeBodyPart messageAttachPart = new MimeBodyPart();
+           
+            
+
+    messageAttachPart.setContent(privitak, "text/json; charset=utf-8");
+
+    
+    /*
+            System.out.println("dat: " + odabranaDatotekaPath);
+            DataSource source = new FileDataSource(odabranaDatotekaPath);
+            //messageAttachPart.setDataHandler(new DataHandler(source));
+            messageAttachPart.attachFile(odabranaDatotekaPath);
+            */
+    
+    messageAttachPart.setFileName(nazivAttachmenta);
+            
+            
+            
+            multipart.addBodyPart(messageAttachPart);
+            // Send the complete message parts
+            message.setContent(multipart);
             Transport.send(message);
 
             //status = "Your message was sent.";
-
         } catch (AddressException e) {
             e.printStackTrace();
             //status = "There was an error parsing the addresses.";
@@ -117,11 +168,56 @@ public class SlanjePoruka {
         } catch (MessagingException e) {
             e.printStackTrace();
             //status = "There was an unexpected error.";
-        }
-        
+        } 
+
         privitak = "{}";
         return "";
     }
+
+    private String getJsonFile(String datoteka) {
+        try {
+            if (datoteka == null || datoteka.length() == 0) {
+                throw new NemaKonfiguracije("naziv datoteke nedostaje");
+            }
+            File datKonf = new File(datoteka);
+            if (!datKonf.exists()) {
+                throw new NemaKonfiguracije("Datoteka: " + datoteka + " ne postoji!");
+            } else if (datKonf.isDirectory()) {
+                throw new NeispravnaKonfiguracija(datoteka + " nije datoteka već direktorij");
+            }
+            return readFromFile(datoteka);
+        } catch (NemaKonfiguracije | NeispravnaKonfiguracija ex) {
+            System.out.println("Nema datoteke sa IOT podatcima");
+        }
+        return null;
+    }
+
+    private String readFromFile(String datoteka) {
+        try {
+            byte[] encoded = Files.readAllBytes(Paths.get(datoteka));
+            return new String(encoded, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            System.out.println("errog: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public static boolean testInputString(String sintaksa, String string) {
+        String p = string.trim();
+        Pattern pattern = Pattern.compile(sintaksa);
+        Matcher m = pattern.matcher(p);
+        return m.matches();
+    }
+
+    public String getPrivitak() {
+        return privitak;
+    }
+
+    public void setPrivitak(String privitak) {
+        this.privitak = privitak;
+    }
+
+
 
     public String obrisiPrivitak() {
         privitak = "{}";
@@ -153,7 +249,7 @@ public class SlanjePoruka {
     }
 
     public List<String> getNizDatoteka() {
-        return nizDatoteka;
+        return naziviDatoteka;
     }
 
     public String getOdabranaDatoteka() {
