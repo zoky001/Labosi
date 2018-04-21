@@ -141,14 +141,6 @@ System.out.println("dat: " + odabranaDatotekaPath);
 
     messageAttachPart.setContent(privitak, "text/json; charset=utf-8");
 
-    
-    /*
-            System.out.println("dat: " + odabranaDatotekaPath);
-            DataSource source = new FileDataSource(odabranaDatotekaPath);
-            //messageAttachPart.setDataHandler(new DataHandler(source));
-            messageAttachPart.attachFile(odabranaDatotekaPath);
-            */
-    
     messageAttachPart.setFileName(nazivAttachmenta);
             
             
