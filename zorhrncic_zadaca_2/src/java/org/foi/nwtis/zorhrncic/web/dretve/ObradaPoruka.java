@@ -32,6 +32,7 @@ import javax.mail.NoSuchProviderException;
 import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.Store;
+import javax.mail.UIDFolder;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 import javax.servlet.ServletContext;
@@ -78,6 +79,9 @@ public class ObradaPoruka extends Thread {
     private String urlDatabase;
     private String patternDateTimeSQL = "yyyy-MM-dd H:m:s";
     private final SimpleDateFormat sqlDateFormat;
+    private String jsonString;
+    private UIDFolder uf;
+    private long messageID;
 
     public ObradaPoruka() {
         preuzmiKonfiuraciju();
@@ -124,17 +128,19 @@ public class ObradaPoruka extends Thread {
             try {
 
                 folder = connectAndReadINBOX();
-
+                uf = (UIDFolder) folder;
                 messages = readMessages(folder);
 
                 for (int i = 0; i < messages.length; ++i) {
+                    jsonString = "nema privitka";
+                    messageID = uf.getUID(messages[i]);
                     System.out.println("\n--------------------------------------------------------------------------");
-                     System.out.println("poruka: " + messages[i].getReceivedDate().toString());
+                    System.out.println("INBOX  [" + i + "] poruka: " + messages[i].getReceivedDate().toString());
                     Flags flags = messages[i].getFlags();
 
                     MimeBodyPart part = checkIfExistAttachment(messages[i]); // ovo je nwtis message
                     if (part != null) {
-                        String jsonString = processingMessage(messages[i], part);
+                        jsonString = processingMessage(messages[i], part);
                         if (jsonString != null) {
                             if (valdiateJSONAttachment(jsonString)) {
                                 processIOTdeviceData(jsonString);
@@ -172,6 +178,9 @@ public class ObradaPoruka extends Thread {
                         }
 
                     }
+
+                    saveMessageToLog(messages[i], jsonString, messageID);
+
                 }
                 folder.expunge();
                 folder.close(false);
@@ -569,4 +578,60 @@ Broj neispravnih poruka: n
             return null;
         }
     }
+
+    private void saveMessageToLog(Message message, String jsonString, Long id) {
+
+        if (checkIfExistMessageInLog(id)) {
+            return;
+        }
+        upit = "INSERT INTO `dnevnik` (`id`, `sadrzaj`, `vrijeme`) VALUES ('" + id + "', '" + jsonString + "', '" + sqlDateFormat.format(new Date()) + "')";
+
+        uprProgram = konfiguracijaBaza.getDriverDatabase();
+        boolean success = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (
+                Connection con = DriverManager.getConnection(urlDatabase, usernameAdminDatabase, lozinkaDatabase);
+                Statement stmt = con.createStatement();) {
+            success = stmt.execute(upit);
+
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        }
+
+    }
+
+    private boolean checkIfExistMessageInLog(long IOT_id) {
+        upit = "SELECT * FROM `dnevnik` WHERE `id` = " + IOT_id;
+        uprProgram = konfiguracijaBaza.getDriverDatabase();
+        boolean exist = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (
+                Connection con = DriverManager.getConnection(urlDatabase, usernameAdminDatabase, lozinkaDatabase);
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(upit);) {
+            while (rs.next()) {
+                exist = true;
+                //TODO pogreška ??
+            }
+
+            rs.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        } finally {
+            return exist;
+        }
+    }
+
 }

@@ -20,7 +20,7 @@
             <br></br>
 
             <h:outputLabel value="#{p['pregledPoruka.odaberiMapu']}"></h:outputLabel>
-            <h:selectOneMenu>
+            <h:selectOneMenu value="#{pregledPoruka.odabranaMapa}">
                 <f:selectItems value="#{pregledPoruka.nizMapa}" var="c" itemLabel="#{c.labela}" itemValue="#{c.vrijednost}" />
             </h:selectOneMenu>
             <br></br>
@@ -60,7 +60,7 @@
                     <f:facet name="header">#{p['pregledPoruka.vrijemePrijema']}</f:facet>
                     <!-- row record -->
                     <h:outputText value="#{message.vrijemePrijema}">
-                    <f:convertDateTime pattern="d-M-yyyy" />
+                        <f:convertDateTime pattern="d-M-yyyy" />
                     </h:outputText>
 
                 </h:column>
@@ -69,9 +69,9 @@
                     <!-- column header -->
                     <f:facet name="header">#{p['pregledPoruka.vrijemeSlanja']}</f:facet>
                     <!-- row record -->
-                  
+
                     <h:outputText value="#{message.vrijemeSlanja}">
-                    	<f:convertDateTime pattern="d-M-yyyy" />
+                        <f:convertDateTime pattern="d-M-yyyy" />
                     </h:outputText>
 
                 </h:column>
@@ -98,8 +98,19 @@
 
             <h:outputLabel value="#{p['pregledPoruka.ukupnoPoruka']}:"></h:outputLabel>
             &nbsp;&nbsp;
-            <h:inputText value="5"></h:inputText>
+            <h:inputText value="#{pregledPoruka.ukupanBrojPoruka}"></h:inputText>
             <br></br>
+
+            <h:outputLabel value="From:"></h:outputLabel>
+            &nbsp;&nbsp;
+            <h:inputText value="#{pregledPoruka.pozicijaOd}"></h:inputText>
+            <br></br>
+            <h:outputLabel value="To:"></h:outputLabel>
+            &nbsp;&nbsp;
+            <h:inputText value="#{pregledPoruka.pozicijaDo}"></h:inputText>
+            <br></br>
+
+
             <h:commandButton  value="#{p['pregledPoruka.prethodnePoruke']}" action="#{pregledPoruka.prethodnePoruke()}"/>
             <br></br>
             <h:commandButton  value="#{p['pregledPoruka.sljedecePoruke']}" action="#{pregledPoruka.sljedecePoruke()}"/>
