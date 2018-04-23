@@ -9,7 +9,13 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -45,6 +51,8 @@ import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
  */
 public class ObradaPoruka extends Thread {
 
+    private String formatIspisa = "|%-25s|%-25s|\n";
+    private String line20 = "-------------------------";
     private boolean krajRada = false;
     private int spavanje;
     private Folder folder;
@@ -82,6 +90,11 @@ public class ObradaPoruka extends Thread {
     private String jsonString;
     private UIDFolder uf;
     private long messageID;
+    private int processingNumber = 0;
+    private int messageNumber_Total = 0;
+    private int addedIot = 0;
+    private int updatedIot = 0;
+    private int messageNumber_incorrect = 0;
 
     public ObradaPoruka() {
         preuzmiKonfiuraciju();
@@ -120,11 +133,18 @@ public class ObradaPoruka extends Thread {
         int broj = 0;
         while (!krajRada) {
             pocetak = System.currentTimeMillis();
-            if (kraj != 0) {
+            processingNumber++;
+            messageNumber_Total = 0;
+            addedIot = 0;
+            updatedIot = 0;
+            messageNumber_incorrect = 0;
+            if (kraj
+                    != 0) {
                 /*0.01666666666;*/
 
                 System.out.println("Razlika od prosle serijalizacije: " + (pocetak - kraj) / 1000 + " sec");
             }
+
             try {
 
                 folder = connectAndReadINBOX();
@@ -132,6 +152,7 @@ public class ObradaPoruka extends Thread {
                 messages = readMessages(folder);
 
                 for (int i = 0; i < messages.length; ++i) {
+                    messageNumber_Total++;
                     jsonString = "nema privitka";
                     messageID = uf.getUID(messages[i]);
                     System.out.println("\n--------------------------------------------------------------------------");
@@ -147,14 +168,15 @@ public class ObradaPoruka extends Thread {
                                 //prebaciti u mapu
 
                                 moveMessageToNWTISFolder(messages[i], nazivMape, folder);
-                            } else {
 
+                            } else {
+                                messageNumber_incorrect++;
                             }
                         } else {
-
+                            messageNumber_incorrect++;
                         }
                     } else {
-
+                        messageNumber_incorrect++;
                         if (flags.contains(Flags.Flag.ANSWERED)) {
                             messages[i].setFlag(Flags.Flag.ANSWERED, true);
                         }
@@ -211,19 +233,38 @@ public class ObradaPoruka extends Thread {
     }
 
     private void spremiPodatkeRadu(long pocetak, long currentTimeMillis) {
-        /*
-        Dretva na kraju svakog ciklusa dodaje podatke o radu u datoteku (naziv određen konfiguracijom, mail.threadCycleLogFilename, i sadržaj u UTF-8) u sljedećem obliku:
+        try {
 
-Obrada poruka broj:
-Obrada započela u: vrijeme_1 (dd.MM.yyyy hh.mm.ss.zzz)
-Obrada završila u: vrijeme_2 (dd.MM.yyyy hh.mm.ss.zzz) 
-Trajanje obrade u ms: n
-Broj poruka: n - odnosi se na jedan ciklus
-Broj dodanih IOT: n 
-Broj ažuriranih IOT: n 
-Broj neispravnih poruka: n
-<prazan redak>*/
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            FileWriter out = new FileWriter(nazivDatotekePodatciRadu);
+            printAllData(out, pocetak, currentTimeMillis);
+            out.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
+    }
+
+    private void printAllData(FileWriter out, long pocetak, long currentTimeMillis) throws IOException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy H:m:s.SSS");
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write(String.format(formatIspisa, "Obrada poruka broj: ", processingNumber));
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write(String.format(formatIspisa, "Obrada započela u: ", dateFormat.format(new Date(pocetak))));
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write(String.format(formatIspisa, "Obrada završila u: ", dateFormat.format(new Date(currentTimeMillis))));
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write(String.format(formatIspisa, "Trajanje obrade u ms: ", currentTimeMillis - pocetak));
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write(String.format(formatIspisa, "Broj poruka: ", messageNumber_Total));
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write(String.format(formatIspisa, "Broj dodanih IOT: ", addedIot));
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write(String.format(formatIspisa, "Broj ažuriranih IOT: ", updatedIot));
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write(String.format(formatIspisa, "Broj neispravnih poruka: ", messageNumber_incorrect));
+        out.write(String.format(formatIspisa, line20, line20));
+        out.write("\n");
     }
 
     private Folder connectAndReadINBOX() throws NoSuchProviderException, MessagingException {
@@ -256,7 +297,8 @@ Broj neispravnih poruka: n
             }*/
 
         } catch (MessagingException ex) {
-            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObradaPoruka.class
+                    .getName()).log(Level.SEVERE, null, ex);
             return messages;
         }
     }
@@ -410,6 +452,7 @@ Broj neispravnih poruka: n
         if (!checkIfExistIOT(IOT_id) && IOT_atributs.getProperty("naziv") != null) {
             if (addIOTinDatabase(IOT_id, IOT_atributs.getProperty("naziv"), json)) {
                 //TODO uspjesno dodan uređaj
+                addedIot++;
             } else {
                 //grešk kod dodavanja uređaja
             }
@@ -422,6 +465,7 @@ Broj neispravnih poruka: n
         if (checkIfExistIOT(IOT_id)) {
             if (updateIOTinDatabase(IOT_id, IOT_atributs, json)) {
                 //TODO uspjesno update uređaj
+                updatedIot++;
 
             } else {
                 //grešk kod dodavanja uređaja
@@ -438,8 +482,10 @@ Broj neispravnih poruka: n
         boolean exist = false;
         try {
             Class.forName(uprProgram);
+
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObradaPoruka.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
         try (
                 Connection con = DriverManager.getConnection(urlDatabase, usernameAdminDatabase, lozinkaDatabase);
@@ -466,14 +512,16 @@ Broj neispravnih poruka: n
         boolean success = false;
         try {
             Class.forName(uprProgram);
+
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObradaPoruka.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
         try (
                 Connection con = DriverManager.getConnection(urlDatabase, usernameAdminDatabase, lozinkaDatabase);
                 Statement stmt = con.createStatement();) {
-            success = stmt.execute(upit);
-
+            stmt.execute(upit);
+            success = true;
             stmt.close();
             con.close();
         } catch (Exception e) {
@@ -495,14 +543,16 @@ Broj neispravnih poruka: n
         boolean success = false;
         try {
             Class.forName(uprProgram);
+
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObradaPoruka.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
         try (
                 Connection con = DriverManager.getConnection(urlDatabase, usernameAdminDatabase, lozinkaDatabase);
                 Statement stmt = con.createStatement();) {
             success = stmt.execute(upit);
-
+            success = true;
             stmt.close();
             con.close();
         } catch (Exception e) {
@@ -553,8 +603,10 @@ Broj neispravnih poruka: n
             }
 
             return null;
+
         } catch (MessagingException ex) {
-            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObradaPoruka.class
+                    .getName()).log(Level.SEVERE, null, ex);
             return null;
         }
     }
@@ -590,8 +642,10 @@ Broj neispravnih poruka: n
         boolean success = false;
         try {
             Class.forName(uprProgram);
+
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObradaPoruka.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
         try (
                 Connection con = DriverManager.getConnection(urlDatabase, usernameAdminDatabase, lozinkaDatabase);
@@ -612,8 +666,10 @@ Broj neispravnih poruka: n
         boolean exist = false;
         try {
             Class.forName(uprProgram);
+
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObradaPoruka.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
         try (
                 Connection con = DriverManager.getConnection(urlDatabase, usernameAdminDatabase, lozinkaDatabase);

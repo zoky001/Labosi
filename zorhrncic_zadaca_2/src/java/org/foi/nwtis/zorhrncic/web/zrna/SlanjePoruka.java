@@ -5,6 +5,9 @@
  */
 package org.foi.nwtis.zorhrncic.web.zrna;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,7 +25,12 @@ import javax.activation.DataSource;
 import javax.activation.FileDataSource;
 import javax.inject.Named;
 import javax.enterprise.context.RequestScoped;
+import javax.faces.application.FacesMessage;
+import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
+import javax.faces.validator.FacesValidator;
+import javax.faces.validator.Validator;
+import javax.faces.validator.ValidatorException;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -58,6 +66,7 @@ public class SlanjePoruka {
     private final String sintaksaJSON = "([^\\s]+\\.(?i)(json|json))";
     private String odabranaDatotekaPath;
     private String nazivAttachmenta;
+    private String poruka = "";
 
     /**
      * Creates a new instance of SlanjePoruka
@@ -66,6 +75,8 @@ public class SlanjePoruka {
         //todo preuzeti iz postavki
         preuzmiKonfiuraciju();
         osvjeziNizDatoteka();
+        privitak = "{}";
+        odabranaDatoteka = "";
 
     }
 
@@ -80,7 +91,6 @@ public class SlanjePoruka {
         salje = konfiguracija.dajPostavku("mail.usernameEmailAddress");
         predmet = konfiguracija.dajPostavku("mail.subjectEmail");
         nazivAttachmenta = konfiguracija.dajPostavku("mail.attachmentFilename");
-        privitak = "{}";
 
     }
 
@@ -108,13 +118,13 @@ public class SlanjePoruka {
         privitak = getJsonFile(putanja + odabranaDatoteka);
         odabranaDatotekaPath = putanja + odabranaDatoteka;
         //odabranaDatoteka;
-System.out.println("dat: " + odabranaDatotekaPath);
+        System.out.println("dat: " + odabranaDatotekaPath);
         return "";
 
     }
 
     public String saljiPoruku() {
-        preuzmiSadrzaj();
+       // preuzmiSadrzaj();
         try {
             // Create the JavaMail session
             java.util.Properties properties = System.getProperties();
@@ -136,33 +146,24 @@ System.out.println("dat: " + odabranaDatotekaPath);
             // Create a multipar message
             Multipart multipart = new MimeMultipart();
             MimeBodyPart messageAttachPart = new MimeBodyPart();
-           
-            
 
-    messageAttachPart.setContent(privitak, "text/json; charset=utf-8");
+            messageAttachPart.setContent(privitak, "text/json; charset=utf-8");
 
-    messageAttachPart.setFileName(nazivAttachmenta);
-            
-            
-            
+            messageAttachPart.setFileName(nazivAttachmenta);
+
             multipart.addBodyPart(messageAttachPart);
             // Send the complete message parts
             message.setContent(multipart);
             Transport.send(message);
-
+            poruka = "Uspješno poslana poruka!";
+            privitak = "{}";
             //status = "Your message was sent.";
-        } catch (AddressException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            
+            poruka = "Greška u slanju poruke!!";
             //status = "There was an error parsing the addresses.";
-        } catch (SendFailedException e) {
-            e.printStackTrace();
-            //status = "There was an error sending the message.";
-        } catch (MessagingException e) {
-            e.printStackTrace();
-            //status = "There was an unexpected error.";
         } 
 
-        privitak = "{}";
         return "";
     }
 
@@ -200,6 +201,31 @@ System.out.println("dat: " + odabranaDatotekaPath);
         Matcher m = pattern.matcher(p);
         return m.matches();
     }
+//validate
+
+    /**
+     *
+     * Validation method 3
+     */
+    public void validateJSON(FacesContext context, UIComponent component, Object value) throws ValidatorException {
+        String selectedRadio = (String) value;
+        String msg = "Nije ispravan JSON format";
+        try {
+            JsonObject jsonObject = new JsonParser().parse(selectedRadio).getAsJsonObject();
+        } catch (JsonSyntaxException e) {
+            throw new ValidatorException(new FacesMessage(FacesMessage.SEVERITY_ERROR, msg, msg));
+        }
+
+    }
+
+    public String getPoruka() {
+        return poruka;
+    }
+
+    //getter & setter
+    public void setPoruka(String poruka) {
+        this.poruka = poruka;
+    }
 
     public String getPrivitak() {
         return privitak;
@@ -208,8 +234,6 @@ System.out.println("dat: " + odabranaDatotekaPath);
     public void setPrivitak(String privitak) {
         this.privitak = privitak;
     }
-
-
 
     public String obrisiPrivitak() {
         privitak = "{}";

@@ -94,7 +94,7 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         if (fromDate == null || toDate == null) {
             return;
         }
-        upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '" + df.format(fromDate) + "' AND `vrijeme` < '" + df.format(toDate) + "'";
+        upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '" + df.format(fromDate) + "' AND `vrijeme` < '" + df.format(toDate) + "' ORDER BY `vrijeme` DESC";
         uprProgram = konfiguracijaBaza.getDriverDatabase();
 
         try {

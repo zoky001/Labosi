@@ -1,10 +1,211 @@
-/*
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
-*/
-/* 
-    Created on : Apr 17, 2018, 3:13:42 PM
-    Author     : grupa_1
-*/
 
+.section{
+    width: 99.3%;
+    background-color: #EFFFC7;
+
+
+    border-style:solid;
+    border-width: 5px;
+    border-color: #4E5247;
+    border-radius: 12px;
+
+
+    float: left;
+    margin-top: 50px;
+
+}
+
+
+
+
+
+.text-centar{
+    text-align: center;
+
+
+}
+
+.navigacija{
+    position:fixed;
+    width: 100%;
+    margin-left: -0.5%;
+    margin-top: -0.9%;
+    text-align: center;
+    background-color: #F5FFDC;
+
+
+}
+
+
+.btnNavL{
+    min-width: 200px;
+    height: 50px;
+    border-style:solid;
+    border-width: 1px;
+    border-color: #C4CCB0;
+    border-radius: 2px;
+    border-bottom-left-radius: 35px;
+   
+  
+}
+.btnNavL:hover{
+    min-width: 200px;
+    height: 50px;
+    border-style:solid;
+    border-width: 1px;
+    border-color: #C4CCB0;
+    border-radius: 2px;
+    border-bottom-left-radius: 35px;
+    background-color: #EFFFC7;
+  
+}
+
+.btnNav{
+    min-width: 200px;
+    height: 50px;
+    border-style:solid;
+    border-width: 1px;
+    border-color: #C4CCB0;
+    border-radius: 2px;
+     margin-left: 0px;
+  
+}
+.btnNav:hover{
+    min-width: 200px;
+    height: 50px;
+    border-style:solid;
+    border-width: 1px;
+    border-color: #C4CCB0;
+    border-radius: 2px;
+    
+    background-color: #EFFFC7;
+  
+}
+
+
+.btn{
+    width: 200px;
+    height: 50px;
+    border-style:solid;
+    border-width: 1px;
+    border-color: #C4CCB0;
+    border-radius: 2px;
+    margin-left: 0px;
+  
+}
+.btn:hover{
+    width: 200px;
+    height: 50px;
+    border-style:solid;
+    border-width: 1px;
+    border-color: #C4CCB0;
+    border-radius: 2px;
+    
+    background-color: #EFFFC7;
+  
+}
+
+.btnNavD{
+    width: 200px;
+    height: 50px;
+    border-style:solid;
+    border-width: 1px;
+    border-color: #C4CCB0;
+    border-radius: 2px;
+    border-bottom-right-radius: 35px;
+  
+}
+.btnNavD:hover{
+    width: 200px;
+    height: 50px;
+    border-style:solid;
+    border-width: 1px;
+    border-color: #C4CCB0;
+    border-radius: 2px;
+    border-bottom-right-radius: 35px;
+    background-color: #EFFFC7;
+  
+}
+
+.naslov{
+    background-color: #C6CCB6;
+    color:#777F63;
+    font-size: 25pt; /*velicina */
+    font-weight: bold;
+    text-align: center;
+
+}
+
+.galerija{
+    
+   margin: 5px;
+  
+   float: left;
+   width: 60%;
+   padding: 5px;
+   margin-left: 20%
+}
+
+.formaNovaDiskusija{
+   
+    left:0px;
+    width:95%;
+    margin:2%;
+    background-color: #C6CCB6;
+    border: 5px;
+     border: 3px solid #73AD21;
+    
+    
+    
+}
+
+.label{
+      color: black;
+   font-size: 20px;
+    font-family: "times"; /*obitelj*/
+    float:left;
+    width:50%; 
+    margin-left: 10px;
+    margin-top: 10px;
+    
+}
+
+.input{
+    border: 3px solid #4E5247;
+    height:20px;
+   width:40%;
+   margin-top: 10px;
+
+
+}
+
+.greske{
+    
+         position: relative;
+    left:0px;
+    margin:2%;
+    background-color: #FFAC9A;
+    border: 5px;
+     border: 3px solid #D21500;
+     border-radius: 5px;
+     padding:10px;
+    
+}
+
+.uspjeh{
+color: white;
+    
+   
+   
+    
+     
+    left:0px;
+    width:50%;
+    margin-left: 25%;
+    margin:2%;
+    background-color:#52760A;
+    border: 5px;
+     border: 3px solid #407F45;
+     border-radius: 5px;
+     padding:10px;
+}

@@ -54,6 +54,8 @@ public class PregledPoruka {
     private int portServera;
     private String nazivAttachmenta;
     private String privitak;
+    private boolean previous = false;
+    private boolean next = false;
 
     /**
      * Creates a new instance of PregledPoruka
@@ -100,7 +102,7 @@ public class PregledPoruka {
             // Open the INBOX folder
             Folder[] f = store.getDefaultFolder().list();
             for (Folder fd : f) {
-              //  System.out.println(">> " + fd.getName());
+                //  System.out.println(">> " + fd.getName());
                 nizMapa.add(new Izbornik(fd.getName(), fd.getName()));
             }
             store.close();
@@ -153,7 +155,7 @@ public class PregledPoruka {
             if (ukupanBrojPoruka < pozicijaOd + messageToShow) {
                 end = ukupanBrojPoruka;
             } else {
-                end = pozicijaOd + messageToShow-1;
+                end = pozicijaOd + messageToShow - 1;
             }
             for (Message m : folder.getMessages(pozicijaOd, end)) {
                 privitak = "";
@@ -168,7 +170,8 @@ public class PregledPoruka {
                         m.getFrom()[0].toString(),
                         m.getSubject(),
                         privitak,
-                        Poruka.VrstaPoruka.NWTiS_poruka));
+                       vrsta)
+                );
 
                 pozicijaDo++;
             }
@@ -176,14 +179,6 @@ public class PregledPoruka {
             Logger.getLogger(PregledPoruka.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-    }
-
-    public int getUkupanBrojPoruka() {
-        return ukupanBrojPoruka;
-    }
-
-    public void setUkupanBrojPoruka(int ukupanBrojPoruka) {
-        this.ukupanBrojPoruka = ukupanBrojPoruka;
     }
 
     private MimeBodyPart checkIfExistAttachment(Message message) {
@@ -269,6 +264,42 @@ public class PregledPoruka {
         }
     }
 
+    public boolean isPrevious() {
+        if (pozicijaOd == 0) {
+            return false;
+
+        } else {
+            return true;
+        }
+
+    }
+
+    public void setPrevious(boolean previous) {
+        this.previous = previous;
+    }
+
+    public boolean isNext() {
+         if (pozicijaOd == ukupanBrojPoruka) {
+            return false;
+
+        } else {
+            return true;
+        }
+    }
+
+    //Getter & setter
+    public void setNext(boolean next) {
+        this.next = next;
+    }
+
+    public int getUkupanBrojPoruka() {
+        return ukupanBrojPoruka;
+    }
+
+    public void setUkupanBrojPoruka(int ukupanBrojPoruka) {
+        this.ukupanBrojPoruka = ukupanBrojPoruka;
+    }
+
     public List<Izbornik> getNizMapa() {
         return nizMapa;
     }
@@ -315,7 +346,7 @@ public class PregledPoruka {
         if (pozicijaOd < 1) {
             pozicijaOd = 1;
         }
-        pozicijaDo = pozicijaOd-1;
+        pozicijaDo = pozicijaOd - 1;
         preuzmiPoruke();
         //
         return "PrethodnePoruke";
@@ -323,11 +354,11 @@ public class PregledPoruka {
 
     public String sljedecePoruke() {
         if (pozicijaDo < ukupanBrojPoruka) {
-            pozicijaOd = pozicijaDo+1;
+            pozicijaOd = pozicijaDo + 1;
         }
 
-        pozicijaDo = pozicijaOd-1;
-preuzmiPoruke();
+        pozicijaDo = pozicijaOd - 1;
+        preuzmiPoruke();
         return "SljedecePoruke";
     }
 

@@ -4,47 +4,150 @@
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:f="http://xmlns.jcp.org/jsf/core">
     <h:head>
-        <title>Slanje poruka</title>
+        <h:outputStylesheet library="css" name="osnovna.css"  />
+        <title>#{p['slanjePoruka.title']}</title>
     </h:head>
     <h:body>
-        <h:form>
 
 
-            <h:commandLink value="#{p['slanjePoruka.veza_promjenaJezika']}" action="#{slanjePoruka.promjenaJezika()}"/>
-            &nbsp;&nbsp;
-            <h:commandLink value="#{p['slanjePoruka.veza_pregledPoruka']}" action="#{slanjePoruka.pregledPoruka()}"/>
-            &nbsp;&nbsp;
-            <h:commandLink value="#{p['slanjePoruka.veza_pregledDnevnika']}" action="#{slanjePoruka.pregledDnevnika()}"/>
+        <header class="header">
+            <div class="text-centar">
+
+                <div class="navigacija"> 
 
 
-            <br></br>
+                    <h:form style="clear: both;" >
+                        <h:commandLink   action="#{slanjePoruka.promjenaJezika()}">
+                            <h:button class="btnNavL" value="#{p['slanjePoruka.veza_promjenaJezika']}">
 
-            <h:outputLabel value="Prima: "></h:outputLabel>
-            <h:inputText value="#{slanjePoruka.prima}"></h:inputText>
-            <br></br>
-            <h:outputLabel value="Salje: "></h:outputLabel>
-            <h:inputText value="#{slanjePoruka.salje}"></h:inputText>
-            <br></br>
-            <h:outputLabel value="Predmet: "></h:outputLabel>
-            <h:inputText value="#{slanjePoruka.predmet}"></h:inputText>
-            <br></br>
-            <h:panelGrid columns="2">
-                <h:inputTextarea rows="5" cols="70" value="#{slanjePoruka.privitak}"></h:inputTextarea>
-                <h:selectOneListbox value="#{slanjePoruka.odabranaDatoteka}" size="5">
+                            </h:button>
+                        </h:commandLink>
 
-                    <f:selectItems value="#{slanjePoruka.nizDatoteka}" var="d" itemLabel="#{d}" itemValue="#{d}" />
+                        <h:commandLink  action="#{slanjePoruka.pregledPoruka()}">
+                            <h:button class="btnNav" value="#{p['slanjePoruka.veza_pregledPoruka']}">
 
-                </h:selectOneListbox>
+                            </h:button>
+                        </h:commandLink>
 
-                <h:commandButton value="Šalji poruku " action="#{slanjePoruka.saljiPoruku()}"/>
-                 &nbsp;&nbsp;
-                <h:commandButton value="Obriši " action="#{slanjePoruka.obrisiPrivitak()}"/>
-                 &nbsp;&nbsp;
-                <h:commandButton value="Preuzmi sadržaj " action="#{slanjePoruka.preuzmiSadrzaj()}"/>
-            </h:panelGrid>
-        </h:form>
+                        <h:commandLink  action="#{slanjePoruka.pregledDnevnika()}">
+                            <h:button class="btnNavD" value="#{p['slanjePoruka.veza_pregledDnevnika']}">
+
+                            </h:button>
+                        </h:commandLink>       
+                    </h:form>
 
 
+
+
+                </div>
+            </div>
+
+        </header>
+
+
+
+
+        <div id="content" class="section text-centar">
+
+            <div class="naslov">
+                <h1>#{p['slanjePoruka.title']} </h1>
+
+            </div>
+            <div class="galerija">
+                 <h:outputText  class="uspjeh" value="#{slanjePoruka.poruka}" rendered="#{slanjePoruka.poruka ne ''}">
+                    </h:outputText>
+                <h:form class="formaNovaDiskusija">
+
+                   
+
+                    <div style="clear: both; text-align: center; width: 70%; float: left"> 
+                        <h:outputLabel value="#{p['slanjePoruka.prima']}: " class="label"></h:outputLabel>
+                        <h:inputText class="input" id="To" value="#{slanjePoruka.prima}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{slanjePoruka.prima} #{p['slanjePoruka.neispravan_email']}">
+                            <f:validateRegex pattern="[\w\.-]*[a-zA-Z0-9_]@[\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]" />
+
+
+                        </h:inputText>
+                        <span>
+                            <h:message id="m1" for="To" style="color:red"/>  
+                        </span>
+
+
+
+
+
+                        <br></br>
+                        <h:outputLabel value="#{p['slanjePoruka.salje']}: " class="label"></h:outputLabel>
+                        <h:inputText class="input" id="from" value="#{slanjePoruka.salje}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{slanjePoruka.salje} #{p['slanjePoruka.neispravan_email']}">
+                            <f:validateRegex pattern="[\w\.-]*[a-zA-Z0-9_]@[\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]" />
+                        </h:inputText>
+                        <h:message class="" id="m2" for="from" style="color:red;"/>
+
+
+
+
+
+                        <br></br>
+                        <h:outputLabel value="#{p['slanjePoruka.predmet']}: " class="label"></h:outputLabel>
+                        <h:inputText  class="input" id="subject" value="#{slanjePoruka.predmet}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{p['slanjePoruka.minLength']}" >
+
+                            <f:validateLength minimum="10"/>
+                        </h:inputText>
+                        <h:message for="subject" style="color:red" />
+
+
+
+
+                        <br></br>
+
+                    </div>
+
+
+
+                    <h:panelGrid columns="2">
+
+                        <h:inputTextarea id = "attachment" rows="15" cols="80" value="#{slanjePoruka.privitak}"  required="true"  requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validator="#{slanjePoruka.validateJSON}" >
+
+
+                        </h:inputTextarea>
+                        <h:selectOneListbox style="vertical-align: top" id="selecBox" value="#{slanjePoruka.odabranaDatoteka}" size="5" required="true" requiredMessage="#{p['slanjePoruka.odabirJSON_dat']}">
+
+                            <f:selectItems value="#{slanjePoruka.nizDatoteka}" var="d" itemLabel="#{d}" itemValue="#{d}" />
+
+                        </h:selectOneListbox>
+
+
+                        <h:message for="attachment" style="color:red" />
+
+
+
+                        <h:message for="selecBox" style="color:red" />
+
+                    </h:panelGrid>
+
+                    <div style="width: 100%">
+                        <div style="width: 30%; float: left">
+                            <h:commandButton value="#{p['slanjePoruka.salji']}" action="#{slanjePoruka.saljiPoruku()}"/>
+
+                        </div>
+                        <div style="width: 30%; float: left">
+
+                            <h:commandButton value="#{p['slanjePoruka.obrisi']} " action="#{slanjePoruka.obrisiPrivitak()}"/>
+
+                        </div>
+                        <div style="width: 30%; float: left" >
+
+                            <h:commandButton value="#{p['slanjePoruka.preuzmi']}" action="#{slanjePoruka.preuzmiSadrzaj()}"/> 
+                        </div>
+                    </div>
+
+                    <p><br></br></p>
+                </h:form>
+
+            </div>
+
+
+
+        </div>
     </h:body>
 </html>
 
