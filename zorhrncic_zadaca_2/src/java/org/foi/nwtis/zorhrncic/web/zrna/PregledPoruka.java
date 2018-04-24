@@ -8,10 +8,13 @@ package org.foi.nwtis.zorhrncic.web.zrna;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.print.Collation;
 import javax.inject.Named;
 import javax.enterprise.context.RequestScoped;
 import javax.faces.context.FacesContext;
@@ -44,7 +47,7 @@ public class PregledPoruka {
     private List<Izbornik> nizMapa;
     private List<Poruka> nizPoruka;
 
-    private int ukupanBrojPoruka, messageToShow, pozicijaOd = 1, pozicijaDo = 0;
+    private int ukupanBrojPoruka, messageToShow, pozicijaOd = -1, pozicijaDo = 0;
     private Session session;
     private Store store;
     private Folder folder;
@@ -54,8 +57,8 @@ public class PregledPoruka {
     private int portServera;
     private String nazivAttachmenta;
     private String privitak;
-    private boolean previous = false;
-    private boolean next = false;
+    private static boolean previous = false;
+    private static boolean next = false;
 
     /**
      * Creates a new instance of PregledPoruka
@@ -66,6 +69,9 @@ public class PregledPoruka {
         preuzmiKonfiuraciju();
         preuzmiMape();
         preuzmiPoruke();
+        /*String odabraniJezik = FacesContext.getCurrentInstance().getViewRoot().getLocale().getLanguage();
+        Locale local = new Locale(odabraniJezik);
+        FacesContext.getCurrentInstance().getViewRoot().setLocale(local);*/
 
     }
 
@@ -103,7 +109,10 @@ public class PregledPoruka {
             Folder[] f = store.getDefaultFolder().list();
             for (Folder fd : f) {
                 //  System.out.println(">> " + fd.getName());
-                nizMapa.add(new Izbornik(fd.getName(), fd.getName()));
+                if (fd.getName().equalsIgnoreCase(nazivMape) || fd.getName().equalsIgnoreCase("INBOX")) {
+                    nizMapa.add(new Izbornik(fd.getName(), fd.getName()));
+                }
+
             }
             store.close();
             //TODO provjeri da ne postoji trazena mapa u sanducicu prema nazivu iz postavki
@@ -134,6 +143,8 @@ public class PregledPoruka {
     }
 
     private void getMessgeFromFolder(String odabranaMapa) {
+        next = true;
+        previous = true;
         try {
             // Open the INBOX folder
             Folder folder = store.getFolder(odabranaMapa);
@@ -151,12 +162,32 @@ public class PregledPoruka {
             if (ukupanBrojPoruka == 0) {
                 return;
             }
-            int end = 0;
-            if (ukupanBrojPoruka < pozicijaOd + messageToShow) {
+
+            pozicijaDo = pozicijaOd + messageToShow - 1;
+            if (pozicijaOd == -1) {
+
+                pozicijaDo = ukupanBrojPoruka;
+                pozicijaOd = pozicijaDo - messageToShow + 1;
+            }
+            if (pozicijaDo >= ukupanBrojPoruka) {
+                pozicijaDo = ukupanBrojPoruka;
+                previous = false;
+            }
+
+            if (pozicijaOd > ukupanBrojPoruka) {
+                pozicijaOd = ukupanBrojPoruka - messageToShow + 1;
+            }
+            if (pozicijaOd <= 1) {
+                pozicijaOd = 1;
+                next = false;
+            }
+            int end = pozicijaDo;
+            /* if (ukupanBrojPoruka < pozicijaOd + messageToShow) {
                 end = ukupanBrojPoruka;
             } else {
                 end = pozicijaOd + messageToShow - 1;
-            }
+            }*/
+
             for (Message m : folder.getMessages(pozicijaOd, end)) {
                 privitak = "";
                 MimeBodyPart part = checkIfExistAttachment(m); // ovo je nwtis message
@@ -170,11 +201,12 @@ public class PregledPoruka {
                         m.getFrom()[0].toString(),
                         m.getSubject(),
                         privitak,
-                       vrsta)
+                        vrsta)
                 );
 
-                pozicijaDo++;
             }
+            Collections.reverse(nizPoruka);
+
         } catch (MessagingException ex) {
             Logger.getLogger(PregledPoruka.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -265,31 +297,21 @@ public class PregledPoruka {
     }
 
     public boolean isPrevious() {
-        if (pozicijaOd == 0) {
-            return false;
-
-        } else {
-            return true;
-        }
+        return previous;
 
     }
 
     public void setPrevious(boolean previous) {
-        this.previous = previous;
+        previous = previous;
     }
 
     public boolean isNext() {
-         if (pozicijaOd == ukupanBrojPoruka) {
-            return false;
-
-        } else {
-            return true;
-        }
+        return next;
     }
 
     //Getter & setter
     public void setNext(boolean next) {
-        this.next = next;
+        next = next;
     }
 
     public int getUkupanBrojPoruka() {
@@ -335,29 +357,38 @@ public class PregledPoruka {
     //navigacija
     public String promjenaMape() {
         pozicijaDo = 0;
-        pozicijaOd = 1;
+        pozicijaOd = -1;
         preuzmiPoruke();
         return "PromjenaMape";
     }
 
     public String prethodnePoruke() {
-        pozicijaOd = pozicijaOd - messageToShow;
+        /*pozicijaOd = pozicijaOd - messageToShow;
 
         if (pozicijaOd < 1) {
             pozicijaOd = 1;
         }
         pozicijaDo = pozicijaOd - 1;
+         */
+        pozicijaOd = pozicijaDo + 1;
+        pozicijaDo = pozicijaOd + messageToShow - 1;
+
         preuzmiPoruke();
         //
         return "PrethodnePoruke";
     }
 
     public String sljedecePoruke() {
-        if (pozicijaDo < ukupanBrojPoruka) {
+        /*   if (pozicijaDo < ukupanBrojPoruka) {
             pozicijaOd = pozicijaDo + 1;
         }
-
+         */
         pozicijaDo = pozicijaOd - 1;
+        pozicijaOd = pozicijaOd - messageToShow;
+        pozicijaDo = pozicijaOd + messageToShow;
+        if (pozicijaOd < 1) {
+            pozicijaOd = 1;
+        }
         preuzmiPoruke();
         return "SljedecePoruke";
     }

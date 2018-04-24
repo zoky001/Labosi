@@ -16,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -49,6 +51,7 @@ import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaJSON;
 import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
+import org.omg.CORBA.CTX_RESTRICT_SCOPE;
 
 /**
  *
@@ -77,6 +80,9 @@ public class SlanjePoruka {
         osvjeziNizDatoteka();
         privitak = "{}";
         odabranaDatoteka = "";
+        /*  String odabraniJezik = FacesContext.getCurrentInstance().getViewRoot().getLocale().getLanguage();
+        Locale local = new Locale(odabraniJezik);
+        FacesContext.getCurrentInstance().getViewRoot().setLocale(local);*/
 
     }
 
@@ -124,7 +130,9 @@ public class SlanjePoruka {
     }
 
     public String saljiPoruku() {
-       // preuzmiSadrzaj();
+        // preuzmiSadrzaj();
+        FacesContext ctx = FacesContext.getCurrentInstance();
+        ResourceBundle resBund = ctx.getApplication().getResourceBundle(ctx, "p");
         try {
             // Create the JavaMail session
             java.util.Properties properties = System.getProperties();
@@ -155,14 +163,16 @@ public class SlanjePoruka {
             // Send the complete message parts
             message.setContent(multipart);
             Transport.send(message);
-            poruka = "Uspješno poslana poruka!";
+
+            poruka = resBund.getString("slanjePoruka.uspjesnoPoslano");
+
             privitak = "{}";
             //status = "Your message was sent.";
         } catch (Exception e) {
-            
-            poruka = "Greška u slanju poruke!!";
+
+            poruka = resBund.getString("slanjePoruka.neuspjesnoPoslano");
             //status = "There was an error parsing the addresses.";
-        } 
+        }
 
         return "";
     }
@@ -209,10 +219,15 @@ public class SlanjePoruka {
      */
     public void validateJSON(FacesContext context, UIComponent component, Object value) throws ValidatorException {
         String selectedRadio = (String) value;
-        String msg = "Nije ispravan JSON format";
+        FacesContext ctx = FacesContext.getCurrentInstance();
+        ResourceBundle resBund = ctx.getApplication().getResourceBundle(ctx, "p");
+
+        String msg = resBund.getString("slanjePoruka.nijeJSON");
         try {
             JsonObject jsonObject = new JsonParser().parse(selectedRadio).getAsJsonObject();
         } catch (JsonSyntaxException e) {
+            throw new ValidatorException(new FacesMessage(FacesMessage.SEVERITY_ERROR, msg, msg));
+        } catch (Exception e) {
             throw new ValidatorException(new FacesMessage(FacesMessage.SEVERITY_ERROR, msg, msg));
         }
 

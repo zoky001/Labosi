@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Named;
@@ -61,13 +62,16 @@ public class PregledDnevnika {
     public PregledDnevnika() {
         preuzmiKonfiuraciju();
         //preuzmiZapise();
+       /* String odabraniJezik = FacesContext.getCurrentInstance().getViewRoot().getLocale().getLanguage();
+        Locale local = new Locale(odabraniJezik);
+        FacesContext.getCurrentInstance().getViewRoot().setLocale(local);*/
     }
 
     private void preuzmiKonfiuraciju() {
         ServletContext servletContext = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
         konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
         konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
-        
+
         usernameAdmin = konfiguracijaBaza.getUserUsername();
         lozinka = konfiguracijaBaza.getUserPassword();
         url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getUserDatabase();

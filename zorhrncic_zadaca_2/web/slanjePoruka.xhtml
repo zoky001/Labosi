@@ -3,11 +3,15 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <f:view locale="#{lokalizacija.locale}"></f:view>
     <h:head>
         <h:outputStylesheet library="css" name="osnovna.css"  />
+        <!-- Bootstrap core CSS -->
+        <h:outputStylesheet library="css" name="bootstrap-3.3.7-dist/css/bootstrap.min.css"/>
         <title>#{p['slanjePoruka.title']}</title>
     </h:head>
     <h:body>
+
 
 
         <header class="header">
@@ -54,91 +58,120 @@
 
             </div>
             <div class="galerija">
-                 <h:outputText  class="uspjeh" value="#{slanjePoruka.poruka}" rendered="#{slanjePoruka.poruka ne ''}">
-                    </h:outputText>
-                <h:form class="formaNovaDiskusija">
+                <h:outputText  class="alert-success text-success text-primary" value="#{slanjePoruka.poruka}" style="font-size: 30px;" rendered="#{slanjePoruka.poruka ne ''}">
+                </h:outputText>
+                
+                <h:form class="form-horizontal">
 
-                   
+                    <div class="row"> 
+                        <div class="col-md-5">
+                            <div class="form-group">
 
-                    <div style="clear: both; text-align: center; width: 70%; float: left"> 
-                        <h:outputLabel value="#{p['slanjePoruka.prima']}: " class="label"></h:outputLabel>
-                        <h:inputText class="input" id="To" value="#{slanjePoruka.prima}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{slanjePoruka.prima} #{p['slanjePoruka.neispravan_email']}">
-                            <f:validateRegex pattern="[\w\.-]*[a-zA-Z0-9_]@[\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]" />
+                                <h:outputLabel value="#{p['slanjePoruka.prima']}: " class="control-label col-sm-2" ></h:outputLabel>
+                                <div class="col-sm-10">
 
-
-                        </h:inputText>
-                        <span>
-                            <h:message id="m1" for="To" style="color:red"/>  
-                        </span>
+                                    <h:inputText class="form-control"  id="To" value="#{slanjePoruka.prima}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{slanjePoruka.prima} #{p['slanjePoruka.neispravan_email']}">
+                                        <f:validateRegex pattern="[\w\.-]*[a-zA-Z0-9_]@[\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]" />
 
 
+                                    </h:inputText>
 
+                                    <h:message id="m1" for="To" class="text-danger" />  
 
+                                </div>
+                            </div>
 
-                        <br></br>
-                        <h:outputLabel value="#{p['slanjePoruka.salje']}: " class="label"></h:outputLabel>
-                        <h:inputText class="input" id="from" value="#{slanjePoruka.salje}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{slanjePoruka.salje} #{p['slanjePoruka.neispravan_email']}">
-                            <f:validateRegex pattern="[\w\.-]*[a-zA-Z0-9_]@[\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]" />
-                        </h:inputText>
-                        <h:message class="" id="m2" for="from" style="color:red;"/>
+                            <div class="form-group">
+                                <h:outputLabel value="#{p['slanjePoruka.salje']}: " class="control-label col-sm-2" ></h:outputLabel>
 
 
 
 
 
-                        <br></br>
-                        <h:outputLabel value="#{p['slanjePoruka.predmet']}: " class="label"></h:outputLabel>
-                        <h:inputText  class="input" id="subject" value="#{slanjePoruka.predmet}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{p['slanjePoruka.minLength']}" >
+                                <div class="col-sm-10"> 
 
-                            <f:validateLength minimum="10"/>
-                        </h:inputText>
-                        <h:message for="subject" style="color:red" />
+                                    <h:inputText class="form-control" id="from" value="#{slanjePoruka.salje}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{slanjePoruka.salje} #{p['slanjePoruka.neispravan_email']}">
+                                        <f:validateRegex pattern="[\w\.-]*[a-zA-Z0-9_]@[\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]" />
+                                    </h:inputText>
+                                    <h:message class="text-danger"  id="m2" for="from" />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
 
 
+                                <h:outputLabel value="#{p['slanjePoruka.predmet']}: " class="control-label col-sm-2" ></h:outputLabel>
+
+                                <div class="col-sm-10"> 
 
 
-                        <br></br>
+                                    <h:inputText  class="form-control" id="subject" value="#{slanjePoruka.predmet}" required="true" requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validatorMessage="#{p['slanjePoruka.minLength']}" >
+
+                                        <f:validateLength minimum="10"/>
+                                    </h:inputText>
+                                    <h:message for="subject" class="text-danger" />
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <br></br>
+                        </div>
+                    </div>
+
+
+                    <br></br>
+
+                    <div class="row">
+
+                        <div class="col-md-8">
+                            <div class="form-group">
+
+
+                                <h:inputTextarea class="form-control" id = "attachment" rows="15" cols="80" value="#{slanjePoruka.privitak}"  required="true"  requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validator="#{slanjePoruka.validateJSON}" >
+
+
+                                </h:inputTextarea>
+                                <h:message for="attachment" class="text-danger" />
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <br></br>
+                                </div>
+                                <div class="col-md-3 center-block">
+                                    <h:commandButton class="btn btn-success" value="#{p['slanjePoruka.salji']}" action="#{slanjePoruka.saljiPoruku()}"/>
+                                </div>
+                                <div class="col-md-1">
+                                    <br></br>
+                                </div>
+                                <div class="col-md-3 center-block">
+                                    <h:commandButton class="btn btn-danger" value="#{p['slanjePoruka.obrisi']} " action="#{slanjePoruka.obrisiPrivitak()}"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <br></br>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+
+                                <h:selectOneListbox  class="form-control" style="vertical-align: top" id="selecBox" value="#{slanjePoruka.odabranaDatoteka}" size="5" required="true" requiredMessage="#{p['slanjePoruka.odabirJSON_dat']}">
+
+                                    <f:selectItems value="#{slanjePoruka.nizDatoteka}" var="d" itemLabel="#{d}" itemValue="#{d}" />
+
+                                </h:selectOneListbox>
+                                <h:message for="selecBox" class="text-danger" />
+
+                            </div>
+                            <div class="form-group center-block">
+                                <h:commandButton class="btn btn-default" value="#{p['slanjePoruka.preuzmi']}" action="#{slanjePoruka.preuzmiSadrzaj()}"/> 
+                            </div>
+                        </div>
 
                     </div>
 
 
 
-                    <h:panelGrid columns="2">
-
-                        <h:inputTextarea id = "attachment" rows="15" cols="80" value="#{slanjePoruka.privitak}"  required="true"  requiredMessage="#{p['slanjePoruka.obavezno_polje']}" validator="#{slanjePoruka.validateJSON}" >
-
-
-                        </h:inputTextarea>
-                        <h:selectOneListbox style="vertical-align: top" id="selecBox" value="#{slanjePoruka.odabranaDatoteka}" size="5" required="true" requiredMessage="#{p['slanjePoruka.odabirJSON_dat']}">
-
-                            <f:selectItems value="#{slanjePoruka.nizDatoteka}" var="d" itemLabel="#{d}" itemValue="#{d}" />
-
-                        </h:selectOneListbox>
-
-
-                        <h:message for="attachment" style="color:red" />
-
-
-
-                        <h:message for="selecBox" style="color:red" />
-
-                    </h:panelGrid>
-
-                    <div style="width: 100%">
-                        <div style="width: 30%; float: left">
-                            <h:commandButton value="#{p['slanjePoruka.salji']}" action="#{slanjePoruka.saljiPoruku()}"/>
-
-                        </div>
-                        <div style="width: 30%; float: left">
-
-                            <h:commandButton value="#{p['slanjePoruka.obrisi']} " action="#{slanjePoruka.obrisiPrivitak()}"/>
-
-                        </div>
-                        <div style="width: 30%; float: left" >
-
-                            <h:commandButton value="#{p['slanjePoruka.preuzmi']}" action="#{slanjePoruka.preuzmiSadrzaj()}"/> 
-                        </div>
-                    </div>
 
                     <p><br></br></p>
                 </h:form>
@@ -149,5 +182,6 @@
 
         </div>
     </h:body>
+    <h:outputScript name="bootstrap-3.3.7-dist/js/bootstrap.min.js"/>
 </html>
 
