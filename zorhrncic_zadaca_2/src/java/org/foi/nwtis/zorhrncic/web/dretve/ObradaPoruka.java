@@ -8,6 +8,7 @@ package org.foi.nwtis.zorhrncic.web.dretve;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
@@ -25,7 +26,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
+import javax.faces.validator.ValidatorException;
 import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
@@ -84,6 +87,8 @@ public class ObradaPoruka extends Thread {
     private String usernameAdminDatabase;
     private String lozinkaDatabase;
     private String urlDatabase;
+    private String sintaksaJSON = "^\\{\\\"id\\\": ([0-9]{0,4})\\, \\\"komanda\\\"\\: \\\"(dodaj|azuriraj)\\\"\\,((( ((\\\"([A-Za-z0-9_]{1,30})\\\"\\: ((\\d{1,3},|(\\b(?!0\\d{1,2}\\.)\\d{1,3}\\.\\d{1,2}\\b\\,))|\\\"[a-zA-Z0-9_ ]*{1,30}\\\"\\,))))){1,5}) \\\"vrijeme\\\"\\: \\\"((19|20)\\d\\d).(0?[1-9]|1[012]).(0?[1-9]|[12][0-9]|3[01]) ([2][0-3]|[0-1][0-9]|[1-9]):[0-5][0-9]:([0-5][0-9]|[6][0])\\\"}";
+
     private String patternDateTimeSQL = "yyyy-MM-dd H:m:s";
     private final SimpleDateFormat sqlDateFormat;
     private String jsonString;
@@ -452,9 +457,16 @@ public class ObradaPoruka extends Thread {
      */
     private boolean valdiateJSONAttachment(String JSONfILE) {
         Gson gson = new Gson();
-        //TODO valdiate json string
-        return true;
-
+        boolean odg = false;                      
+        try {          
+            JsonObject jsonObject = new JsonParser().parse(JSONfILE).getAsJsonObject();
+            odg = testInputString(sintaksaJSON, JSONfILE);
+        } catch (JsonSyntaxException e) {
+            odg = false;
+        } catch (Exception e) {
+            odg = false;
+        }
+        return odg;
     }
 
     /**
