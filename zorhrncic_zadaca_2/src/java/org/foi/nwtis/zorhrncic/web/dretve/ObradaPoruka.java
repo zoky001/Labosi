@@ -95,6 +95,9 @@ public class ObradaPoruka extends Thread {
     private int addedIot = 0;
     private int updatedIot = 0;
     private int messageNumber_incorrect = 0;
+    private int toMessage;
+    private int fromMessage;
+    private int numMessagesInFolder;
 
     public ObradaPoruka() {
         preuzmiKonfiuraciju();
@@ -138,6 +141,9 @@ public class ObradaPoruka extends Thread {
             addedIot = 0;
             updatedIot = 0;
             messageNumber_incorrect = 0;
+            fromMessage = 1;
+            toMessage = 1;
+            numMessagesInFolder = 0;
             if (kraj
                     != 0) {
                 /*0.01666666666;*/
@@ -149,61 +155,20 @@ public class ObradaPoruka extends Thread {
 
                 folder = connectAndReadINBOX();
                 uf = (UIDFolder) folder;
-                messages = readMessages(folder);
-
-                for (int i = 0; i < messages.length; ++i) {
-                    messageNumber_Total++;
-                    jsonString = "nema privitka";
-                    messageID = uf.getUID(messages[i]);
-                    System.out.println("\n--------------------------------------------------------------------------");
-                    System.out.println("INBOX  [" + i + "] poruka: " + messages[i].getReceivedDate().toString());
-                    Flags flags = messages[i].getFlags();
-
-                    MimeBodyPart part = checkIfExistAttachment(messages[i]); // ovo je nwtis message
-                    if (part != null) {
-                        jsonString = processingMessage(messages[i], part);
-                        if (jsonString != null) {
-                            if (valdiateJSONAttachment(jsonString)) {
-                                processIOTdeviceData(jsonString);
-                                //prebaciti u mapu
-
-                                moveMessageToNWTISFolder(messages[i], nazivMape, folder);
-
-                            } else {
-                                messageNumber_incorrect++;
-                            }
-                        } else {
-                            messageNumber_incorrect++;
-                        }
-                    } else {
-                        messageNumber_incorrect++;
-                        if (flags.contains(Flags.Flag.ANSWERED)) {
-                            messages[i].setFlag(Flags.Flag.ANSWERED, true);
-                        }
-                        if (flags.contains(Flags.Flag.DELETED)) {
-                            messages[i].setFlag(Flags.Flag.DELETED, true);
-                        }
-                        if (flags.contains(Flags.Flag.DRAFT)) {
-                            messages[i].setFlag(Flags.Flag.DRAFT, true);
-                        }
-                        if (flags.contains(Flags.Flag.FLAGGED)) {
-                            messages[i].setFlag(Flags.Flag.FLAGGED, true);
-                        }
-                        if (flags.contains(Flags.Flag.RECENT)) {
-                            //messages[i].setFlag(Flags.Flag.RECENT, true);
-                        }
-                        if (flags.contains(Flags.Flag.SEEN)) {
-                            messages[i].setFlag(Flags.Flag.SEEN, true);
-                        }
-                        if (flags.contains(Flags.Flag.USER)) {
-                            messages[i].setFlag(Flags.Flag.USER, true);
-                        }
-
+                numMessagesInFolder = folder.getMessageCount();
+                while (numMessagesInFolder > toMessage) {
+                    if (fromMessage < toMessage) {
+                        fromMessage = toMessage + 1;
                     }
 
-                    saveMessageToLog(messages[i], jsonString, messageID);
-
+                    toMessage = (fromMessage + brojPorukaZaUcitavanje) - 1;
+                    if (toMessage > numMessagesInFolder) {
+                        toMessage = numMessagesInFolder;
+                    }
+                    messages = readMessages(folder, fromMessage, toMessage);
+                    prosessMessageRange();
                 }
+
                 folder.expunge();
                 folder.close(false);
                 store.close();
@@ -221,6 +186,62 @@ public class ObradaPoruka extends Thread {
             }
         }
 
+    }
+
+    private void prosessMessageRange() throws Exception {
+        for (int i = 0; i < messages.length; ++i) {
+            messageNumber_Total++;
+            jsonString = "nema privitka";
+            messageID = uf.getUID(messages[i]);
+            System.out.println("\n--------------------------------------------------------------------------");
+            System.out.println("INBOX  [" + i + "] poruka: " + messages[i].getReceivedDate().toString());
+            Flags flags = messages[i].getFlags();
+
+            MimeBodyPart part = checkIfExistAttachment(messages[i]); // ovo je nwtis message
+            if (part != null) {
+                jsonString = processingMessage(messages[i], part);
+                if (jsonString != null) {
+                    if (valdiateJSONAttachment(jsonString)) {
+                        processIOTdeviceData(jsonString);
+                        //prebaciti u mapu
+
+                        moveMessageToNWTISFolder(messages[i], nazivMape, folder);
+
+                    } else {
+                        messageNumber_incorrect++;
+                    }
+                } else {
+                    messageNumber_incorrect++;
+                }
+            } else {
+                messageNumber_incorrect++;
+                if (flags.contains(Flags.Flag.ANSWERED)) {
+                    messages[i].setFlag(Flags.Flag.ANSWERED, true);
+                }
+                if (flags.contains(Flags.Flag.DELETED)) {
+                    messages[i].setFlag(Flags.Flag.DELETED, true);
+                }
+                if (flags.contains(Flags.Flag.DRAFT)) {
+                    messages[i].setFlag(Flags.Flag.DRAFT, true);
+                }
+                if (flags.contains(Flags.Flag.FLAGGED)) {
+                    messages[i].setFlag(Flags.Flag.FLAGGED, true);
+                }
+                if (flags.contains(Flags.Flag.RECENT)) {
+                    //messages[i].setFlag(Flags.Flag.RECENT, true);
+                }
+                if (flags.contains(Flags.Flag.SEEN)) {
+                    messages[i].setFlag(Flags.Flag.SEEN, true);
+                }
+                if (flags.contains(Flags.Flag.USER)) {
+                    messages[i].setFlag(Flags.Flag.USER, true);
+                }
+
+            }
+
+            saveMessageToLog(messages[i], jsonString, messageID);
+
+        }
     }
 
     @Override
@@ -283,11 +304,11 @@ public class ObradaPoruka extends Thread {
         return folder;
     }
 
-    private Message[] readMessages(Folder folder) {
+    private Message[] readMessages(Folder folder, int from, int to) {
         Message[] messages = null;
         try {
             //TODO, ne dohvatiti sve porukeodjednom, nego po grupama
-            messages = folder.getMessages();
+            messages = folder.getMessages(from, to);
             return messages;
             /*  // Print each message
             for (int i = 0; i < messages.length; ++i) {
@@ -377,6 +398,7 @@ public class ObradaPoruka extends Thread {
                 }
                  */
             } else {
+                System.out.println("Primljeni je : " + message.getContentType());
                 return null;
             }
 
