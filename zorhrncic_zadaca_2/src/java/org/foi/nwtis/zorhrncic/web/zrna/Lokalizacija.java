@@ -10,12 +10,14 @@ import javax.enterprise.context.SessionScoped;
 import java.io.Serializable;
 import java.util.Locale;
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.faces.context.FacesContext;
 
 /**
  *
- * @author grupa_1
+ * Klasa sadrzi sve metode koje su potrebne za postavljanje jezika na kojem će
+ * se prikazivati stranice.
+ *
+ * @author Zoran Hrncic
  */
 @Named(value = "lokalizacija")
 @SessionScoped
@@ -24,14 +26,6 @@ public class Lokalizacija implements Serializable {
     private static final long serialVersionUID = 1L;
     private String odabraniJezik;
     private Locale locale;
-
-    public Locale getLocale() {
-        return locale;
-    }
-
-    public String getLanguage() {
-        return locale.getLanguage();
-    }
 
     @PostConstruct
     public void init() {
@@ -47,21 +41,27 @@ public class Lokalizacija implements Serializable {
         this.odabraniJezik = odabraniJezik;
     }
 
+
     /**
-     * Creates a new instance of Lokalizacija
+     * Postavlja prosljeđeni jezik kao vazeci za trenutnu sesiju.
+     * 
+     * @param jezik inicijali jezika za lokalizaciju
+     * @return 
      */
-   /* public Lokalizacija() {
-        String odabraniJezik1 = FacesContext.getCurrentInstance().getViewRoot().getLocale().getLanguage();
-        odabraniJezik = odabraniJezik1;
-        Locale local = new Locale(odabraniJezik1);
-        FacesContext.getCurrentInstance().getViewRoot().setLocale(local);
-    }
-*/
     public Object odaberiJezik(String jezik) {
         locale = new Locale(jezik);
         FacesContext.getCurrentInstance().getViewRoot().setLocale(locale);
         return "";
 
+    }
+
+    //getter & setter
+    public Locale getLocale() {
+        return locale;
+    }
+
+    public String getLanguage() {
+        return locale.getLanguage();
     }
 
     public String saljiPoruku() {

@@ -9,12 +9,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.print.Collation;
 import javax.inject.Named;
 import javax.enterprise.context.RequestScoped;
 import javax.faces.context.FacesContext;
@@ -35,18 +32,18 @@ import org.foi.nwtis.zorhrncic.web.kontrole.Poruka;
 
 /**
  *
- * @author grupa_1
+ * Klasa sadrzi sve metode koje su potrebne za dohvacanje poruka sa mail servera
+ * i prikazivanje sadrazaja istih.
+ *
+ * @author Zoran Hrncic
  */
 @Named(value = "pregledPoruka")
 @RequestScoped
 public class PregledPoruka {
 
-    private String posluzitelj;
-    private String korisnickoIme;
-    private String lozinka, odabranaMapa;
+    private String posluzitelj, korisnickoIme, lozinka, odabranaMapa;
     private List<Izbornik> nizMapa;
     private List<Poruka> nizPoruka;
-
     private int ukupanBrojPoruka, messageToShow, pozicijaOd = -1, pozicijaDo = 0;
     private Session session;
     private Store store;
@@ -55,31 +52,34 @@ public class PregledPoruka {
     private Konfiguracija konfiguracija;
     private String nazivMape;
     private int portServera;
-    private String nazivAttachmenta;
-    private String privitak;
-    private static boolean previousBoolean = false;
-    private static boolean nextBoolean = false;
+    private String nazivAttachmenta, privitak;
+    private static boolean previousBoolean = false, nextBoolean = false;
+    private static String AttachFormat1 = "";
+    private static String AttachFormat2 = "";
 
     /**
-     * Creates a new instance of PregledPoruka
+     * Postavlja INBOX kao pocetnu odabranu mapa iz koje se ispisuju poruke.
+     * Poziva metodu za preuzimanje podataka iz konfiguracije. Poziva metodu za
+     * dohvacanje mapa sa prukama. Poziva metodu za preuzimanje poruka iz
+     * odabrane mape.
+     *
      */
     public PregledPoruka() {
         odabranaMapa = "INBOX";
-        //TODO preuzmi iz konf
         preuzmiKonfiuraciju();
         preuzmiMape();
         preuzmiPoruke();
-        /*String odabraniJezik = FacesContext.getCurrentInstance().getViewRoot().getLocale().getLanguage();
-        Locale local = new Locale(odabraniJezik);
-        FacesContext.getCurrentInstance().getViewRoot().setLocale(local);*/
-
     }
 
+    /**
+     * Preuzima konfiguraciju iz kontexta i pohranjije potrebne podatke u
+     * globalne vrijable.
+     *
+     */
     private void preuzmiKonfiuraciju() {
         ServletContext servletContext = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
         konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
         konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
-
         posluzitelj = konfiguracija.dajPostavku("mail.server");
         portServera = Integer.parseInt(konfiguracija.dajPostavku("mail.imap.port"));
         korisnickoIme = konfiguracija.dajPostavku("mail.usernameThread");
@@ -87,9 +87,13 @@ public class PregledPoruka {
         nazivMape = konfiguracija.dajPostavku("mail.folderNWTiS");
         messageToShow = Integer.parseInt(konfiguracija.dajPostavku("mail.numMessagesToShow"));
         nazivAttachmenta = konfiguracija.dajPostavku("mail.attachmentFilename");
-
+        AttachFormat1 = "TEXT/JSON; charset=utf-8; name=" + nazivAttachmenta;
+        AttachFormat2 = "APPLICATION/JSON; charset=utf-8; name=" + nazivAttachmenta;
     }
 
+    /**
+     * Dohvaca sve mape poruka i trazene dodaje u niz "nizMapa"
+     */
     private void preuzmiMape() {
         Session session;
         Store store;
@@ -97,25 +101,18 @@ public class PregledPoruka {
         nizMapa = new ArrayList<>();
         ukupanBrojPoruka = 0;
         try {
-            // Connect to the store
-            // Start the session
             java.util.Properties properties = System.getProperties();
             properties.put("mail.smtp.host", posluzitelj);
             session = Session.getInstance(properties, null);
-            // Connect to the store
             store = session.getStore("imap");
             store.connect(posluzitelj, korisnickoIme, lozinka);
-            // Open the INBOX folder
             Folder[] f = store.getDefaultFolder().list();
             for (Folder fd : f) {
-                //  System.out.println(">> " + fd.getName());
                 if (fd.getName().equalsIgnoreCase(nazivMape) || fd.getName().equalsIgnoreCase("INBOX")) {
                     nizMapa.add(new Izbornik(fd.getName(), fd.getName()));
                 }
-
             }
             store.close();
-            //TODO provjeri da ne postoji trazena mapa u sanducicu prema nazivu iz postavki
         } catch (NoSuchProviderException ex) {
             Logger.getLogger(PregledPoruka.class.getName()).log(Level.SEVERE, null, ex);
         } catch (MessagingException ex) {
@@ -123,30 +120,33 @@ public class PregledPoruka {
         }
     }
 
+    /**
+     * Pokrece preuzimanje svih poruke iz odabrane mape i smjesta ih u niz
+     * "nizPoruka"
+     */
     private void preuzmiPoruke() {
         try {
             nizPoruka = new ArrayList<>();
-            //TODO pruzmi poruke s email poslužiteja
             java.util.Properties properties = System.getProperties();
             properties.put("mail.smtp.host", posluzitelj);
             session = Session.getInstance(properties, null);
-
-            // Connect to the store
             store = session.getStore("imap");
             store.connect(posluzitelj, korisnickoIme, lozinka);
             getMessgeFromFolder(odabranaMapa);
-
         } catch (MessagingException ex) {
             Logger.getLogger(PregledPoruka.class.getName()).log(Level.SEVERE, null, ex);
         }
-
     }
 
+    /**
+     * Dohvaca sve poruke iz mape ciji naziv je prosljedjen u metodu
+     *
+     * @param odabranaMapa naziv mape iz koje se dohvacaju poruke
+     */
     private void getMessgeFromFolder(String odabranaMapa) {
         nextBoolean = true;
         previousBoolean = true;
         try {
-            // Open the INBOX folder
             Folder folder = store.getFolder(odabranaMapa);
             folder.open(Folder.READ_ONLY);
             Poruka.VrstaPoruka vrsta;
@@ -155,147 +155,141 @@ public class PregledPoruka {
             } else {
                 vrsta = Poruka.VrstaPoruka.neNWTiS_poruka;
             }
-            //TODO, ne dohvatiti sve porukeodjednom, nego po grupama
-            //dohvatitiprivitak NE NWTIS PORUKA
-
             ukupanBrojPoruka = folder.getMessageCount();
             if (ukupanBrojPoruka == 0) {
                 return;
             }
-
-         
-            if (pozicijaOd == -1) {
-   pozicijaDo = pozicijaOd + messageToShow - 1;//moakni gore
-                pozicijaDo = ukupanBrojPoruka;
-                pozicijaOd = pozicijaDo - messageToShow + 1;
-            }
-            if (pozicijaDo >= ukupanBrojPoruka) {
-                pozicijaDo = ukupanBrojPoruka;
-                previousBoolean = false;
-            }
-
-            if (pozicijaOd > ukupanBrojPoruka) {
-                pozicijaOd = ukupanBrojPoruka - messageToShow + 1;
-            }
-            if (pozicijaOd <= 1) {
-                pozicijaOd = 1;
-                nextBoolean = false;
-            }
-            int end = pozicijaDo;
-            /* if (ukupanBrojPoruka < pozicijaOd + messageToShow) {
-                end = ukupanBrojPoruka;
-            } else {
-                end = pozicijaOd + messageToShow - 1;
-            }*/
-
-            for (Message m : folder.getMessages(pozicijaOd, end)) {
-                privitak = "";
-                MimeBodyPart part = checkIfExistAttachment(m); // ovo je nwtis message
-                if (part != null) {
-                    privitak = processingMessage(m, part);
-                }
-
-                nizPoruka.add(new Poruka(Integer.toString(m.getMessageNumber()),
-                        m.getSentDate(),
-                        m.getReceivedDate(),
-                        m.getFrom()[0].toString(),
-                        m.getSubject(),
-                        privitak,
-                        vrsta)
-                );
-
-            }
+            int end = validateFrom_To_valueForFetchingMessages();
+            fetchRequiredMessages(folder, end, vrsta);
             Collections.reverse(nizPoruka);
-
         } catch (MessagingException ex) {
             Logger.getLogger(PregledPoruka.class.getName()).log(Level.SEVERE, null, ex);
         }
-
     }
 
+    /**
+     * Dohvaca poruke sa mail servera prema prosljedjenim parametrima.
+     *
+     * @param folder1 mapa iz koje se dohvacaju poruke
+     * @param end kraj dohvacanja poruka, pozicija
+     * @param vrsta vrsta poruka
+     * @throws MessagingException
+     */
+    private void fetchRequiredMessages(Folder folder1, int end, Poruka.VrstaPoruka vrsta) throws MessagingException {
+        for (Message m : folder1.getMessages(pozicijaOd, end)) {
+            privitak = "";
+            MimeBodyPart part = checkIfExistAttachment(m); // ovo je nwtis message
+            if (part != null) {
+                privitak = processingMessage(part);
+            }
+            nizPoruka.add(new Poruka(Integer.toString(m.getMessageNumber()),
+                    m.getSentDate(),
+                    m.getReceivedDate(),
+                    m.getFrom()[0].toString(),
+                    m.getSubject(),
+                    privitak,
+                    vrsta)
+            );
+        }
+    }
+
+    /**
+     * Provjera i ustimavanje pocetne i zavrsne pozicije poruka koje se
+     * dohvacaju.
+     *
+     * @return zavrsna pozicija do koje se dohvacaju poruke.
+     */
+    private int validateFrom_To_valueForFetchingMessages() {
+        if (pozicijaOd == -1) {
+            pozicijaDo = pozicijaOd + messageToShow - 1;//moakni gore
+            pozicijaDo = ukupanBrojPoruka;
+            pozicijaOd = pozicijaDo - messageToShow + 1;
+        }
+        if (pozicijaDo >= ukupanBrojPoruka) {
+            pozicijaDo = ukupanBrojPoruka;
+            previousBoolean = false;
+        }
+        if (pozicijaOd > ukupanBrojPoruka) {
+            pozicijaOd = ukupanBrojPoruka - messageToShow + 1;
+        }
+        if (pozicijaOd <= 1) {
+            pozicijaOd = 1;
+            nextBoolean = false;
+        }
+        int end = pozicijaDo;
+        return end;
+    }
+
+    /**
+     * Provjera sadrzi li poruka attachment. Ako sadrzi, onda ga vraca, ako ne
+     * onda vraca null.
+     *
+     * @param message poruka koja se provjerava
+     * @return attachment, ili null ako ne postoji
+     */
     private MimeBodyPart checkIfExistAttachment(Message message) {
-// suppose 'message' is an object of type Message
         int numAttach = 0;
         boolean isNwtisMessage = false;
         MimeBodyPart attachment = null;
         try {
-
             String contentType = message.getContentType();
-
             if (contentType.contains("multipart")) {
-                // this message may contain attachment
                 Multipart multiPart = (Multipart) message.getContent();
-
                 for (int i = 0; i < multiPart.getCount(); i++) {
                     MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
                     if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
                         numAttach++;
-                        // this part is attachment
-                        // code to save attachment...
-                        if (part.getFileName().equalsIgnoreCase(nazivAttachmenta)) { // OVO JE MOZDA NEPOTREBNA PROVJERA IMENA.. CONTENT
-                            //System.out.println("HAVE ATTACH: " + part.getFileName());
+                        if (part.getFileName().equalsIgnoreCase(nazivAttachmenta)) {
                             isNwtisMessage = true;
                             attachment = part;
-
                         }
                     }
                 }
             }
-
         } catch (Exception e) {
-            System.out.println("ERROR: " + e.getMessage());
             return null;
         }
         if (isNwtisMessage && numAttach == 1 && attachment != null) {
             return attachment;
-            // processingMessage(message, attachment);
         } else {
             return null;
         }
-
     }
 
-    private String processingMessage(Message message, MimeBodyPart attachment) {
-        /*obrađuju se tako da se ispituje sadržaj 
-        datoteke privitka. Sadržaj datoteke treba biti 
-        u "text/json" ili "application/json" formatu i može
-        biti sa sljedećem sintaksom:*/
-
+    /**
+     * Dohvaca podatke iz attachmenta poruke.
+     *
+     * @param attachment attachment
+     * @return sadrzaj definiranog attachment ili null ako ne postoji
+     */
+    private String processingMessage(MimeBodyPart attachment) {
         try {
-            // If the text is in HTML, just print it
-            if ("TEXT/JSON; charset=utf-8; name=NWTiS_privitak.json".equalsIgnoreCase(attachment.getContentType()) || "APPLICATION/JSON; charset=utf-8; name=NWTiS_privitak.json".equalsIgnoreCase(attachment.getContentType())) {
-                System.out.println("Primljeni je TEXT_JSOON: ");
-
+            if (AttachFormat1.equalsIgnoreCase(attachment.getContentType())
+                    || AttachFormat2.equalsIgnoreCase(attachment.getContentType())) {
                 BufferedReader reader
                         = new BufferedReader(
                                 new InputStreamReader(
                                         attachment.getInputStream()));
-
                 String s;
-//OVJE JE PRIMLJENI JSON MESSG
                 String JSONfILE = "";
                 while ((s = reader.readLine()) != null) {
-
                     JSONfILE = JSONfILE + s;
                 }
-
-                System.out.print(JSONfILE);
                 return JSONfILE;
-                /*
-                if (valdiateJSONAttachment(JSONfILE)) {
-                    processIOTdeviceData(JSONfILE);
-                }
-                 */
             } else {
                 return null;
             }
-
         } catch (Exception e) {
-            System.out.println("GREŠKA: " + e.getMessage());
             return null;
         }
     }
 
+    /**
+     * Provjera postoje li prethodni zapisi poruka za prikazati. hidden -klasa
+     * frameworka bootstrap koja sakriva element
+     *
+     * @return ako nepostoje vraca "hidden", ako ne postoji vraca ""
+     */
     public String isPrevious() {
         if (previousBoolean) {
             return "";
@@ -304,7 +298,12 @@ public class PregledPoruka {
         }
     }
 
-//getter & setter
+    /**
+     * Provjera postoje li sljedeci zapisi poruka za prikazati. hidden -klasa
+     * frameworka bootstrap koja sakriva element
+     *
+     * @return ako ne postoje vraca "hidden", ako ne postoji vraca ""
+     */
     public String isNext() {
         if (nextBoolean) {
             return "";
@@ -313,6 +312,7 @@ public class PregledPoruka {
         }
     }
 
+//getter & setter
     public int getUkupanBrojPoruka() {
         return ukupanBrojPoruka;
     }
@@ -354,6 +354,11 @@ public class PregledPoruka {
     }
 
     //navigacija
+    /**
+     * definira pocetne vrijednosti pozicija za prikazivanje poruka iz mapa.
+     *
+     * @return
+     */
     public String promjenaMape() {
         pozicijaDo = 0;
         pozicijaOd = -1;
@@ -361,30 +366,26 @@ public class PregledPoruka {
         return "PromjenaMape";
     }
 
+    /**
+     * Definira pozicije, rang, iz kojeg se dohvacaju prethodne poruke
+     *
+     * @return
+     */
     public String prethodnePoruke() {
-        /*pozicijaOd = pozicijaOd - messageToShow;
-
-        if (pozicijaOd < 1) {
-            pozicijaOd = 1;
-        }
-        pozicijaDo = pozicijaOd - 1;
-         */
         pozicijaOd = pozicijaDo + 1;
         pozicijaDo = pozicijaOd + messageToShow - 1;
-
         preuzmiPoruke();
-        //
         return "PrethodnePoruke";
     }
 
+    /**
+     * Definira pozicije, rang, iz kojeg se dohvacaju sljedece poruke
+     *
+     * @return
+     */
     public String sljedecePoruke() {
-        /*   if (pozicijaDo < ukupanBrojPoruka) {
-            pozicijaOd = pozicijaDo + 1;
-        }
-         */
         pozicijaDo = pozicijaOd - 1;
         pozicijaOd = pozicijaOd - messageToShow;
-       // pozicijaDo = pozicijaOd + messageToShow;
         if (pozicijaOd < 1) {
             pozicijaOd = 1;
         }

@@ -5,7 +5,6 @@
  */
 package org.foi.nwtis.zorhrncic.web.zrna;
 
-import static com.oracle.wls.shaded.org.apache.xalan.lib.ExsltDatetime.date;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -13,12 +12,9 @@ import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Named;
@@ -26,23 +22,20 @@ import javax.enterprise.context.RequestScoped;
 import javax.faces.context.FacesContext;
 import javax.servlet.ServletContext;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
-import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaApstraktna;
-import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
-import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
 import org.foi.nwtis.zorhrncic.web.kontrole.Dnevnik;
 
 /**
+ * Klasa sadrzi sve metode koje su potrebne za dohvacanje zapisa iz dnevnika iz
+ * baze podataka i prikazivanje istiog.
  *
- * @author Zoran
+ * @author Zoran Hrncic
  */
 @Named(value = "pregledDnevnika")
 @RequestScoped
 public class PregledDnevnika {
 
     private List<Dnevnik> preuzetiZapisniciDnevnika;
-    //TODO broj zapisa za prikazati
-    //TODO renderiranje buttona
     private int ukupanBrojZapisa, brojZapisaZaPrikaz = 5, pozicijaOd = 0, pozicijaDo = 0;
     private String odDatuma, doDatuma;
     private Date fromDate, toDate;
@@ -57,56 +50,85 @@ public class PregledDnevnika {
     private Konfiguracija konfiguracija;
 
     /**
-     * Creates a new instance of PregledDnevnika
+     * Pokrece se preuzimanje konfiguracije i pohranjivanje podataka.
+     *
      */
     public PregledDnevnika() {
         preuzmiKonfiuraciju();
-        //preuzmiZapise();
-        /* String odabraniJezik = FacesContext.getCurrentInstance().getViewRoot().getLocale().getLanguage();
-        Locale local = new Locale(odabraniJezik);
-        FacesContext.getCurrentInstance().getViewRoot().setLocale(local);*/
     }
 
+    /**
+     * Preuzima konfiguraciju iz kontexta i pohranjije potrebne podatke u
+     * globalne vrijable.
+     *
+     */
     private void preuzmiKonfiuraciju() {
         ServletContext servletContext = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
         konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
         konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
-
         usernameAdmin = konfiguracijaBaza.getUserUsername();
         lozinka = konfiguracijaBaza.getUserPassword();
         url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getUserDatabase();
         brojZapisaZaPrikaz = Integer.parseInt(konfiguracija.dajPostavku("mail.numLogItemsToShow"));
     }
 
+    /**
+     * Zapocinje dohvacanje zapisa iz baze podataka. Tablica log.
+     *
+     */
     void preuzmiZapise() {
         preuzetiZapisniciDnevnika = new ArrayList<>();
-        /*
-        koja preuzima zapise iz tablice DNEVNIK u bazi podataka na temelju intervala Od Do. Za vježbe se kreira 5 zapisa pomoću linije koju kasnije treba zamijeniti kodom koji će preuzeti stvarne zapise
-o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Senzor temperature', 'vrijeme': '2018.04.08 11:20:45'}");
-
-         */
-
-        //TODO preuzeti podatke iz baze
         int i = 0;
-        /* preuzetiZapisniciDnevnika.add(new Dnevnik(i++, "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Senzor temperature', 'vrijeme': '2018.04.08 11:20:45'}", new Date()));
-        preuzetiZapisniciDnevnika.add(new Dnevnik(i++, "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Senzor temperature', 'vrijeme': '2018.04.08 11:20:45'}", new Date()));
-        preuzetiZapisniciDnevnika.add(new Dnevnik(i++, "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Senzor temperature', 'vrijeme': '2018.04.08 11:20:45'}", new Date()));
-        preuzetiZapisniciDnevnika.add(new Dnevnik(i++, "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Senzor temperature', 'vrijeme': '2018.04.08 11:20:45'}", new Date()));
-         */
         DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
-
         if (fromDate == null || toDate == null) {
             return;
         }
+        getNumberOfEntries(df);
+        getEntries(df);
+    }
+
+    /**
+     * Dohvacanje svih zapisa iz baze podataka unutar trazenog ranga
+     *
+     * @param df format zapisa datuma u bazi podtaka
+     */
+    private void getEntries(DateFormat df) {
+        upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '" + df.format(fromDate) + "' AND `vrijeme` < '" + df.format(toDate) + "' ORDER BY `vrijeme` DESC LIMIT " + pozicijaOd + "," + brojZapisaZaPrikaz;
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(upit);) {
+            while (rs.next()) {
+                String id = rs.getString("id");
+                String sadrzaj = rs.getString("sadrzaj");
+                String vrijeme = rs.getString("vrijeme");
+                df = new SimpleDateFormat(patternDateTimeSQL);
+                Date today = df.parse(vrijeme);
+                preuzetiZapisniciDnevnika.add(new Dnevnik(Integer.valueOf(id), sadrzaj, today));
+                pozicijaDo++;
+            }
+            rs.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Dohvacanje ukupnog broja zapisa iz dnevnika koji zadovoljavaju zadane
+     * uvjete
+     *
+     * @param df
+     */
+    private void getNumberOfEntries(DateFormat df) {
         upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '" + df.format(fromDate) + "' AND `vrijeme` < '" + df.format(toDate) + "' ORDER BY `vrijeme` DESC";
         uprProgram = konfiguracijaBaza.getDriverDatabase();
-
         try {
             Class.forName(uprProgram);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(PregledDnevnika.class.getName()).log(Level.SEVERE, null, ex);
         }
-
         try (
                 Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
                 Statement stmt = con.createStatement();
@@ -115,44 +137,21 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
             while (rs.next()) {
                 ukupanBrojZapisa++;
             }
-
             rs.close();
             stmt.close();
             con.close();
         } catch (Exception e) {
             System.out.println("error: " + e.getMessage());
-
-        }
-
-        upit = "SELECT * FROM `dnevnik` WHERE `vrijeme` > '" + df.format(fromDate) + "' AND `vrijeme` < '" + df.format(toDate) + "' ORDER BY `vrijeme` DESC LIMIT " + pozicijaOd + "," + brojZapisaZaPrikaz;
-
-        try (
-                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
-                Statement stmt = con.createStatement();
-                ResultSet rs = stmt.executeQuery(upit);) {
-
-            while (rs.next()) {
-                String id = rs.getString("id");
-                String sadrzaj = rs.getString("sadrzaj");
-                String vrijeme = rs.getString("vrijeme");
-
-                df = new SimpleDateFormat(patternDateTimeSQL);
-                Date today = df.parse(vrijeme);
-
-                preuzetiZapisniciDnevnika.add(new Dnevnik(Integer.valueOf(id), sadrzaj, today));
-                pozicijaDo++;
-            }
-
-            rs.close();
-            stmt.close();
-            con.close();
-        } catch (Exception e) {
-            System.out.println("error: " + e.getMessage());
-
         }
     }
 
     //getter and setter
+    /**
+     * Provjera postoje li prethodni zapisi poruka za prikazati. hidden -klasa
+     * frameworka bootstrap koja sakriva element
+     *
+     * @return ako nepostoje vraca "hidden", ako ne postoji vraca ""
+     */
     public String isPrevious() {
         if (pozicijaOd < 1) {
             return "hidden";
@@ -161,7 +160,12 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         }
     }
 
-//getter & setter
+    /**
+     * Provjera postoje li sljedeci zapisi poruka za prikazati. hidden -klasa
+     * frameworka bootstrap koja sakriva element
+     *
+     * @return ako ne postoje vraca "hidden", ako ne postoji vraca ""
+     */
     public String isNext() {
         if (pozicijaDo >= ukupanBrojZapisa) {
             return "hidden";
@@ -170,16 +174,19 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         }
     }
 
+    /**
+     * Postavljanje pocetnog datuma za pretrazivanej dnevnika
+     *
+     * @param odDatuma
+     */
     public void setOdDatuma(String odDatuma) {
         try {
             String s = (String) odDatuma;
             String pattern = "dd.MM.yyyy H:m:s";
-
             DateFormat df = new SimpleDateFormat(pattern);
             Date today = df.parse(s);
             this.fromDate = today;
-
-            this.odDatuma = s;//today;
+            this.odDatuma = s;
         } catch (ParseException ex) {
             Logger.getLogger(PregledDnevnika.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -194,16 +201,19 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         return doDatuma;
     }
 
+    /**
+     * Postavljanje krajnjeg datuma za pretrazivanej dnevnika
+     *
+     * @param odDatuma
+     */
     public void setDoDatuma(String doDatuma) {
         try {
             String s = (String) doDatuma;
             String pattern = "dd.MM.yyyy H:m:s";
-
             DateFormat df = new SimpleDateFormat(pattern);
             Date today = df.parse(s);
             this.toDate = today;
-
-            this.doDatuma = s;//today;
+            this.doDatuma = s;
         } catch (ParseException ex) {
             Logger.getLogger(PregledDnevnika.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -251,6 +261,13 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
     }
 
     //navigacija
+    
+    
+    /**
+     * definira pocetne vrijednosti pozicija za prikazivanje zapisa iz dnevnika
+     *
+     * @return
+     */
     public String promjenaIntervala() {
         pozicijaDo = 0;
         pozicijaOd = 0;
@@ -258,10 +275,13 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         return "PromjenaIntervala";
     }
 
+    /**
+     * Definira pozicije, rang, iz kojeg se dohvacaju prethodni zapisi
+     *
+     * @return
+     */
     public String prethodniZapisi() {
-
         pozicijaOd = pozicijaOd - brojZapisaZaPrikaz;
-
         if (pozicijaOd < 0) {
             pozicijaOd = 0;
         }
@@ -270,13 +290,16 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
         return "PrethodniZapisi";
     }
 
+    /**
+     * Definira pozicije, rang, iz kojeg se dohvacaju sljedece poruke
+     *
+     * @return
+     */
     public String sljedeciZapisi() {
         if (pozicijaDo < ukupanBrojZapisa) {
             pozicijaOd = pozicijaDo;
         }
-
         pozicijaDo = pozicijaOd;
-
         preuzmiZapise();
         return "SljedeciZapisi";
     }

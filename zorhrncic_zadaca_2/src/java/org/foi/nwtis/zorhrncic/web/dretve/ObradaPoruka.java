@@ -10,12 +10,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -40,14 +37,16 @@ import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.UIDFolder;
 import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMultipart;
 import javax.servlet.ServletContext;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
 
 /**
  *
- * @author grupa_1
+ * Dretva koja se okida nakon svakog intervala i obavlja sortiranje poruka u
+ * mape i pohranjivanje IOT uredjaja u bazu podataka.
+ *
+ * @author Zoran Hrncic
  */
 public class ObradaPoruka extends Thread {
 
@@ -98,17 +97,29 @@ public class ObradaPoruka extends Thread {
     private int toMessage;
     private int fromMessage;
     private int numMessagesInFolder;
+    private long sleepTime;
+    private static String AttachFormat1 = "";
+    private static String AttachFormat2 = "";
 
+    /**
+     * Pokrece pruzimanje podataka iz konfiguracije. Definira format datuma SQL
+     * baze
+     *
+     */
     public ObradaPoruka() {
         preuzmiKonfiuraciju();
         sqlDateFormat = new SimpleDateFormat(patternDateTimeSQL);
     }
 
+    /**
+     * Preuzima konfiguraciju iz kontexta i pohranjije potrebne podatke u
+     * globalne vrijable.
+     *
+     */
     private void preuzmiKonfiuraciju() {
         ServletContext servletContext = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
         konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
         konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
-
         spavanje = Integer.parseInt(konfiguracija.dajPostavku("mail.timeSecThreadCycle"));
         adresaServera = konfiguracija.dajPostavku("mail.server");
         portServera = Integer.parseInt(konfiguracija.dajPostavku("mail.imap.port"));
@@ -121,6 +132,8 @@ public class ObradaPoruka extends Thread {
         usernameAdminDatabase = konfiguracijaBaza.getUserUsername();
         lozinkaDatabase = konfiguracijaBaza.getUserPassword();
         urlDatabase = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getUserDatabase();
+        AttachFormat1 = "TEXT/JSON; charset=utf-8; name=" + nazivAttachmenta;
+        AttachFormat2 = "APPLICATION/JSON; charset=utf-8; name=" + nazivAttachmenta;
 
     }
 
@@ -131,6 +144,10 @@ public class ObradaPoruka extends Thread {
 
     }
 
+    /**
+     * pokrece obradu i odredjuje vrijeme NERADA dretve
+     *
+     */
     @Override
     public void run() {
         int broj = 0;
@@ -144,43 +161,19 @@ public class ObradaPoruka extends Thread {
             fromMessage = 1;
             toMessage = 1;
             numMessagesInFolder = 0;
-            if (kraj
-                    != 0) {
-                /*0.01666666666;*/
-
+            if (kraj != 0) {
                 System.out.println("Razlika od prosle serijalizacije: " + (pocetak - kraj) / 1000 + " sec");
             }
-
             try {
-
-                folder = connectAndReadINBOX();
-                uf = (UIDFolder) folder;
-                numMessagesInFolder = folder.getMessageCount();
-                while (numMessagesInFolder > toMessage) {
-                    if (fromMessage < toMessage) {
-                        fromMessage = toMessage + 1;
-                    }
-
-                    toMessage = (fromMessage + brojPorukaZaUcitavanje) - 1;
-                    if (toMessage > numMessagesInFolder) {
-                        toMessage = numMessagesInFolder;
-                    }
-                    messages = readMessages(folder, fromMessage, toMessage);
-                    prosessMessageRange();
-                }
-
-                folder.expunge();
-                folder.close(false);
-                store.close();
-
-                //TODO
-                spremiPodatkeRadu(pocetak, System.currentTimeMillis());
-
+                runProcessing();
                 System.out.println("Gotova obrada: " + broj++);
                 kraj = System.currentTimeMillis();
                 razlika = kraj - pocetak;
-                Thread.sleep((spavanje * 1000 - razlika) + (long) (koef * (spavanje * 1000 - razlika)));
-
+                sleepTime = (spavanje * 1000 - razlika) + (long) (koef * (spavanje * 1000 - razlika));
+                if (sleepTime < 0) {
+                    sleepTime = 0;
+                }
+                Thread.sleep(sleepTime);
             } catch (Exception e) {
                 System.out.println("org.foi.nwtis.zorhrncic.web.dretve.ObradaPoruka.run(): " + e.getMessage());
             }
@@ -188,25 +181,52 @@ public class ObradaPoruka extends Thread {
 
     }
 
+    /**
+     * Pozivanje redom potrebnih metoda za obradu poruka. Na kraju pohrana
+     * podataka o radu u datoteku.
+     *
+     * @throws MessagingException
+     * @throws Exception
+     */
+    private void runProcessing() throws MessagingException, Exception {
+        folder = connectAndReadINBOX();
+        uf = (UIDFolder) folder;
+        numMessagesInFolder = folder.getMessageCount();
+        while (numMessagesInFolder > toMessage) {
+            if (fromMessage < toMessage) {
+                fromMessage = toMessage + 1;
+            }
+            toMessage = (fromMessage + brojPorukaZaUcitavanje) - 1;
+            if (toMessage > numMessagesInFolder) {
+                toMessage = numMessagesInFolder;
+            }
+            messages = readMessages(folder, fromMessage, toMessage);
+            prosessMessageRange();
+        }
+        folder.expunge();
+        folder.close(false);
+        store.close();
+        spremiPodatkeRadu(pocetak, System.currentTimeMillis());
+    }
+
+    /**
+     * Dohvacanje i obrada poruka redom po opsegu definiranom u konfiguraciji
+     *
+     * @throws Exception
+     */
     private void prosessMessageRange() throws Exception {
         for (int i = 0; i < messages.length; ++i) {
             messageNumber_Total++;
             jsonString = "nema privitka";
             messageID = uf.getUID(messages[i]);
-            System.out.println("\n--------------------------------------------------------------------------");
-            System.out.println("INBOX  [" + i + "] poruka: " + messages[i].getReceivedDate().toString());
             Flags flags = messages[i].getFlags();
-
-            MimeBodyPart part = checkIfExistAttachment(messages[i]); // ovo je nwtis message
+            MimeBodyPart part = checkIfExistAttachment(messages[i]);
             if (part != null) {
                 jsonString = processingMessage(messages[i], part);
                 if (jsonString != null) {
                     if (valdiateJSONAttachment(jsonString)) {
                         processIOTdeviceData(jsonString);
-                        //prebaciti u mapu
-
                         moveMessageToNWTISFolder(messages[i], nazivMape, folder);
-
                     } else {
                         messageNumber_incorrect++;
                     }
@@ -215,47 +235,57 @@ public class ObradaPoruka extends Thread {
                 }
             } else {
                 messageNumber_incorrect++;
-                if (flags.contains(Flags.Flag.ANSWERED)) {
-                    messages[i].setFlag(Flags.Flag.ANSWERED, true);
-                }
-                if (flags.contains(Flags.Flag.DELETED)) {
-                    messages[i].setFlag(Flags.Flag.DELETED, true);
-                }
-                if (flags.contains(Flags.Flag.DRAFT)) {
-                    messages[i].setFlag(Flags.Flag.DRAFT, true);
-                }
-                if (flags.contains(Flags.Flag.FLAGGED)) {
-                    messages[i].setFlag(Flags.Flag.FLAGGED, true);
-                }
-                if (flags.contains(Flags.Flag.RECENT)) {
-                    //messages[i].setFlag(Flags.Flag.RECENT, true);
-                }
-                if (flags.contains(Flags.Flag.SEEN)) {
-                    messages[i].setFlag(Flags.Flag.SEEN, true);
-                }
-                if (flags.contains(Flags.Flag.USER)) {
-                    messages[i].setFlag(Flags.Flag.USER, true);
-                }
-
+                setFlags(flags, i);
             }
-
             saveMessageToLog(messages[i], jsonString, messageID);
+        }
+    }
 
+    /**
+     * Postavlja zastavice koje oznacavaju stanje poruka na vrijednost koja je
+     * bila prije obrade.
+     *
+     * @param flags
+     * @param i
+     * @throws MessagingException
+     */
+    private void setFlags(Flags flags, int i) throws MessagingException {
+        if (flags.contains(Flags.Flag.ANSWERED)) {
+            messages[i].setFlag(Flags.Flag.ANSWERED, true);
+        }
+        if (flags.contains(Flags.Flag.DELETED)) {
+            messages[i].setFlag(Flags.Flag.DELETED, true);
+        }
+        if (flags.contains(Flags.Flag.DRAFT)) {
+            messages[i].setFlag(Flags.Flag.DRAFT, true);
+        }
+        if (flags.contains(Flags.Flag.FLAGGED)) {
+            messages[i].setFlag(Flags.Flag.FLAGGED, true);
+        }
+        if (flags.contains(Flags.Flag.RECENT)) {
+            //messages[i].setFlag(Flags.Flag.RECENT, true);
+        }
+        if (flags.contains(Flags.Flag.SEEN)) {
+            messages[i].setFlag(Flags.Flag.SEEN, true);
+        }
+        if (flags.contains(Flags.Flag.USER)) {
+            messages[i].setFlag(Flags.Flag.USER, true);
         }
     }
 
     @Override
     public synchronized void start() {
-//TODO preuzmji vrijeme spavanja iz konf
-//preuzmi adresu posluzitelja, kor ime , looziinku, vrijeme,
-
         super.start();
-
     }
 
+    /**
+     * Pohranjuje podatke o rezultatu obrade u txt datotku.
+     *
+     * @param pocetak
+     * @param currentTimeMillis
+     */
     private void spremiPodatkeRadu(long pocetak, long currentTimeMillis) {
         try {
-
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             FileWriter out = new FileWriter(nazivDatotekePodatciRadu);
             printAllData(out, pocetak, currentTimeMillis);
@@ -263,11 +293,20 @@ public class ObradaPoruka extends Thread {
         } catch (IOException ex) {
             Logger.getLogger(ObradaPoruka.class.getName()).log(Level.SEVERE, null, ex);
         }
-
     }
 
+    /**
+     * Kreiranje formata zpisa datoteke koja se kreira.
+     *
+     * Sa svim podatcima.
+     *
+     * @param out
+     * @param pocetak
+     * @param currentTimeMillis
+     * @throws IOException
+     */
     private void printAllData(FileWriter out, long pocetak, long currentTimeMillis) throws IOException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy H:m:s.SSS");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH.mm.ss.SSS");
         out.write(String.format(formatIspisa, line20, line20));
         out.write(String.format(formatIspisa, "Obrada poruka broj: ", processingNumber));
         out.write(String.format(formatIspisa, line20, line20));
@@ -285,38 +324,41 @@ public class ObradaPoruka extends Thread {
         out.write(String.format(formatIspisa, line20, line20));
         out.write(String.format(formatIspisa, "Broj neispravnih poruka: ", messageNumber_incorrect));
         out.write(String.format(formatIspisa, line20, line20));
-        out.write("\n");
     }
 
+    /**
+     * Otvaranje INBOX mape za sitanje poruka.
+     *
+     * @return
+     * @throws NoSuchProviderException
+     * @throws MessagingException
+     */
     private Folder connectAndReadINBOX() throws NoSuchProviderException, MessagingException {
         Folder folder = null;
-
-        // Start the session
         java.util.Properties properties = System.getProperties();
         properties.put("mail.smtp.host", adresaServera);
         session = Session.getInstance(properties, null);
-        // Connect to the store
         store = session.getStore("imap");
         store.connect(adresaServera, korisnickoIme, lozinka);
-        // Open the INBOX folder
         folder = store.getFolder("INBOX");
         folder.open(Folder.READ_ONLY);
         return folder;
     }
 
+    /**
+     * Dohvacanje poruka iz mape koja je prosljedjena. Poruke se dohvacaju prema
+     * prosljedjenim pozicijama: Od, Do
+     *
+     * @param folder
+     * @param from
+     * @param to
+     * @return
+     */
     private Message[] readMessages(Folder folder, int from, int to) {
         Message[] messages = null;
         try {
-            //TODO, ne dohvatiti sve porukeodjednom, nego po grupama
             messages = folder.getMessages(from, to);
             return messages;
-            /*  // Print each message
-            for (int i = 0; i < messages.length; ++i) {
-                System.out.println("\n--------------------------------------------------------------------------");
-                // System.out.println("poruka: " + messages[i].getFrom()[0]);
-                checkIfExistAttachment(messages[i]);
-            }*/
-
         } catch (MessagingException ex) {
             Logger.getLogger(ObradaPoruka.class
                     .getName()).log(Level.SEVERE, null, ex);
@@ -324,90 +366,90 @@ public class ObradaPoruka extends Thread {
         }
     }
 
+    /**
+     * Provjerava postoji li definirani attachment u poruci.
+     *
+     * @param message poruka
+     * @return attachment ako postoji, ako ne postoji onda null
+     */
     private MimeBodyPart checkIfExistAttachment(Message message) {
-// suppose 'message' is an object of type Message
         int numAttach = 0;
         boolean isNwtisMessage = false;
         MimeBodyPart attachment = null;
         try {
-
             String contentType = message.getContentType();
-
             if (contentType.contains("multipart")) {
-                // this message may contain attachment
                 Multipart multiPart = (Multipart) message.getContent();
-
                 for (int i = 0; i < multiPart.getCount(); i++) {
                     MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
                     if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
                         numAttach++;
-                        // this part is attachment
-                        // code to save attachment...
-                        if (part.getFileName().equalsIgnoreCase(nazivAttachmenta)) { // OVO JE MOZDA NEPOTREBNA PROVJERA IMENA.. CONTENT
-                            //System.out.println("HAVE ATTACH: " + part.getFileName());
+                        if (part.getFileName().equalsIgnoreCase(nazivAttachmenta)) {
                             isNwtisMessage = true;
                             attachment = part;
-
                         }
                     }
                 }
             }
-
         } catch (Exception e) {
-            System.out.println("ERROR: " + e.getMessage());
             return null;
         }
+        return defineReturnValueForCheckAttachmentMethod(isNwtisMessage, numAttach, attachment);
+    }
+
+    /**
+     * Provjerava rezultate provjera attachmetna i definira odgovor prema
+     * trazenim uvjetima
+     *
+     * @param isNwtisMessage
+     * @param numAttach
+     * @param attachment
+     * @return
+     */
+    private MimeBodyPart defineReturnValueForCheckAttachmentMethod(boolean isNwtisMessage, int numAttach, MimeBodyPart attachment) {
         if (isNwtisMessage && numAttach == 1 && attachment != null) {
             return attachment;
-            // processingMessage(message, attachment);
         } else {
             return null;
         }
-
     }
 
+    /**
+     * Vraca sadrzaj privitka poruke ako je sve po zahtjevima, inace vraca null
+     *
+     * @param message poruka
+     * @param attachment privitak
+     * @return null or attachment
+     */
     private String processingMessage(Message message, MimeBodyPart attachment) {
-        /*obrađuju se tako da se ispituje sadržaj 
-        datoteke privitka. Sadržaj datoteke treba biti 
-        u "text/json" ili "application/json" formatu i može
-        biti sa sljedećem sintaksom:*/
-
         try {
-            // If the text is in HTML, just print it
-            if ("TEXT/JSON; charset=utf-8; name=NWTiS_privitak.json".equalsIgnoreCase(attachment.getContentType()) || "APPLICATION/JSON; charset=utf-8; name=NWTiS_privitak.json".equalsIgnoreCase(attachment.getContentType())) {
-                System.out.println("Primljeni je TEXT_JSOON: ");
-
+            if (AttachFormat1.equalsIgnoreCase(attachment.getContentType()) || AttachFormat2.equalsIgnoreCase(attachment.getContentType())) {
                 BufferedReader reader
                         = new BufferedReader(
                                 new InputStreamReader(
                                         attachment.getInputStream()));
-
                 String s;
-//OVJE JE PRIMLJENI JSON MESSG
                 String JSONfILE = "";
                 while ((s = reader.readLine()) != null) {
-
                     JSONfILE = JSONfILE + s;
                 }
-
-                System.out.print(JSONfILE);
                 return JSONfILE;
-                /*
-                if (valdiateJSONAttachment(JSONfILE)) {
-                    processIOTdeviceData(JSONfILE);
-                }
-                 */
             } else {
                 System.out.println("Primljeni je : " + message.getContentType());
                 return null;
             }
-
         } catch (Exception e) {
-            System.out.println("GREŠKA: " + e.getMessage());
             return null;
         }
     }
 
+    /**
+     * Validira dali je json zapis u privitku ispravan json format sa
+     * definiranim poljima.
+     *
+     * @param JSONfILE
+     * @return
+     */
     private boolean valdiateJSONAttachment(String JSONfILE) {
         Gson gson = new Gson();
         //TODO valdiate json string
@@ -415,6 +457,13 @@ public class ObradaPoruka extends Thread {
 
     }
 
+    /**
+     * Metoda za testiranje podudaranja ulaznog stringa i uzorka REgex-a
+     *
+     * @param sintaksa uzorak Regex
+     * @param string string za testiranje
+     * @return true ako odgovara, inace false
+     */
     public static boolean testInputString(String sintaksa, String string) {
         String p = string.trim();
         Pattern pattern = Pattern.compile(sintaksa);
@@ -422,6 +471,12 @@ public class ObradaPoruka extends Thread {
         return m.matches();
     }
 
+    /**
+     * Obrada json zapisa i prepoznavanje komande zahtjeva, te pozivanje upisa u
+     * bazu podataka
+     *
+     * @param JSONfILE
+     */
     private void processIOTdeviceData(String JSONfILE) {
         iot_id = -1;
         iot_command = "";
@@ -432,7 +487,6 @@ public class ObradaPoruka extends Thread {
             for (String en : jsonObject.keySet()) {
                 if (en.equals("id")) {
                     iot_id = Integer.parseInt(jsonObject.get(en).getAsString());
-                    //device.put(en.toLowerCase(), jsonObject.get(en).getAsString());
                 } else if (en.equals("komanda")) {
                     iot_command = jsonObject.get(en).getAsString();
                 } else if (en.equals("vrijeme")) {
@@ -444,67 +498,87 @@ public class ObradaPoruka extends Thread {
                     iot_atributs.put(en.toLowerCase(), jsonObject.get(en).getAsString());
                 }
             }
-
         } catch (Exception e) {
         }
         if (iot_id != -1 && (iot_command.equals("dodaj") || iot_command.equals("azuriraj")) && iot_time != null && iot_atributs.size() < 6 && iot_atributs.size() > 0) {
-            /*  System.out.println("ISPRAVAN JSON PRIVITAK");
-            System.out.println(iot_id);
-            System.out.println(iot_command);
-            System.out.println(iot_time);*/
-            for (Object object : iot_atributs.keySet()) {
-                //System.out.println(object.toString() + " - " + iot_atributs.get(object).toString());
-            }
             writeInDatabase(iot_id, iot_command, iot_atributs, iot_time, JSONfILE);
         }
-
     }
 
+    /**
+     *
+     * Ovisno o prosljedjenoj kondandu vrsi daljjnje akcije sa JSON zapisom
+     * Poziva dodavanje uredjaja, ili update uredjaja.
+     *
+     * @param IOT_id
+     * @param IOT_command
+     * @param IOT_atributs
+     * @param IOT_time
+     * @param json
+     */
     private void writeInDatabase(int IOT_id, String IOT_command, Properties IOT_atributs, Date IOT_time, String json) {
-
         if (IOT_command.equals("dodaj")) {
             addIot(IOT_id, IOT_atributs, IOT_time, json);
         } else if (IOT_command.equals("azuriraj")) {
             updateIot(IOT_id, IOT_atributs, IOT_time, json);
         }
-
     }
 
+    /**
+     * Prvjerava postoji li IOT uredjaj u bazi i ako ne postoji, onda pokrece
+     * dodavanej novog. Update-a podatke o radu dretve
+     *
+     * @param IOT_id
+     * @param IOT_atributs
+     * @param IOT_time
+     * @param json
+     */
     private void addIot(int IOT_id, Properties IOT_atributs, Date IOT_time, String json) {
         if (!checkIfExistIOT(IOT_id) && IOT_atributs.getProperty("naziv") != null) {
             if (addIOTinDatabase(IOT_id, IOT_atributs.getProperty("naziv"), json)) {
-                //TODO uspjesno dodan uređaj
                 addedIot++;
             } else {
-                //grešk kod dodavanja uređaja
+                messageNumber_incorrect++;
             }
         } else {
-            //TODO vrati pogrski da postoji IOT
+            messageNumber_incorrect++;
         }
     }
 
+    /**
+     * Prvjerava postoji li IOT uredjaj u bazi i ako postoji, onda pokrece
+     * update uredjaja. Update-a podatke o radu dretve
+     *
+     * @param IOT_id
+     * @param IOT_atributs
+     * @param IOT_time
+     * @param json
+     */
     private void updateIot(int IOT_id, Properties IOT_atributs, Date IOT_time, String json) {
         if (checkIfExistIOT(IOT_id)) {
             if (updateIOTinDatabase(IOT_id, IOT_atributs, json)) {
-                //TODO uspjesno update uređaj
                 updatedIot++;
-
             } else {
-                //grešk kod dodavanja uređaja
+                messageNumber_incorrect++;
             }
         } else {
-            //TODO vrati pogrski da postoji IOT
+            messageNumber_incorrect++;
         }
 
     }
 
+    /**
+     * Provjerava postoji li uredjaja za prosljedjenim ID u bazi podataka.
+     *
+     * @param IOT_id
+     * @return true - ako postoji, false - ako ne postoji
+     */
     private boolean checkIfExistIOT(int IOT_id) {
         upit = "SELECT * FROM `uredaji` WHERE `id` = " + IOT_id;
         uprProgram = konfiguracijaBaza.getDriverDatabase();
         boolean exist = false;
         try {
             Class.forName(uprProgram);
-
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(ObradaPoruka.class
                     .getName()).log(Level.SEVERE, null, ex);
@@ -515,9 +589,7 @@ public class ObradaPoruka extends Thread {
                 ResultSet rs = stmt.executeQuery(upit);) {
             while (rs.next()) {
                 exist = true;
-                //TODO pogreška ??
             }
-
             rs.close();
             stmt.close();
             con.close();
@@ -528,6 +600,14 @@ public class ObradaPoruka extends Thread {
         }
     }
 
+    /**
+     * Upisuje IOT uredjaj u bazu podataka
+     *
+     * @param IOT_id
+     * @param nameIot
+     * @param json
+     * @return true - uspjesno upisan, false - neuspjesno
+     */
     private boolean addIOTinDatabase(int IOT_id, String nameIot, String json) {
         upit = "INSERT INTO `uredaji` (`id`, `naziv`, `sadrzaj`, `vrijeme_promjene`, `vrijeme_kreiranja`) VALUES ('" + IOT_id + "', '" + nameIot + "', '" + json + "', '" + sqlDateFormat.format(new Date()) + "' , '" + sqlDateFormat.format(new Date()) + "')";
         uprProgram = konfiguracijaBaza.getDriverDatabase();
@@ -554,12 +634,20 @@ public class ObradaPoruka extends Thread {
 
     }
 
+    /**
+     * Uredjuje podatke o postojecem uredjaju u bazi podataka, sa novim
+     * podatcima.
+     *
+     * @param IOT_id
+     * @param IOT_atributs
+     * @param json
+     * @return
+     */
     private boolean updateIOTinDatabase(int IOT_id, Properties IOT_atributs, String json) {
         if (IOT_atributs.getProperty("naziv") != null) {
             upit = "UPDATE `uredaji` SET `naziv`= '" + IOT_atributs.getProperty("naziv") + "',`sadrzaj`='" + json + "',`vrijeme_promjene`='" + sqlDateFormat.format(new Date()) + "' WHERE `id`= " + IOT_id;
         } else {
             upit = "UPDATE `uredaji` SET `sadrzaj`= '" + json + "',`vrijeme_promjene`='" + sqlDateFormat.format(new Date()) + "' WHERE `id`=" + IOT_id;
-
         }
         uprProgram = konfiguracijaBaza.getDriverDatabase();
         boolean success = false;
@@ -578,40 +666,45 @@ public class ObradaPoruka extends Thread {
             stmt.close();
             con.close();
         } catch (Exception e) {
-            System.out.println("error: " + e.getMessage());
             return success;
         } finally {
             return success;
         }
-
     }
 
+    /**
+     * Premjesta poruke iz mape INBOX u novu mapu. Brise poruke iz mape INBOX
+     *
+     * @param mArray
+     * @param folderName
+     * @param currentFolder
+     * @throws Exception
+     */
     private void moveMessageToNWTISFolder(Message mArray, String folderName, Folder currentFolder) throws Exception {
         Message[] array = new Message[1];
         array[0] = mArray;
         Folder f = findFolder(folderName);
-
         currentFolder.copyMessages(array, f);
-
-        // Now the delete the messages from Current Folder
         for (int i = 0; i < array.length; i++) {
             array[i].setFlag(Flags.Flag.DELETED, true);
         }
         currentFolder.expunge();
     }
 
+    /**
+     * Pronalazenje mapre prema imenu
+     *
+     * @param folderName
+     * @return ako postoji vraca mapu, ako ne postoji vraca null
+     */
     private Folder findFolder(String folderName) {
         try {
             Folder folder = null;
-
-            // Start the session
             java.util.Properties properties = System.getProperties();
             properties.put("mail.smtp.host", adresaServera);
             session = Session.getInstance(properties, null);
-            // Connect to the store
             store = session.getStore("imap");
             store.connect(adresaServera, korisnickoIme, lozinka);
-            // Open the INBOX folder
             folder = store.getFolder(folderName);
             if (folder.exists()) {
                 folder.open(Folder.READ_WRITE);
@@ -621,11 +714,8 @@ public class ObradaPoruka extends Thread {
                 if (f != null) {
                     return f;
                 }
-
             }
-
             return null;
-
         } catch (MessagingException ex) {
             Logger.getLogger(ObradaPoruka.class
                     .getName()).log(Level.SEVERE, null, ex);
@@ -633,6 +723,13 @@ public class ObradaPoruka extends Thread {
         }
     }
 
+    /**
+     * Kreiranje novog direktorija prema nazivu i parent direktoriju
+     *
+     * @param parent
+     * @param folderName
+     * @return novokreirani direktorij
+     */
     private Folder createFolder(Store parent, String folderName) {
         boolean isCreated = true;
         Folder newFolder = null;
@@ -640,7 +737,6 @@ public class ObradaPoruka extends Thread {
             newFolder = parent.getFolder(folderName);
             isCreated = newFolder.create(Folder.HOLDS_FOLDERS);
             System.out.println("created: " + isCreated);
-
         } catch (Exception e) {
             System.out.println("Error creating folder: " + e.getMessage());
             e.printStackTrace();
@@ -653,13 +749,18 @@ public class ObradaPoruka extends Thread {
         }
     }
 
+    /**
+     * Upisivanje poruka u dnevnik u bazi podataka.
+     *
+     * @param message
+     * @param jsonString
+     * @param id
+     */
     private void saveMessageToLog(Message message, String jsonString, Long id) {
-
         if (checkIfExistMessageInLog(id)) {
             return;
         }
         upit = "INSERT INTO `dnevnik` (`id`, `sadrzaj`, `vrijeme`) VALUES ('" + id + "', '" + jsonString + "', '" + sqlDateFormat.format(new Date()) + "')";
-
         uprProgram = konfiguracijaBaza.getDriverDatabase();
         boolean success = false;
         try {
@@ -673,15 +774,20 @@ public class ObradaPoruka extends Thread {
                 Connection con = DriverManager.getConnection(urlDatabase, usernameAdminDatabase, lozinkaDatabase);
                 Statement stmt = con.createStatement();) {
             success = stmt.execute(upit);
-
             stmt.close();
             con.close();
         } catch (Exception e) {
             System.out.println("error: " + e.getMessage());
         }
-
     }
 
+    /**
+     * Provjerava da li postoji poruka upisna u dnevnik. Ako postoji upisana,
+     * onda vraca true, inace false
+     *
+     * @param IOT_id
+     * @return true - zapis postoji, false - zapis ne postoji
+     */
     private boolean checkIfExistMessageInLog(long IOT_id) {
         upit = "SELECT * FROM `dnevnik` WHERE `id` = " + IOT_id;
         uprProgram = konfiguracijaBaza.getDriverDatabase();
