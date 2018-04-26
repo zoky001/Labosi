@@ -34,6 +34,7 @@ import javax.faces.validator.FacesValidator;
 import javax.faces.validator.Validator;
 import javax.faces.validator.ValidatorException;
 import javax.mail.Address;
+import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
@@ -148,20 +149,23 @@ public class SlanjePoruka {
             message.setRecipients(Message.RecipientType.TO, toAddresses);
             // Set the subject and text
             message.setSubject(predmet);
-            message.setText("");
-
-            //TODO treba kreirati privitaki u njega staviti sadržaj varijable privitak
+            // Create the message part
+            BodyPart messageBodyPart = new MimeBodyPart();
+            // Now set the actual message
+            messageBodyPart.setText("");
             // Create a multipar message
             Multipart multipart = new MimeMultipart();
             MimeBodyPart messageAttachPart = new MimeBodyPart();
-
-            messageAttachPart.setContent(privitak, "text/json; charset=utf-8");
-
+            messageAttachPart.setContent(privitak, "application/json; charset=utf-8");
             messageAttachPart.setFileName(nazivAttachmenta);
-
-            multipart.addBodyPart(messageAttachPart);
+            // Set text message part
+            multipart.addBodyPart(messageBodyPart);
+            // Set attachment part
+            multipart.addBodyPart(messageAttachPart);        
             // Send the complete message parts
             message.setContent(multipart);
+
+   
             Transport.send(message);
 
             poruka = resBund.getString("slanjePoruka.uspjesnoPoslano");
@@ -226,8 +230,10 @@ public class SlanjePoruka {
         try {
             JsonObject jsonObject = new JsonParser().parse(selectedRadio).getAsJsonObject();
         } catch (JsonSyntaxException e) {
+            privitak = "{}";
             throw new ValidatorException(new FacesMessage(FacesMessage.SEVERITY_ERROR, msg, msg));
         } catch (Exception e) {
+            privitak = "{}";
             throw new ValidatorException(new FacesMessage(FacesMessage.SEVERITY_ERROR, msg, msg));
         }
 

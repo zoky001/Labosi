@@ -136,11 +136,11 @@
 
                                 </div>
                                 <div class="col-md-3">
-                                    <h:commandButton  value="#{p['pregledPoruka.prethodnePoruke']}" action="#{pregledPoruka.prethodnePoruke()}"  />
+                                    <h:commandButton class="#{pregledPoruka.isPrevious()}" value="#{p['pregledPoruka.prethodnePoruke']}" action="#{pregledPoruka.prethodnePoruke()}"  />
 
                                 </div>
                                 <div class="col-md-3">
-                                    <h:commandButton  value="#{p['pregledPoruka.sljedecePoruke']}" action="#{pregledPoruka.sljedecePoruke()}"  />
+                                    <h:commandButton  class="#{pregledPoruka.isNext()}" value="#{p['pregledPoruka.sljedecePoruke']}" action="#{pregledPoruka.sljedecePoruke()}"  />
 
                                 </div>
                             </div>

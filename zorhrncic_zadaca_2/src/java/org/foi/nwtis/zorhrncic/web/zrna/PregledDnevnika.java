@@ -62,7 +62,7 @@ public class PregledDnevnika {
     public PregledDnevnika() {
         preuzmiKonfiuraciju();
         //preuzmiZapise();
-       /* String odabraniJezik = FacesContext.getCurrentInstance().getViewRoot().getLocale().getLanguage();
+        /* String odabraniJezik = FacesContext.getCurrentInstance().getViewRoot().getLocale().getLanguage();
         Locale local = new Locale(odabraniJezik);
         FacesContext.getCurrentInstance().getViewRoot().setLocale(local);*/
     }
@@ -153,6 +153,23 @@ o	new Dnevnik(Integer.toString(i++), "{'id': 1, 'komanda': 'dodaj', 'naziv': 'Se
     }
 
     //getter and setter
+    public String isPrevious() {
+        if (pozicijaOd < 1) {
+            return "hidden";
+        } else {
+            return "";
+        }
+    }
+
+//getter & setter
+    public String isNext() {
+        if (pozicijaDo >= ukupanBrojZapisa) {
+            return "hidden";
+        } else {
+            return "";
+        }
+    }
+
     public void setOdDatuma(String odDatuma) {
         try {
             String s = (String) odDatuma;

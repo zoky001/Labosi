@@ -57,8 +57,8 @@ public class PregledPoruka {
     private int portServera;
     private String nazivAttachmenta;
     private String privitak;
-    private static boolean previous = false;
-    private static boolean next = false;
+    private static boolean previousBoolean = false;
+    private static boolean nextBoolean = false;
 
     /**
      * Creates a new instance of PregledPoruka
@@ -143,8 +143,8 @@ public class PregledPoruka {
     }
 
     private void getMessgeFromFolder(String odabranaMapa) {
-        next = true;
-        previous = true;
+        nextBoolean = true;
+        previousBoolean = true;
         try {
             // Open the INBOX folder
             Folder folder = store.getFolder(odabranaMapa);
@@ -163,15 +163,15 @@ public class PregledPoruka {
                 return;
             }
 
-            pozicijaDo = pozicijaOd + messageToShow - 1;
+         
             if (pozicijaOd == -1) {
-
+   pozicijaDo = pozicijaOd + messageToShow - 1;//moakni gore
                 pozicijaDo = ukupanBrojPoruka;
                 pozicijaOd = pozicijaDo - messageToShow + 1;
             }
             if (pozicijaDo >= ukupanBrojPoruka) {
                 pozicijaDo = ukupanBrojPoruka;
-                previous = false;
+                previousBoolean = false;
             }
 
             if (pozicijaOd > ukupanBrojPoruka) {
@@ -179,7 +179,7 @@ public class PregledPoruka {
             }
             if (pozicijaOd <= 1) {
                 pozicijaOd = 1;
-                next = false;
+                nextBoolean = false;
             }
             int end = pozicijaDo;
             /* if (ukupanBrojPoruka < pozicijaOd + messageToShow) {
@@ -296,22 +296,21 @@ public class PregledPoruka {
         }
     }
 
-    public boolean isPrevious() {
-        return previous;
-
+    public String isPrevious() {
+        if (previousBoolean) {
+            return "";
+        } else {
+            return "hidden";
+        }
     }
 
-    public void setPrevious(boolean previous) {
-        previous = previous;
-    }
-
-    public boolean isNext() {
-        return next;
-    }
-
-    //Getter & setter
-    public void setNext(boolean next) {
-        next = next;
+//getter & setter
+    public String isNext() {
+        if (nextBoolean) {
+            return "";
+        } else {
+            return "hidden";
+        }
     }
 
     public int getUkupanBrojPoruka() {
@@ -385,7 +384,7 @@ public class PregledPoruka {
          */
         pozicijaDo = pozicijaOd - 1;
         pozicijaOd = pozicijaOd - messageToShow;
-        pozicijaDo = pozicijaOd + messageToShow;
+       // pozicijaDo = pozicijaOd + messageToShow;
         if (pozicijaOd < 1) {
             pozicijaOd = 1;
         }

@@ -153,11 +153,11 @@
                             </div>   
 
                             <div class="col-md-3">
-                                <h:commandButton  value="#{p['pregledDnevnika.prethodno']}" action="#{pregledDnevnika.prethodniZapisi()}" />
+                                <h:commandButton  class="#{pregledDnevnika.isPrevious()}" value="#{p['pregledDnevnika.prethodno']}" action="#{pregledDnevnika.prethodniZapisi()}" />
 
                             </div>
                             <div class="col-md-3">
-                                <h:commandButton  value="#{p['pregledDnevnika.sljedece']}" action="#{pregledDnevnika.sljedeciZapisi()}" />
+                                <h:commandButton class="#{pregledDnevnika.isNext()}"  value="#{p['pregledDnevnika.sljedece']}" action="#{pregledDnevnika.sljedeciZapisi()}" />
 
                             </div>
                         </div>
