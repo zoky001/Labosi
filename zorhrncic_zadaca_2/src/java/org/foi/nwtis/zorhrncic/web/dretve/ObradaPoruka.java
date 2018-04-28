@@ -234,9 +234,11 @@ public class ObradaPoruka extends Thread {
                         moveMessageToNWTISFolder(messages[i], nazivMape, folder);
                     } else {
                         messageNumber_incorrect++;
+                        setFlags(flags, i);
                     }
                 } else {
                     messageNumber_incorrect++;
+                    setFlags(flags, i);
                 }
             } else {
                 messageNumber_incorrect++;
@@ -457,8 +459,8 @@ public class ObradaPoruka extends Thread {
      */
     private boolean valdiateJSONAttachment(String JSONfILE) {
         Gson gson = new Gson();
-        boolean odg = false;                      
-        try {          
+        boolean odg = false;
+        try {
             JsonObject jsonObject = new JsonParser().parse(JSONfILE).getAsJsonObject();
             odg = testInputString(sintaksaJSON, JSONfILE);
         } catch (JsonSyntaxException e) {
