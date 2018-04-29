@@ -1,0 +1,175 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+ 
+    <f:view locale="#{lokalizacija.locale}"></f:view>
+    
+    <h:head>
+        <title>#{p['pregledPoruka.title']}</title>
+    </h:head>
+    <h:outputStylesheet library="css" name="osnovna.css"  />
+    <!-- Bootstrap core CSS -->
+    <h:outputStylesheet library="css" name="bootstrap-3.3.7-dist/css/bootstrap.min.css"/>
+
+    <h:body>
+
+
+        <header class="header">
+            <div class="text-centar">
+
+                <div class="navigacija"> 
+
+
+                    <h:form style="clear: both;" >
+
+                        <h:commandLink  action="#{pregledPoruka.promjenaJezika()}">
+                            <h:button class="btnNavL" value="#{p['pregledPoruka.veza_promjenaJezika']}">
+
+                            </h:button>
+                        </h:commandLink>
+
+                        <h:commandLink  action="#{pregledPoruka.saljiPoruku()}">
+                            <h:button class="btnNav" value="#{p['pregledPoruka.slanjePoruke']}">
+
+                            </h:button>
+                        </h:commandLink>
+
+                        <h:commandLink  action="#{pregledPoruka.pregledDnevnika()}">
+                            <h:button class="btnNavD" value="#{p['pregledPoruka.veza_pregledDnevnika']}">
+
+                            </h:button>
+                        </h:commandLink>
+
+                    </h:form>
+                </div>
+            </div>
+
+        </header>
+
+
+        <div id="content" class="section text-centar">
+
+            <div class="naslov">
+                <h1>#{p['pregledPoruka.title']} </h1>
+
+            </div>
+            <div style="width: 80%; margin-left: 10%">
+                <h:form>
+
+                    <div class="form-inline">
+                        <div class="form-group">
+                            <h:outputLabel value="#{p['pregledPoruka.odaberiMapu']}:&nbsp;&nbsp;"></h:outputLabel>
+                            <h:selectOneMenu class="form-control dropdown" value="#{pregledPoruka.odabranaMapa}">
+                                <f:selectItems class="dropdown-menu" value="#{pregledPoruka.nizMapa}" var="c" itemLabel="#{c.labela}" itemValue="#{c.vrijednost}" />
+                            </h:selectOneMenu>
+
+                        </div>
+
+
+                        <h:commandButton style="margin-left: 10px " class="btn btn-default btn-md"  value="#{p['pregledPoruka.promjeni']}" action="#{pregledPoruka.promjenaMape()}"/>
+                    </div>
+
+                    <br></br>
+                    <h:dataTable class="table table-bordered" value="#{pregledPoruka.nizPoruka}" var="message">
+
+                        <h:column>
+                            <!-- column header -->
+                            <f:facet name="header">#{p['pregledPoruka.predmet']}</f:facet>
+                            <!-- row record -->
+                            <h:outputText value="#{message.predmet}"></h:outputText>
+
+                        </h:column>
+
+                        <h:column>
+                            <!-- column header -->
+                            <f:facet name="header">#{p['pregledPoruka.salje']}</f:facet>
+                            <!-- row record -->
+                            <h:outputText value="#{message.salje}"></h:outputText>
+
+                        </h:column>
+
+
+
+                        <h:column>
+                            <!-- column header -->
+                            <f:facet name="header">#{p['pregledPoruka.vrijemeSlanja']}</f:facet>
+                            <!-- row record -->
+
+                            <h:outputText value="#{message.vrijemeSlanja}">
+                                <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                            </h:outputText>
+
+                        </h:column>
+
+                        <h:column>
+                            <!-- column header -->
+                            <f:facet name="header">#{p['pregledPoruka.vrstaPoruke']}</f:facet>
+                            <!-- row record -->
+                            <h:outputText value="#{message.vrsta}"></h:outputText>
+
+                        </h:column>
+                        <h:column>
+                            <!-- column header -->
+                            <f:facet name="header">#{p['pregledPoruka.privitak']}</f:facet>
+                            <!-- row record -->
+                            <h:outputText value="#{message.privitak}"></h:outputText>
+
+                        </h:column>
+
+                    </h:dataTable>
+
+
+                    <br></br>
+                    <div class="row">
+
+                        <div class="col-md-6">
+                            <div class="row">
+
+                                <div class="col-md-6">
+
+                                    <h:outputLabel class="col-md-9" value="#{p['pregledPoruka.ukupnoPoruka']}:"></h:outputLabel>
+
+                                    <h:outputText class="col-md-3" value="#{pregledPoruka.ukupanBrojPoruka}"></h:outputText>
+
+
+                                </div>
+                                <div class="col-md-3">
+                                    <h:commandButton class="#{pregledPoruka.isPrevious()}" value="#{p['pregledPoruka.prethodnePoruke']}" action="#{pregledPoruka.prethodnePoruke()}"  />
+
+                                </div>
+                                <div class="col-md-3">
+                                    <h:commandButton  class="#{pregledPoruka.isNext()}" value="#{p['pregledPoruka.sljedecePoruke']}" action="#{pregledPoruka.sljedecePoruke()}"  />
+
+                                </div>
+                            </div>
+
+
+                        </div>
+                        <div class="col-md-6">
+                            <br></br>
+                        </div>
+                    </div>
+
+
+                    <h:inputText class="hidden" value="#{pregledPoruka.ukupanBrojPoruka}"></h:inputText>
+
+
+                    <h:inputText class="hidden" value="#{pregledPoruka.pozicijaOd}"></h:inputText>
+
+                    <h:inputText class="hidden"  value="#{pregledPoruka.pozicijaDo}"></h:inputText>
+                    <br></br>
+
+
+                </h:form>
+
+            </div>
+
+
+
+        </div>
+    </h:body>
+    <h:outputScript name="bootstrap-3.3.7-dist/js/bootstrap.min.js"/>
+</html>
+

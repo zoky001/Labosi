@@ -1,0 +1,190 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+    <f:view locale="#{lokalizacija.locale}"></f:view>
+    <h:head>
+        <title>#{p['pregledDnevnika.title']}</title>
+        <h:outputStylesheet library="css" name="osnovna.css"  />
+        <!-- Bootstrap core CSS -->
+        <h:outputStylesheet library="css" name="bootstrap-3.3.7-dist/css/bootstrap.min.css"/>
+    </h:head>
+
+
+    <header class="header">
+        <div class="text-centar">
+
+            <div class="navigacija"> 
+                <h:form>
+                    <h:commandLink  action="#{pregledDnevnika.promjenaJezika()}">
+                        <h:button class="btnNavL" value="#{p['pregledDnevnika.veza_promjenaJezika']}">
+
+                        </h:button>
+                    </h:commandLink>
+
+                    <h:commandLink  action="#{pregledDnevnika.saljiPoruku()}">
+                        <h:button class="btnNav" value="#{p['pregledDnevnika.slanjePoruke']}">
+
+                        </h:button>
+                    </h:commandLink>
+
+                    <h:commandLink  action="#{pregledDnevnika.pregledPoruka()}">
+                        <h:button class="btnNavD" value="#{p['pregledDnevnika.veza_pregledPoruka']}">
+
+                        </h:button>
+
+                    </h:commandLink>
+
+                </h:form>
+            </div>
+        </div>
+
+    </header>
+    <div id="content" class="section text-centar">
+
+        <div class="naslov">
+            <h1>
+                #{p['pregledDnevnika.title']}
+            </h1>
+
+        </div>
+        <div class="galerija">
+            <h:form>
+
+                <div class="row">
+                    <div class="col-md-4">
+
+                        <div class="form-horizontal" >
+                            <div class="form-group">
+
+                                <h:outputLabel class="control-label col-sm-2" value="#{p['pregledDnevnika.od']}"></h:outputLabel>
+                                <div class="col-sm-10">
+                                    <h:inputText class="form-control"  value="#{pregledDnevnika.odDatuma}" id="od" required="true" 
+                                                 requiredMessage="#{p['pregledDnevnika.datumObavezan']}" validatorMessage="#{p['pregledDnevnika.datumFormat']}">
+                                        <f:validateRegex pattern="(0[1-9]|[12][0-9]|3[01]).(0[1-9]|1[012]).((19|2[0-9])[0-9]{2}) (0[0-9]|[1][0-9]|2[0-3]):(0[0-9]|[1-5][0-9]):(0[0-9]|[1-5][0-9])" for="od" />
+                                    </h:inputText>
+
+                                    <h:message class="text-danger" id="m1" for="od"/>
+
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <h:outputLabel class="control-label col-sm-2" value="#{p['pregledDnevnika.do']}"></h:outputLabel>
+                                <div class="col-sm-10"> 
+                                    <h:inputText class="form-control" value="#{pregledDnevnika.doDatuma}"
+                                                 id="do"  required="true" requiredMessage="#{p['pregledDnevnika.datumObavezan']}"
+                                                 validatorMessage="#{p['pregledDnevnika.datumFormat']}">
+                                        <f:validateRegex pattern="(0[1-9]|[12][0-9]|3[01]).(0[1-9]|1[012]).((19|2[0-9])[0-9]{2}) (0[0-9]|[1][0-9]|2[0-3]):(0[0-9]|[1-5][0-9]):(0[0-9]|[1-5][0-9])" for="do" />
+                                    </h:inputText>
+
+                                    <h:message  class="text-danger" id="m2" for="do"/>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+
+
+                    </div>
+                    <div class="col-md-2 align-middle">
+                        <div class="form-group"> 
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <h:commandButton  class="btn btn-default" value="#{p['pregledDnevnika.prikaz']}" action="#{pregledDnevnika.promjenaIntervala()}"/>
+
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="col-md-6">
+                        <br></br>
+                    </div>
+                </div>
+
+
+
+
+                <br></br>
+
+
+                <h:dataTable class="table table-bordered" value="#{pregledDnevnika.preuzetiZapisniciDnevnika}" var="item">
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">#{p['pregledDnevnika.id']}</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.id}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">#{p['pregledDnevnika.sadrzaj']}</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.sadrzaj}"></h:outputText>
+
+                    </h:column>
+
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">#{p['pregledDnevnika.vrijeme']}</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.vrijemeZapisa}">
+                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                        </h:outputText>
+
+                    </h:column>
+
+                </h:dataTable>
+                <br></br>
+                <div class="row">
+
+                    <div class="col-md-6">
+                        <div class="row">
+
+                            <div class="col-md-6">
+                                <h:outputLabel  class="col-md-9" value="#{p['pregledDnevnika.ukupno']}:"></h:outputLabel>
+
+
+                                <h:outputText class="col-md-3" value="#{pregledDnevnika.ukupanBrojZapisa}"></h:outputText>
+
+
+                            </div>   
+
+                            <div class="col-md-3">
+                                <h:commandButton  class="#{pregledDnevnika.isPrevious()}" value="#{p['pregledDnevnika.prethodno']}" action="#{pregledDnevnika.prethodniZapisi()}" />
+
+                            </div>
+                            <div class="col-md-3">
+                                <h:commandButton class="#{pregledDnevnika.isNext()}"  value="#{p['pregledDnevnika.sljedece']}" action="#{pregledDnevnika.sljedeciZapisi()}" />
+
+                            </div>
+                        </div>
+                        
+                        <h:inputText  class="hidden" value="#{pregledDnevnika.pozicijaOd}"></h:inputText>
+                        <h:inputText class="hidden"  value="#{pregledDnevnika.ukupanBrojZapisa}"></h:inputText>
+                        <h:inputText class="hidden"  value="#{pregledDnevnika.pozicijaDo}"></h:inputText>
+
+
+                    </div>
+                    <div class="col-md-6">
+                        <br></br>
+                    </div>
+                </div>
+
+
+
+
+
+            </h:form>
+
+        </div>
+
+
+
+    </div>
+    <h:outputScript name="bootstrap-3.3.7-dist/js/bootstrap.min.js"/>
+
+</html>
+

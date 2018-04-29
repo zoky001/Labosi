@@ -232,6 +232,7 @@ public class IOT {
      */
     private boolean updateDevice(Properties device, JsonObject jsonObject) {
         try {
+            
             for (String en : jsonObject.keySet()) {
                 if (en.equals("id") || en.equals("ID")) {
                     device.put(en.toLowerCase(), jsonObject.get(en).getAsString());

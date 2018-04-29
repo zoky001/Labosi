@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="#{lokalizacija.language}"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html" 
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <f:view locale="#{lokalizacija.locale}"></f:view>
+    <h:head>
+        <title>#{p['index.naslov']}</title>
+        <h:outputStylesheet library="css" name="osnovna.css"/>
+        <!-- Latest compiled and minified CSS -->
+        <!-- Bootstrap core CSS -->
+        <h:outputStylesheet library="css" name="bootstrap-3.3.7-dist/css/bootstrap.min.css"/>
+    </h:head>
+
+
+
+    <h:body>
+
+        <header class="header">
+            <div class="text-centar">
+
+                <div class="navigacija"> 
+
+                    <h:form>
+                        <h:inputText class="hidden"  value="#{lokalizacija.odabraniJezik}"></h:inputText>
+
+                        <h:commandLink  action="#{lokalizacija.saljiPoruku()}">
+                            <h:button class="btnNavL" value="#{p['index.veza_slanjePoruke']}">
+
+                            </h:button>
+                        </h:commandLink>
+
+                        <h:commandLink  action="#{lokalizacija.pregledPoruka()}">
+                            <h:button class="btnNav" value="#{p['index.veza_pregledPoruke']}">
+
+                            </h:button>
+                        </h:commandLink>
+
+                        <h:commandLink  action="#{lokalizacija.pregledDnevnika()}">
+                            <h:button class="btnNavD" value="#{p['index.veza_pregledDnevnika']}">
+
+                            </h:button>
+                        </h:commandLink>
+
+
+                    </h:form>
+                </div>
+            </div>
+
+        </header>
+
+
+        <div id="content" class="section text-centar">
+
+            <div class="naslov">
+                <h1>
+                    #{p['index.naslov']}
+                </h1>
+
+            </div>
+            <div class="galerija">
+                <h:form>
+
+                    <h:inputText class="hidden"  value="#{lokalizacija.odabraniJezik}"></h:inputText>
+
+                    <div class="row">
+                        <div class="col-md-3" rendered="#{lokalizacija.odabraniJezik ne 'hr'}">
+                            <br></br>
+                        </div>
+                        <div class="col-md-6">
+                            <h:commandButton class="btn btn-primary btn-lg" value="#{p['index.hr_jezik']}" action="#{lokalizacija.odaberiJezik('hr')}" rendered="#{lokalizacija.odabraniJezik ne 'hr'}"/>
+                            <h:outputText value="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" rendered="#{lokalizacija.odabraniJezik ne 'hr'}"/>
+                            <h:commandButton class="btn btn-primary btn-lg"  value="#{p['index.en_jezik']}" action="#{lokalizacija.odaberiJezik('en')}" rendered="#{lokalizacija.odabraniJezik ne 'en'}"/>
+                            <h:outputText value="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" rendered="#{lokalizacija.odabraniJezik ne 'en'}"/>
+
+                            <h:commandButton class="btn btn-primary btn-lg" value="#{p['index.de_jezik']}" action="#{lokalizacija.odaberiJezik('de')}" rendered="#{lokalizacija.odabraniJezik ne 'de'}"/>
+
+                        </div>
+                        <div class="col-md-3">
+                            <br></br>
+                        </div>
+                    </div>
+
+
+
+
+                </h:form>
+
+            </div>
+
+
+
+        </div>
+    </h:body>
+    <h:outputScript name="bootstrap-3.3.7-dist/js/bootstrap.min.js"/>
+</html>
+
