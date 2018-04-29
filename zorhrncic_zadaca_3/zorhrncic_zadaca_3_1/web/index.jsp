@@ -59,7 +59,7 @@
 
                     </div>
                 </form>-->
-                <form  action="">
+                <form method="post" action="${pageContext.servletContext.contextPath}/DodajParkiraliste">
                     <div class="form-inline">
                         <div class="form-group">
                             <label for="">Naziv i adresa:</label>
@@ -71,8 +71,8 @@
                             <input type="text" class="form-control" id="adresa" name="adresa">
                         </div>
                         <div class="form-group">
+                            <input class="btn btn-xs btn-default" type="submit" name="geolokacija" value="Geo lokacija">
 
-                            <button type="submit" class="btn btn-xs btn-default">Geo lokacija</button>
 
                         </div>
 
@@ -89,7 +89,8 @@
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
-                                <button type="submit" class="btn btn-xs btn-default">Spremi</button>
+                                <input class="btn btn-xs btn-default" type="submit" name="spremi" value="Spremi">
+                               
                             </div>
                         </div>
                     </div>
@@ -110,7 +111,7 @@
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
-                                <button type="submit" class="btn btn-xs btn-default">Meteo podatci</button>
+                                <input class="btn btn-xs btn-default" type="submit" name="meteo" value="Meteo podaci">
                             </div>
                         </div>
                     </div>

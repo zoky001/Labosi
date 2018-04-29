@@ -43,6 +43,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.servlet.ServletContext;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
+import org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije;
 
 /**
  *
@@ -110,10 +111,10 @@ public class PreuzmiMeteoPodatke extends Thread {
      *
      */
     private void preuzmiKonfiuraciju() {
-       /* ServletContext servletContext = (ServletContext) FacesContext.getCurrentInstance().getExternalContext().getContext();
+        ServletContext servletContext = SlusacAplikacije.getServletContext();
         konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
         konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
-        spavanje = Integer.parseInt(konfiguracija.dajPostavku("mail.timeSecThreadCycle"));
+       /* spavanje = Integer.parseInt(konfiguracija.dajPostavku("mail.timeSecThreadCycle"));
         adresaServera = konfiguracija.dajPostavku("mail.server");
         portServera = Integer.parseInt(konfiguracija.dajPostavku("mail.imap.port"));
         korisnickoIme = konfiguracija.dajPostavku("mail.usernameThread");
@@ -124,7 +125,7 @@ public class PreuzmiMeteoPodatke extends Thread {
         nazivDatotekePodatciRadu = konfiguracija.dajPostavku("mail.threadCycleLogFilename");
         usernameAdminDatabase = konfiguracijaBaza.getUserUsername();
         lozinkaDatabase = konfiguracijaBaza.getUserPassword();
-        urlDatabase = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getUserDatabase();  */     
+        urlDatabase = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getUserDatabase();  */
     }
 
     @Override

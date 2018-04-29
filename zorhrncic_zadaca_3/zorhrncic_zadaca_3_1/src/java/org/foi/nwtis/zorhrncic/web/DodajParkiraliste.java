@@ -6,12 +6,20 @@
 package org.foi.nwtis.zorhrncic.web;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
+import org.foi.nwtis.zorhrncic.rest.klijenti.GMKlijent;
+import org.foi.nwtis.zorhrncic.rest.klijenti.OWMKlijent;
+import org.foi.nwtis.zorhrncic.web.podaci.Lokacija;
+import org.foi.nwtis.zorhrncic.web.podaci.MeteoPodaci;
 
 /**
  *
@@ -31,32 +39,57 @@ public class DodajParkiraliste extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet DodajParkiraliste</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet DodajParkiraliste at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
+        String naziv = request.getParameter("naziv");
+        String adresa = request.getParameter("adresa");
+
+        GMKlijent gmk = new GMKlijent("GM apikey");
+        Lokacija lok = gmk.getGeoLocation(adresa);
+
+        BP_Konfiguracija bpk = (BP_Konfiguracija) this.getServletContext().getAttribute("BP_Konfig");
+        if (bpk == null) {
+            System.out.println("Problem s konfiguracijom.");
+            return;
         }
+        String url = bpk.getServerDatabase() + bpk.getUserDatabase();
+        String korisnik = bpk.getUserUsername();
+        String lozinka = bpk.getUserPassword();
+        String upit = "insert into parkiralista (naziv, adresa, latitude, longitude) values "
+                + "('" + naziv + "', '" + adresa + "'," + lok.getLatitude() + ", " + lok.getLongitude() + ")";
+
+        try {
+            Class.forName(bpk.getDriverDatabase());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        try (
+                Connection con = DriverManager.getConnection(url, korisnik, lozinka);
+                Statement stmt = con.createStatement();) {
+            stmt.execute(upit);
+            stmt.close();
+            con.close();
+        } catch (SQLException ex) {
+            System.err.println("SQLException: " + ex.getMessage());
+        }
+        System.out.println("Lokacija: " + lok.getLatitude() + ", " + lok.getLongitude());
+        OWMKlijent owmk = new OWMKlijent("OWM apikey");
+        MeteoPodaci mp = owmk.getRealTimeWeather(lok.getLatitude(), lok.getLongitude());
+        System.out.println("Temp: " + mp.getTemperatureValue());
     }
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+
+// <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
+/**
+ * Handles the HTTP <code>GET</code> method.
+ *
+ * @param request servlet request
+ * @param response servlet response
+ * @throws ServletException if a servlet-specific error occurs
+ * @throws IOException if an I/O error occurs
+ */
+@Override
+        protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
@@ -70,7 +103,7 @@ public class DodajParkiraliste extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+        protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
@@ -81,7 +114,7 @@ public class DodajParkiraliste extends HttpServlet {
      * @return a String containing servlet description
      */
     @Override
-    public String getServletInfo() {
+        public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
 
