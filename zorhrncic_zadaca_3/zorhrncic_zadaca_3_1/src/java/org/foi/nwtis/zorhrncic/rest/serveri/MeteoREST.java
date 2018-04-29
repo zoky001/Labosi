@@ -5,8 +5,27 @@
  */
 package org.foi.nwtis.zorhrncic.rest.serveri;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Properties;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Resource;
+import javax.faces.context.FacesContext;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
+import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.Produces;
@@ -18,7 +37,16 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
 import net.sf.json.JSONObject;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
+import org.foi.nwtis.zorhrncic.rest.klijenti.GMKlijent;
+import org.foi.nwtis.zorhrncic.rest.klijenti.OWMKlijent;
+import org.foi.nwtis.zorhrncic.web.podaci.Lokacija;
+import org.foi.nwtis.zorhrncic.web.podaci.MeteoPodaci;
+import org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije;
 
 /**
  * REST Web Service
@@ -30,11 +58,24 @@ public class MeteoREST {
 
     @Context
     private UriInfo context;
+    private BP_Konfiguracija konfiguracijaBaza;
+    private Konfiguracija konfiguracija;
+    private String usernameAdmin;
+    private String lozinka;
+    private String url;
+    private String uprProgram;
+
+    @Resource
+    private WebServiceContext serviceContext;
+    private String json;
+    private String gm_apiKey;
+    private String OWM_apikey;
 
     /**
      * Creates a new instance of MeteoREST
      */
     public MeteoREST() {
+        preuzmiKonfiuraciju();
     }
 
     /**
@@ -46,29 +87,24 @@ public class MeteoREST {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public String getJson() {
-        //TODO 
-        /*
-       u klasi MeteoREST u metodi getJson() 
-        staviti da vraća popis svih parkirališta 
-        koja se nalaze u tablici PARKIRALISTA iz baze
-        podataka u application/json formatu. 
-        Potrebno je napraviti upit prema bazi podataka.
-        Pripremiti odgovor u application/json formatu i 
-        zadanom strukturom.
-         */
-
-        JsonArrayBuilder nesto =  createArrayJSONdata_allParkingData();
-       
-
-        //with error
-        String json = Json.createObjectBuilder()
-                .add("odgovor", nesto
-                )
-                .add("status", "ERR")
-                .add("poruka", "Dogodila se pogreška")
-                .build()
-                .toString();
- 
+        json = "";
+        JsonArrayBuilder allParkingData = createArrayJSONdata_allParkingData();
+        if (allParkingData != null) {
+            json = Json.createObjectBuilder()
+                    .add("odgovor", allParkingData
+                    )
+                    .add("status", "OK")
+                    .build()
+                    .toString();
+        } else {
+            //with error
+            json = Json.createObjectBuilder()
+                    .add("odgovor", "[]")
+                    .add("status", "ERR")
+                    .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka.")
+                    .build()
+                    .toString();
+        }
 
         return json;
     }
@@ -82,17 +118,34 @@ public class MeteoREST {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public String postJson(String content) {
-        //TODO
-        /*u metodi postJson(String) staviti da dodaje 
-       parkiralište. Prima podatke u application/json 
-       formatu. Pripremiti odgovor u application/json 
-       formatu i zadanom strukturom.
-         */
-        // TODO provjeri da li postoji parkiraliĹˇte s id iz argumenta
-        // TODO ako ne postoji dodati u bazu podataka
+        boolean succes = false;
+        json = "";
+        String naziv, adresa;
+        try {
+            JsonObject jsonObject = new JsonParser().parse(content).getAsJsonObject();
+            naziv = jsonObject.get("naziv").getAsString();
+            adresa = jsonObject.get("adresa").getAsString();
+            if (!checkIfExistParkingByName(naziv)) {
+                succes = processingAddParking(naziv, adresa);
+            }
+        } catch (Exception e) {
 
-        return "{\"odgovor\": [],"
-                + "\"status\": \"OK\"}";
+        }
+        if (succes) {
+            json = Json.createObjectBuilder()
+                    .add("odgovor", "[]")
+                    .add("status", "OK")
+                    .build()
+                    .toString();
+        } else {
+            json = Json.createObjectBuilder()
+                    .add("odgovor", "[]")
+                    .add("status", "ERR")
+                    .add("poruka", "Dogodila se pogreška prilikom upisivanja podataka.")
+                    .build()
+                    .toString();
+        }
+        return json;
     }
 
     @PUT
@@ -112,13 +165,34 @@ public class MeteoREST {
          */
         // TODO provjeri da li postoji parkiraliĹˇte s id iz argumenta
         // TODO ako postoji aĹľurirati u bazi podataka
-        if (Integer.parseInt(id) == 0) {
-            return "{\"odgovor\": [],"
-                    + "\"status\": \"ERR\", \"poruka\": \"ParkiraliĹˇte ne postoji\"}";
-        } else {
-            return "{\"odgovor\": [],"
-                    + "\"status\": \"OK\"}";
+        boolean succes = false;
+        json = "";
+        String naziv, adresa;
+        try {
+            JsonObject jsonObject = new JsonParser().parse(content).getAsJsonObject();
+            naziv = jsonObject.get("naziv").getAsString();
+            adresa = jsonObject.get("adresa").getAsString();
+            if (checkIfExistParkingByID(Integer.parseInt(id))) {
+                succes = processingUpdateParking(naziv, adresa,Integer.parseInt(id));
+            }
+        } catch (Exception e) {
+
         }
+        if (succes) {
+            json = Json.createObjectBuilder()
+                    .add("odgovor", "[]")
+                    .add("status", "OK")
+                    .build()
+                    .toString();
+        } else {
+            json = Json.createObjectBuilder()
+                    .add("odgovor", "[]")
+                    .add("status", "ERR")
+                    .add("poruka", "Dogodila se pogreška prilikom izmjene podataka.")
+                    .build()
+                    .toString();
+        }
+        return json;
     }
 
     @DELETE
@@ -150,15 +224,25 @@ public class MeteoREST {
          */
 
         // TODO provjeri da li postoji parkiraliĹˇte s id iz argumenta
-        if (Integer.parseInt(id) == 0) {
-            return "{\"odgovor\": [],"
-                    + "\"status\": \"ERR\", \"poruka\": \"ParkiraliĹˇte ne postoji\"}";
+        json = "";
+        JsonArrayBuilder allParkingData = createJSONdataWeather_ByParkingID(Integer.parseInt(id));
+        if (allParkingData != null) {
+            json = Json.createObjectBuilder()
+                    .add("odgovor", allParkingData)
+                    .add("status", "OK")
+                    .build()
+                    .toString();
         } else {
-            return "{\"odgovor\": [{\"id\": 1, "
-                    + "\"naziv\": \"Podzemna garaĹľa\","
-                    + "\"adresa\": \"Kapucinski trg 1, VaraĹľdin\"}],"
-                    + "\"status\": \"OK\"}";
+            //with error
+            json = Json.createObjectBuilder()
+                    .add("odgovor", "[]")
+                    .add("status", "ERR")
+                    .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka.")
+                    .build()
+                    .toString();
         }
+
+        return json;
     }
 
     @POST
@@ -172,17 +256,220 @@ public class MeteoREST {
 
     private JsonArrayBuilder createArrayJSONdata_allParkingData() {
         JsonArrayBuilder nesto = Json.createArrayBuilder();
-
-        for (int i = 0; i < 10; i++) {
-            nesto.add(Json.createObjectBuilder()
-                    .add("id", i)
-                    .add("naziv", "Podzemna garaža")
-                    .add("adresa", "Kapucinski trg 9")
-                    .add("latitude", "46.2201")
-                     .add("longitude", "46.2201")
-            );
-
+        String upit = "SELECT * FROM PARKIRALISTA";
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(MeteoREST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet results = stmt.executeQuery(upit);) {
+            nesto = createJSONArrayFromResultset(results, nesto);
+            results.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+            return null;
         }
         return nesto;
     }
+
+    private JsonArrayBuilder createJSONArrayFromResultset(ResultSet results, JsonArrayBuilder nesto) {
+
+        if (results != null) {
+            try {
+                while (results.next()) {
+                    String latitude = results.getString("LATITUDE");
+                    String longitude = results.getString("LONGITUDE");
+                    String id = results.getString("ID");
+                    String naziv = results.getString("NAZIV");
+                    String adresa = results.getString("ADRESA");
+
+                    nesto.add(Json.createObjectBuilder()
+                            .add("id", id)
+                            .add("naziv", naziv)
+                            .add("adresa", adresa)
+                            .add("latitude", latitude)
+                            .add("longitude", longitude)
+                    );
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(MeteoREST.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return nesto;
+
+    }
+
+    private JsonArrayBuilder createJSONdataWeather_ByParkingID(int id) {
+        JsonArrayBuilder nesto = Json.createArrayBuilder();
+        String upit = "SELECT * FROM PARKIRALISTA where ID = " + id;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(MeteoREST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet results = stmt.executeQuery(upit);) {
+            nesto = createJSONArrayFromResultset_Weather(results, nesto);
+            results.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+            return null;
+        }
+        return nesto;
+    }
+
+    private JsonArrayBuilder createJSONArrayFromResultset_Weather(final ResultSet results, JsonArrayBuilder nesto) throws SQLException {
+        if (results != null) {
+            while (results.next()) {
+                String latitude = results.getString("LATITUDE");
+                String longitude = results.getString("LONGITUDE");
+
+                OWMKlijent owmk = new OWMKlijent(OWM_apikey);
+                MeteoPodaci mp = owmk.getRealTimeWeather(latitude, longitude);
+
+                nesto.add(Json.createObjectBuilder()
+                        .add("temp", mp.getTemperatureValue())
+                        .add("vlaga", mp.getHumidityValue())
+                        .add("tlak", mp.getPressureValue())
+                );
+            }
+        }
+        return nesto;
+    }
+
+    private void preuzmiKonfiuraciju() {
+
+        ServletContext servletContext = (ServletContext) SlusacAplikacije.getServletContext();
+        konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
+        konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
+        usernameAdmin = konfiguracijaBaza.getAdminUsername();
+        lozinka = konfiguracijaBaza.getAdminPassword();
+        url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getAdminDatabase();
+        uprProgram = konfiguracijaBaza.getDriverDatabase();
+        gm_apiKey = konfiguracija.dajPostavku("apikey");
+        OWM_apikey = konfiguracija.dajPostavku("OWM_apikey");
+
+    }
+
+    private boolean checkIfExistParkingByName(String name) {
+        String upit = "SELECT * FROM PARKIRALISTA WHERE NAZIV = '" + name + "'";
+        boolean exist = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(upit);) {
+            while (rs.next()) {
+                exist = true;
+            }
+            rs.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        } finally {
+            return exist;
+        }
+    }
+
+       private boolean checkIfExistParkingByID(int id) {
+        String upit = "SELECT * FROM PARKIRALISTA WHERE ID =" + id;
+        boolean exist = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(upit);) {
+            while (rs.next()) {
+                exist = true;
+            }
+            rs.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        } finally {
+            return exist;
+        }
+    }
+       
+       
+    private boolean addParkingnInDatabase(String name, String address, String lat, String lon) {
+        String upit = "INSERT INTO PARKIRALISTA (NAZIV, ADRESA, LATITUDE, LONGITUDE) \n"
+                + "	VALUES ('" + name + "', '" + address + "', " + lat + ", " + lon + ")";
+        boolean success = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();) {
+            stmt.execute(upit);
+            success = true;
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        } finally {
+            return success;
+        }
+
+    }
+
+    private boolean updateParkingnInDatabase(String name, String address, String lat, String lon, int id) {
+        String upit = "UPDATE PARKIRALISTA\n"
+                + "  SET NAZIV='" + name + "', ADRESA='" + address + "', LATITUDE=" + lat + ", LONGITUDE=" + lon + "\n"
+                + "  WHERE ID = " + id;
+        boolean success = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();) {
+            stmt.execute(upit);
+            success = true;
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        } finally {
+            return success;
+        }
+
+    }
+
+    private boolean processingAddParking(String naziv, String adresa) {
+        GMKlijent gmk = new GMKlijent(gm_apiKey);
+        Lokacija lok = gmk.getGeoLocation(adresa);
+        return addParkingnInDatabase(naziv, adresa, lok.getLatitude(), lok.getLongitude());
+    }
+
+    private boolean processingUpdateParking(String naziv, String adresa, int id) {
+        GMKlijent gmk = new GMKlijent(gm_apiKey);
+        Lokacija lok = gmk.getGeoLocation(adresa);
+        return updateParkingnInDatabase(naziv, adresa, lok.getLatitude(), lok.getLongitude(), id);
+    }
+
 }

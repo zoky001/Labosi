@@ -35,6 +35,7 @@ public class SlusacAplikacije implements ServletContextListener {
         try {
             //
 
+            
             ServletContext context = sce.getServletContext();
             this.servletContext = context;
             datoteka = context.getInitParameter("konfiguracija");

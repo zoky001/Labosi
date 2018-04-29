@@ -5,15 +5,34 @@
  */
 package org.foi.nwtis.zorhrncic.ws.serveri;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Resource;
+import javax.faces.context.FacesContext;
 import javax.jws.WebService;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
+import javax.servlet.ServletContext;
+import javax.ws.rs.core.Context;
 import javax.xml.ws.RequestWrapper;
 import javax.xml.ws.ResponseWrapper;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
 import org.foi.nwtis.zorhrncic.web.podaci.Lokacija;
 import org.foi.nwtis.zorhrncic.web.podaci.MeteoPodaci;
 import org.foi.nwtis.zorhrncic.web.podaci.Parkiraliste;
+import org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije;
+import javax.annotation.Resource;
+import javax.servlet.ServletContext;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
 
 /**
  *
@@ -21,6 +40,21 @@ import org.foi.nwtis.zorhrncic.web.podaci.Parkiraliste;
  */
 @WebService(serviceName = "GeoMeteoWS")
 public class GeoMeteoWS {
+
+
+    private BP_Konfiguracija konfiguracijaBaza;
+    private Konfiguracija konfiguracija;
+    private String usernameAdmin;
+    private String lozinka;
+    private String url;
+    private String upit;
+    private String uprProgram;
+   
+
+    public GeoMeteoWS() {
+     
+        preuzmiKonfiuraciju();
+    }
 
     /**
      * Web service operation
@@ -41,7 +75,6 @@ public class GeoMeteoWS {
         return svaParkiralista;
     }
 
-
     /**
      * Web service operation
      */
@@ -54,6 +87,7 @@ public class GeoMeteoWS {
          */
         //return null;
     }
+
     /**
      * Web service operation
      */
@@ -127,6 +161,47 @@ public class GeoMeteoWS {
         za uneseno parkiralište i interval, ukoliko nema 
         podataka vraća null*/
         return null;
+    }
+
+    private void preuzmiKonfiuraciju() {
+/*
+        konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
+
+        konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
+
+        usernameAdmin = konfiguracijaBaza.getAdminUsername();
+        lozinka = konfiguracijaBaza.getAdminPassword();
+        url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getAdminUsername();
+        uprProgram = konfiguracijaBaza.getDriverDatabase();*/
+
+    }
+
+    private ResultSet executeQuery(String upit) {
+        ResultSet result = null;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            System.out.println("GREŠKA: " + ex.getMessage());
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(upit);) {
+
+            /* while (rs.next()) {
+                String mb = rs.getString("kor_ime");
+                String pr = rs.getString("prezime");
+                String im = rs.getString("ime");
+
+            }*/
+            result = rs;
+            rs.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        }
+        return result;
     }
 
 }
