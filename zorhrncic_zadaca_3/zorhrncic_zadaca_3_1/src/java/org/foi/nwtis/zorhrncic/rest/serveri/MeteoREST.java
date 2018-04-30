@@ -198,6 +198,7 @@ public class MeteoREST {
         String naziv, adresa;
         try {
             if (checkIfExistParkingByID(Integer.parseInt(id))) {
+                succes = deleteMeteoInDatabase(Integer.parseInt(id));
                 succes = deleteParkingnInDatabase(Integer.parseInt(id));
             }
         } catch (Exception e) {
@@ -253,7 +254,7 @@ public class MeteoREST {
         return json;
     }
 
-    @POST
+  /*  @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{id}")
@@ -261,7 +262,7 @@ public class MeteoREST {
         return "{\"odgovor\": [],"
                 + "\"status\": \"ERR\", \"poruka\": \"Nije dozvoljeno\"}";
     }
-
+*/
     private JsonArrayBuilder createArrayJSONdata_allParkingData() {
         JsonArrayBuilder nesto = Json.createArrayBuilder();
         String upit = "SELECT * FROM PARKIRALISTA";
@@ -469,6 +470,28 @@ public class MeteoREST {
 
     private boolean deleteParkingnInDatabase(int id) {
         String upit = "DELETE from PARKIRALISTA WHERE ID = " + id;
+        boolean success = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();) {
+            success = stmt.execute(upit);
+            success = true;
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        } finally {
+            return success;
+        }
+
+    }
+       private boolean deleteMeteoInDatabase(int id) {
+        String upit = "DELETE FROM METEO WHERE ID = " + id;
         boolean success = false;
         try {
             Class.forName(uprProgram);
