@@ -44,8 +44,8 @@ public class SlusacAplikacije implements ServletContextListener {
             konfiguracijaSve = KonfiguracijaApstraktna.preuzmiKonfiguraciju(putanja + datoteka);//all config data
             context.setAttribute("BP_Konfig", konfiguracija);
             context.setAttribute("All_Konfig", konfiguracijaSve);
-           // meteoPodatke = new PreuzmiMeteoPodatke();
-           // meteoPodatke.start();
+           meteoPodatke = new PreuzmiMeteoPodatke();
+           meteoPodatke.start();
         } catch (NemaKonfiguracije ex) {
             Logger.getLogger(SlusacAplikacije.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NeispravnaKonfiguracija ex) {
