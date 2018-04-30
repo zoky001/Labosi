@@ -5,21 +5,27 @@
  */
 package org.foi.nwtis.zorhrncic.web;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
 import org.foi.nwtis.zorhrncic.rest.klijenti.GMKlijent;
 import org.foi.nwtis.zorhrncic.rest.klijenti.OWMKlijent;
 import org.foi.nwtis.zorhrncic.web.podaci.Lokacija;
 import org.foi.nwtis.zorhrncic.web.podaci.MeteoPodaci;
+import org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije;
 
 /**
  *
@@ -27,6 +33,15 @@ import org.foi.nwtis.zorhrncic.web.podaci.MeteoPodaci;
  */
 @WebServlet(name = "DodajParkiraliste", urlPatterns = {"/DodajParkiraliste"})
 public class DodajParkiraliste extends HttpServlet {
+
+    private BP_Konfiguracija konfiguracijaBaza;
+    private Konfiguracija konfiguracija;
+    private String usernameAdmin;
+    private String lozinka;
+    private String url;
+    private String uprProgram;
+    private String gm_apiKey;
+    private String OWM_apikey;
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -39,57 +54,60 @@ public class DodajParkiraliste extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String naziv = request.getParameter("naziv");
-        String adresa = request.getParameter("adresa");
-
-        GMKlijent gmk = new GMKlijent("GM apikey");
-        Lokacija lok = gmk.getGeoLocation(adresa);
-
-        BP_Konfiguracija bpk = (BP_Konfiguracija) this.getServletContext().getAttribute("BP_Konfig");
-        if (bpk == null) {
-            System.out.println("Problem s konfiguracijom.");
-            return;
+        preuzmiKonfiuraciju();
+        request.setCharacterEncoding("UTF-8");
+        if (request.getParameter("geolokacija") != null) {
+            if (getGeolocation(request)) {
+                request.setAttribute("message", "Uspješno dohvaćeni podatci");
+            } else {
+                request.setAttribute("message", "Greška prilikom dohvaćanja podataka");
+            }
+        } else if (request.getParameter("spremi") != null) {
+            if (saveParking(request)) {
+                request.setAttribute("message", "Uspješno dodano parkiralište");
+            } else {
+                request.setAttribute("message", "Neuspješno dodano parkiralište. Več postoji sa istim nazivom.");
+            }//if condition
+        } else if (request.getParameter("meteo") != null) {
+            if (getMeteoData(request)) {
+                request.setAttribute("message", "Uspješno dohvačeni podatci");
+            } else {
+                request.setAttribute("message", "Greška prilikom dohvaćanja podataka");
+            }
         }
-        String url = bpk.getServerDatabase() + bpk.getUserDatabase();
-        String korisnik = bpk.getUserUsername();
-        String lozinka = bpk.getUserPassword();
-        String upit = "insert into parkiralista (naziv, adresa, latitude, longitude) values "
-                + "('" + naziv + "', '" + adresa + "'," + lok.getLatitude() + ", " + lok.getLongitude() + ")";
-
-        try {
-            Class.forName(bpk.getDriverDatabase());
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        try (
-                Connection con = DriverManager.getConnection(url, korisnik, lozinka);
-                Statement stmt = con.createStatement();) {
-            stmt.execute(upit);
-            stmt.close();
-            con.close();
-        } catch (SQLException ex) {
-            System.err.println("SQLException: " + ex.getMessage());
-        }
-        System.out.println("Lokacija: " + lok.getLatitude() + ", " + lok.getLongitude());
-        OWMKlijent owmk = new OWMKlijent("OWM apikey");
-        MeteoPodaci mp = owmk.getRealTimeWeather(lok.getLatitude(), lok.getLongitude());
-        System.out.println("Temp: " + mp.getTemperatureValue());
+        request.setAttribute("hidden_class", "show");
+        request.getRequestDispatcher("/index.jsp").forward(request, response);
     }
 
+    private boolean getGeolocation(HttpServletRequest request) {
+        boolean success = false;
+        try {
+            String naziv = request.getParameter("naziv");
+            String adresa = request.getParameter("adresa");
+            GMKlijent gmk = new GMKlijent(gm_apiKey);
+            Lokacija lok = gmk.getGeoLocation(adresa);
+            request.setAttribute("naziv", naziv);
+            request.setAttribute("adresa", adresa);
+            request.setAttribute("geoLoc", lok.getLatitude() + " " + lok.getLongitude());
+            request.setAttribute("geoLocLon", lok.getLongitude());
+            request.setAttribute("geoLocLat", lok.getLatitude());
+            success = true;
+        } catch (Exception e) {
+        }
+        return success;
+    }
 
 // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-/**
- * Handles the HTTP <code>GET</code> method.
- *
- * @param request servlet request
- * @param response servlet response
- * @throws ServletException if a servlet-specific error occurs
- * @throws IOException if an I/O error occurs
- */
-@Override
-        protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    /**
+     * Handles the HTTP <code>GET</code> method.
+     *
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
@@ -103,7 +121,7 @@ public class DodajParkiraliste extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
     @Override
-        protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         processRequest(request, response);
     }
@@ -114,8 +132,119 @@ public class DodajParkiraliste extends HttpServlet {
      * @return a String containing servlet description
      */
     @Override
-        public String getServletInfo() {
+    public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
+
+    private void preuzmiKonfiuraciju() {
+
+        ServletContext servletContext = (ServletContext) SlusacAplikacije.getServletContext();
+        konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
+        konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
+        usernameAdmin = konfiguracijaBaza.getAdminUsername();
+        lozinka = konfiguracijaBaza.getAdminPassword();
+        url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getAdminDatabase();
+        uprProgram = konfiguracijaBaza.getDriverDatabase();
+        gm_apiKey = konfiguracija.dajPostavku("apikey");
+        OWM_apikey = konfiguracija.dajPostavku("OWM_apikey");
+
+    }
+
+    private boolean saveParking(HttpServletRequest request) {
+        boolean succes = false;
+        try {
+            String naziv = request.getParameter("naziv");
+            String adresa = request.getParameter("adresa");
+            String geoLocLon = request.getParameter("geoLocLon");
+            String geoLocLat = request.getParameter("geoLocLat");
+            request.setAttribute("naziv", naziv);
+            request.setAttribute("adresa", adresa);
+            request.setAttribute("geoLoc", request.getParameter("geoLocLat") + " " + request.getParameter("geoLocLon"));
+            request.setAttribute("geoLocLon", request.getParameter("geoLocLon"));
+            request.setAttribute("geoLocLat", request.getParameter("geoLocLat"));
+            if (!checkIfExistParkingByName(naziv)) {
+                succes = addParkingnInDatabase(naziv, adresa, geoLocLat, geoLocLon);
+            }
+        } catch (Exception e) {
+
+        }
+        return succes;
+    }
+
+    private boolean getMeteoData(HttpServletRequest request) {
+        boolean succes = false;
+        try {
+            String naziv = request.getParameter("naziv");
+            String adresa = request.getParameter("adresa");
+            String geoLocLon = request.getParameter("geoLocLon");
+            String geoLocLat = request.getParameter("geoLocLat");
+            GMKlijent gmk = new GMKlijent(gm_apiKey);
+            Lokacija lok = gmk.getGeoLocation(adresa);
+            OWMKlijent owmk = new OWMKlijent(OWM_apikey);
+            MeteoPodaci mp = owmk.getRealTimeWeather(lok.getLatitude(), lok.getLongitude());
+
+            request.setAttribute("temp", mp.getTemperatureValue() + " " + mp.getTemperatureUnit());
+            request.setAttribute("vlaga", mp.getHumidityValue() + " " + mp.getHumidityUnit());
+            request.setAttribute("tlak", mp.getPressureValue() + " " + mp.getPressureUnit());
+            request.setAttribute("naziv", naziv);
+            request.setAttribute("adresa", adresa);
+            request.setAttribute("geoLoc", request.getParameter("geoLocLat") + " " + request.getParameter("geoLocLon"));
+            request.setAttribute("geoLocLon", request.getParameter("geoLocLon"));
+            request.setAttribute("geoLocLat", request.getParameter("geoLocLat"));
+            succes = true;
+        } catch (Exception e) {
+
+        }
+        return succes;
+    }
+
+    private boolean checkIfExistParkingByName(String name) {
+        String upit = "SELECT * FROM PARKIRALISTA WHERE NAZIV = '" + name + "'";
+        boolean exist = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet rs = stmt.executeQuery(upit);) {
+            while (rs.next()) {
+                exist = true;
+            }
+            rs.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        } finally {
+            return exist;
+        }
+    }
+
+    private boolean addParkingnInDatabase(String name, String address, String lat, String lon) {
+        String upit = "INSERT INTO PARKIRALISTA (NAZIV, ADRESA, LATITUDE, LONGITUDE) \n"
+                + "	VALUES ('" + name + "', '" + address + "', " + lat + ", " + lon + ")";
+        boolean success = false;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();) {
+            stmt.execute(upit);
+            success = true;
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+        } finally {
+            return success;
+        }
+
+    }
 
 }

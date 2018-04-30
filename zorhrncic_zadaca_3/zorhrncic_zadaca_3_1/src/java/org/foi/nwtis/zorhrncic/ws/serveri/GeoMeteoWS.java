@@ -12,6 +12,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -58,6 +61,7 @@ public class GeoMeteoWS {
     private WebServiceContext context;
     private String OWM_apikey;
     private String gm_apiKey;
+    private String patternDateTimeSQL = "yyyy-MM-dd HH:mm:ss";
 
     public GeoMeteoWS() {
         //preuzmiKonfiuraciju();
@@ -98,12 +102,18 @@ public class GeoMeteoWS {
     public java.util.List<MeteoPodaci> dajSveMeteoPodatke(@WebParam(name = "id") int id) {
         //TODO 
         /*
-        o	dajSveMeteoPodatke(int) 
+        o	dajSveMeteoPodatke(int)
         - vraća sve spremljene podatke iz baze podataka za uneseno 
         parkirališta, ukoliko nema podataka vraća null
          */
-        
-        return createMeteodataWeather_ByParkingID(id);
+        preuzmiKonfiuraciju();
+        List<MeteoPodaci> list = createMeteodata_ByParkingID(id);
+
+        if (list == null || list.size() == 0) {
+            return null;
+        } else {
+            return list;
+        }
     }
 
     /**
@@ -120,7 +130,17 @@ public class GeoMeteoWS {
         uneseno parkirališta i interval (timestamp), ukoliko nema 
         podataka vraća null
          */
-        return null;
+        preuzmiKonfiuraciju();
+        List<MeteoPodaci> list = createMeteodataInRange_ByParkingID(id, form, to);
+        if (form > to) {
+            return null;
+        }
+
+        if (list == null || list.size() == 0) {
+            return null;
+        } else {
+            return list;
+        }
     }
 
     /**
@@ -135,8 +155,14 @@ public class GeoMeteoWS {
         iz baze podatka za uneseno parkiralište ukoliko 
         nema podataka vraća null
          */
+        preuzmiKonfiuraciju();
+        List<MeteoPodaci> list = createLastMeteodataByParkingID(id);
 
-        return null;
+        if (list == null || list.size() == 0) {
+            return null;
+        } else {
+            return list.get(0);
+        }
     }
 
     /**
@@ -151,20 +177,41 @@ public class GeoMeteoWS {
         web servisa  za uneseno parkiralište ukoliko 
         nema podataka vraća null
          */
-        return null;
+        preuzmiKonfiuraciju();
+        if (!checkIfExistParkingByID(id)) {
+            return null;
+        }
+        MeteoPodaci meteo = getCurrentValidMeteoDataByParkingID(id);
+
+        if (meteo == null) {
+            return null;
+        } else {
+            return meteo;
+        }
+
     }
 
     /**
      * Web service operation
      */
     @WebMethod(operationName = "dajMinMaxTemp")
-    public String dajMinMaxTemp(@WebParam(name = "id") int id, @WebParam(name = "from") long from, @WebParam(name = "to") long to) {
+    public ArrayList<Float> dajMinMaxTemp(@WebParam(name = "id") int id, @WebParam(name = "from") long from, @WebParam(name = "to") long to) {
         //TODO 
         /*o	dajMinMaxTemp(int, long, long) - 
         vraća min i max važeće temperature iz baze podatka 
         za uneseno parkiralište i interval, ukoliko nema 
         podataka vraća null*/
-        return null;
+        preuzmiKonfiuraciju();
+        ArrayList<Float> list = getMinMaxTempValueInRange_ByParkingID(id, from, to);
+        if (from > to) {
+            return null;
+        }
+
+        if (list == null || list.size() != 2) {
+            return null;
+        } else {
+            return list;
+        }
     }
 
     private void preuzmiKonfiuraciju() {
@@ -297,10 +344,84 @@ public class GeoMeteoWS {
 
     }
 
-    private List<MeteoPodaci> createMeteodataWeather_ByParkingID(int id) {
+    private MeteoPodaci getCurrentValidMeteoDataByParkingID(int id) {
+
+        MeteoPodaci meteo = null;
+        String upit = "SELECT * FROM PARKIRALISTA where ID = " + id;
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(MeteoREST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet results = stmt.executeQuery(upit);) {
+            meteo = getCurrentValidaMeteoDataByResultSet(results);
+            results.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+            return null;
+        }
+        return meteo;
+    }
+
+    private List<MeteoPodaci> createLastMeteodataByParkingID(int id) {
+
+        List<MeteoPodaci> nesto = null;
+        DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
+        String upit = "SELECT * FROM METEO where ID = " + id + " ORDER BY PREUZETO DESC FETCH FIRST 1 ROWS ONLY";
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(MeteoREST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet results = stmt.executeQuery(upit);) {
+            nesto = createMeteoPodatciArrayFromResultset_Weather(results);
+            results.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+            return null;
+        }
+        return nesto;
+    }
+
+    private List<MeteoPodaci> createMeteodataInRange_ByParkingID(int id, long from, long to) {
         preuzmiKonfiuraciju();
         List<MeteoPodaci> nesto = null;
-        String upit = "SELECT * FROM METEO where ID = " + id;
+        DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
+        String upit = "SELECT * FROM METEO where ID = " + id + " AND PREUZETO BETWEEN  '" + df.format(new Date(from)) + "' AND '" + df.format(new Date(to)) + "' ORDER BY PREUZETO DESC";
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(MeteoREST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet results = stmt.executeQuery(upit);) {
+            nesto = createMeteoPodatciArrayFromResultset_Weather(results);
+            results.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+            return null;
+        }
+        return nesto;
+    }
+
+    private List<MeteoPodaci> createMeteodata_ByParkingID(int id) {
+        preuzmiKonfiuraciju();
+        List<MeteoPodaci> nesto = null;
+        String upit = "SELECT * FROM METEO where ID = " + id + " ORDER BY PREUZETO DESC";
         try {
             Class.forName(uprProgram);
         } catch (ClassNotFoundException ex) {
@@ -340,10 +461,102 @@ public class GeoMeteoWS {
                 String preuzeto = results.getString("PREUZETO");
                 String idmeto = results.getString("IDMETEO");
                 //TODO staviti pravi datum
-                Date preuzetoDate = new Date();
-                arrayList.add(new MeteoPodaci(new Date(), new Date(), Float.parseFloat(temp), Float.parseFloat(tempMin), Float.parseFloat(tempMax), "", Float.parseFloat(vlaga), "", Float.parseFloat(tlak), "", Float.parseFloat(vjetar), "", Float.parseFloat(vjetarSmjer), "", "", 0, "", "", Float.NaN, "", "", Integer.parseInt(idmeto), "", "", preuzetoDate));
+                createMeteoPodatciObject(preuzeto, arrayList, temp, tempMin, tempMax, vlaga, tlak, vjetar, vjetarSmjer, vrijeme, vrijemeOpis, idmeto);
+
             }
         }
         return arrayList;
     }
+
+    private ArrayList<Float> getMinMAxTempValueFromResultSet(final ResultSet results) throws SQLException {
+        ArrayList<Float> arrayList = new ArrayList<>();
+        if (results != null) {
+            while (results.next()) {
+                String min = results.getString("MIN");
+                String max = results.getString("MAX");
+                arrayList.add(Float.valueOf(min));
+                arrayList.add(Float.valueOf(max));
+
+         
+            }
+        }
+        return arrayList;
+    }
+
+    private MeteoPodaci getCurrentValidaMeteoDataByResultSet(final ResultSet results) throws SQLException {
+        MeteoPodaci meteo = null;
+        if (results != null) {
+            while (results.next()) {
+                String latitude = results.getString("LATITUDE");
+                String longitude = results.getString("LONGITUDE");
+                Lokacija lok = new Lokacija(latitude, longitude);
+                OWMKlijent owmk = new OWMKlijent(OWM_apikey);
+                meteo = owmk.getRealTimeWeather(lok.getLatitude(), lok.getLongitude());
+            }
+        }
+        return meteo;
+    }
+
+    private void createMeteoPodatciObject(String preuzeto, List<MeteoPodaci> arrayList, String temp, String tempMin, String tempMax, String vlaga, String tlak, String vjetar, String vjetarSmjer, String vrijeme, String vrijemeOpis, String idmeto) throws NumberFormatException {
+        try {
+            DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
+            Date preuzetoDate = df.parse(preuzeto);
+            arrayList.add(new MeteoPodaci(
+                    new Date(), //sunRise
+                    new Date(), //sunSet
+                    Float.parseFloat(temp), //tempreatureVlue
+                    Float.parseFloat(tempMin),//temperatureMinValue
+                    Float.parseFloat(tempMax), //temperatureAMxValue
+                    "°C", //temperatureUnit
+                    Float.parseFloat(vlaga), //humidity value
+                    "%", //humidityUnit
+                    Float.parseFloat(tlak), //pressureValue
+                    "hPa", //pressureUnit
+                    Float.parseFloat(vjetar), //windSpeedValue
+                    "m/s", //windSpeedName
+                    Float.parseFloat(vjetarSmjer), //windDirectionValue
+                    "", //windDirectionCode
+                    "", //windDirectionNAme
+                    0, //cloud value
+                    "", //cloudName
+                    vrijeme, //visibility
+                    Float.NaN, //precipationValue
+                    vrijemeOpis, //precipation mode
+                    "", //precipationUnit
+                    Integer.parseInt(idmeto), //weather number
+                    "", //weatherValue
+                    "", //weatherIcon
+                    preuzetoDate)//last update
+            );
+
+        } catch (ParseException ex) {
+            Logger.getLogger(GeoMeteoWS.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private ArrayList<Float> getMinMaxTempValueInRange_ByParkingID(int id, long from, long to) {
+        ArrayList<Float> nesto = null;
+        DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
+        String upit = "SELECT MIN(TEMPMIN) as \"MIN\", MAX(TEMPMAX) as \"MAX\" FROM METEO where ID = " + id + " AND PREUZETO BETWEEN  '" + df.format(new Date(from)) + "' AND '" + df.format(new Date(to)) + "'";
+
+        try {
+            Class.forName(uprProgram);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(MeteoREST.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try (
+                Connection con = DriverManager.getConnection(url, usernameAdmin, lozinka);
+                Statement stmt = con.createStatement();
+                ResultSet results = stmt.executeQuery(upit);) {
+            nesto = getMinMAxTempValueFromResultSet(results);
+            results.close();
+            stmt.close();
+            con.close();
+        } catch (Exception e) {
+            System.out.println("error: " + e.getMessage());
+            return null;
+        }
+        return nesto;
+    }
+
 }

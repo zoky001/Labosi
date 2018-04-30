@@ -5,10 +5,10 @@
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ taglib prefix = "c" uri = "http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <head>     
         <!-- Latest compiled and minified CSS -->
 
         <link rel="stylesheet" href="resources/css/osnovna.css">
@@ -16,8 +16,7 @@
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
-        <title>Unos parkiralista</title>
+        <title>Unos parkirališta</title>
     </head>
     <body>
 
@@ -59,16 +58,25 @@
 
                     </div>
                 </form>-->
+
+                <!--<h1 class=" text-info text-uppercase">${message}</h1>-->
+                <c:choose>
+                    <c:when test="${! empty message}">
+                        <div class="alert alert-info center-block">
+                           ${message}
+                        </div>
+                    </c:when>
+                </c:choose>
                 <form method="post" action="${pageContext.servletContext.contextPath}/DodajParkiraliste">
                     <div class="form-inline">
                         <div class="form-group">
                             <label for="">Naziv i adresa:</label>
                         </div>
                         <div class="form-group">
-                            <input type="text" class="form-control" id="naziv" name="naziv">
+                            <input type="text" class="form-control" id="naziv" name="naziv" value="${naziv}">
                         </div>
                         <div class="form-group">
-                            <input type="text" class="form-control" id="adresa" name="adresa">
+                            <input type="text" class="form-control" id="adresa" name="adresa" value="${adresa}">
                         </div>
                         <div class="form-group">
                             <input class="btn btn-xs btn-default" type="submit" name="geolokacija" value="Geo lokacija">
@@ -84,29 +92,54 @@
                         </div>
                         <div class="col-md-8">
                             <div class="form-group">
-                                <input type="text" class="form-control" id="geoLoc" name="geoLoc">
+                                <input type="text" class="form-control" id="geoLoc" name="geoLoc" value="${geoLoc}">
+                                <input class="hidden" type="text" class="form-control" id="lon" name="geoLocLon" value="${geoLocLon}">
+                                <input class="hidden" type="text" class="form-control" id="lat" name="geoLocLat" value="${geoLocLat}">
                             </div>
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
                                 <input class="btn btn-xs btn-default" type="submit" name="spremi" value="Spremi">
-                               
+
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-2">
-                            <label for="" class="col-md-6">Temp:</label>
-                            <label for="" class="col-md-6">28,08</label>
+                        <div class="col-md-4">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label for="" class="">Temp:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label for="" >${temp}</label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label for="" class="">Vlaga:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label for="">${vlaga}</label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label for="" >Tlak:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label for="" >${tlak}</label>
+                                </div>
+                            </div>
 
-                            <label for="" class="col-md-6">Vlaga:</label>
-                            <label for="" class="col-md-6">28,08</label>
 
-                            <label for="" class="col-md-6">Tlak:</label>
-                            <label for="" class="col-md-6">28,08</label>
+
+
+
+
+
 
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <br>
                         </div>
                         <div class="col-md-2">
