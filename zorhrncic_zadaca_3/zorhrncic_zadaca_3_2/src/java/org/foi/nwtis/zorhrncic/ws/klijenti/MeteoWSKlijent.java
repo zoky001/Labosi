@@ -11,22 +11,32 @@ package org.foi.nwtis.zorhrncic.ws.klijenti;
  */
 public class MeteoWSKlijent {
 
+  
+
+
+
+    public static java.util.List<org.foi.nwtis.zorhrncic.ws.serveri.MeteoPodaci> dajSveMeteoPodatke(int id) {
+        org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service service = new org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service();
+        org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS port = service.getGeoMeteoWSPort();
+        return port.dajSveMeteoPodatke(id);
+    }
+
+    public static boolean dodajParkiraliste(org.foi.nwtis.zorhrncic.ws.serveri.Parkiraliste parkiraliste) {
+        org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service service = new org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service();
+        org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS port = service.getGeoMeteoWSPort();
+        return port.dodajParkiraliste(parkiraliste);
+    }
+
     public static java.util.List<org.foi.nwtis.zorhrncic.ws.serveri.Parkiraliste> dajSvaParkiralista() {
         org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service service = new org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service();
         org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS port = service.getGeoMeteoWSPort();
         return port.dajSvaParkiralista();
     }
 
-    public static void dodajParkiraliste(org.foi.nwtis.zorhrncic.ws.serveri.Parkiraliste parkiraliste) {
+    public static java.util.List<org.foi.nwtis.zorhrncic.ws.serveri.Parkiraliste> dajSvaParkiralista_1() {
         org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service service = new org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service();
         org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS port = service.getGeoMeteoWSPort();
-        port.dodajParkiraliste(parkiraliste);
-    }
-
-    public static java.util.List<org.foi.nwtis.zorhrncic.ws.serveri.MeteoPodaci> dajSveMeteoPodatke(int id) {
-        org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service service = new org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service();
-        org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS port = service.getGeoMeteoWSPort();
-        return port.dajSveMeteoPodatke(id);
+        return port.dajSvaParkiralista();
     }
     
     

@@ -47,7 +47,7 @@
                                 <h:outputLabel class="control-label" value="Naziv i adresa:"></h:outputLabel>
                             </div>
                             <div class="col-md-3  form-group" rendered="">
-                                <h:inputText class="form-control"  value="#{operacijaParkiraliste.naziv}" id="naziv" required="true" 
+                                <h:inputText class="form-control"  value="#{operacijaParkiraliste.naziv}" id="naziv" required="" 
                                              requiredMessage="Morate unjeti naziv" validatorMessage="">
 
                                 </h:inputText>
@@ -56,7 +56,7 @@
 
                             </div>
                             <div class="col-md-3  form-group" rendered="">
-                                <h:inputText class="form-control"  value="#{operacijaParkiraliste.adresa}" id="adresa" required="true" 
+                                <h:inputText class="form-control"  value="#{operacijaParkiraliste.adresa}" id="adresa" required="" 
                                              requiredMessage="Morate unjeti aderesu" validatorMessage="">
 
                                 </h:inputText>
@@ -81,15 +81,15 @@
 
 
 
-                    </h:form>
+                   
                     <br></br>
-                    <h:form>
+
                         <div class="row">
                             <div class="col-md-3 form-group">
                                 <h:outputLabel class="control-label" value="Parkirališta:"></h:outputLabel>
                             </div>
                             <div class="col-md-3 form-group">
-                                <h:selectManyListbox  class="form-control" style="vertical-align: top" id="selecBox" value="#{operacijaParkiraliste.parkListOdabrana}" size="5" required="true" requiredMessage="Morate odabrati minimalno 2 parkirališta">
+                                <h:selectManyListbox  class="form-control" style="vertical-align: top" id="selecBox" value="#{operacijaParkiraliste.parkListOdabrana}" size="5" required="" requiredMessage="Morate odabrati minimalno 2 parkirališta">
 
                                     <f:selectItems value="#{operacijaParkiraliste.parkList}" var="d" itemLabel="#{d.naziv}" itemValue="#{d}" />
 
@@ -128,39 +128,131 @@
                     </h:form>
                     <br></br>
                     <!--dodati h messages  -->
+                    <h:messages class="alert alert-info col-md-offset-3 col-md-6" globalOnly="true" />
+                  
+                    
                     <br></br>
 
-                    <h:dataTable class="table table-bordered" value="#{operacijaParkiraliste.meteoList}" var="item">
-                        <h:column>
-                            <!-- column header -->
-                            <f:facet name="header">Tempetatura</f:facet>
-                            <!-- row record -->
-                            <h:outputText value="#{item.temperatureValue}"></h:outputText>
 
-                        </h:column>
-                        <h:column>
-                            <!-- column header -->
-                            <f:facet name="header">Vlaga</f:facet>
-                            <!-- row record -->
-                            <h:outputText value="#{item.humidityValue}"></h:outputText>
-
-                        </h:column>
-
-                        <h:column>
-                            <!-- column header -->
-                            <f:facet name="header">Preuzeto</f:facet>
-                            <!-- row record -->
-                            <h:outputText value="#{item.lastUpdate}">
-                              
-                            </h:outputText>
-
-                        </h:column>
-
-                    </h:dataTable>
                 </div>
                 <div class="col-md-2">
                     <br></br>
                 </div>
+            </div>
+            <div class="row col-md-offset-1 col-md-10"> 
+                <h:dataTable class="table table-bordered" value="#{operacijaParkiraliste.meteoList}" var="item">
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Tempetatura</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.temperatureValue} #{item.temperatureUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Tempetatura min</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.temperatureMin} #{item.temperatureUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Tempetatura max</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.temperatureMax} #{item.temperatureUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Vlaga</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.humidityValue} #{item.humidityUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Tlak</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.pressureValue} #{item.pressureUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Brzina vjetra</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.windSpeedValue} #{item.windSpeedName}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Smjer vjetra</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.windDirectionValue} #{item.windDirectionName} #{item.windDirectionCode}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Vidljivost</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.visibility}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Vrijeme broj</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.weatherNumber}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Vrijeme naziv</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.weatherValue}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Oblaci</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.cloudsName} #{item.cloudsValue}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Oborine</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.precipitationValue} : #{item.precipitationUnit} : #{item.precipitationMode}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Izlazak sunca</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.sunRise.toGregorianCalendar().time}">
+                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                        </h:outputText>
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Zalazak sunca</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.sunSet.toGregorianCalendar().time}">
+                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                        </h:outputText>
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Preuzeto</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.lastUpdate.toGregorianCalendar().time}">
+                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                        </h:outputText>
+
+                    </h:column>
+
+
+                </h:dataTable>
             </div>
 
 

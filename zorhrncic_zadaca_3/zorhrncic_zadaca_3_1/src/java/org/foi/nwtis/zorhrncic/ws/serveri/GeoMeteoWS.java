@@ -81,18 +81,19 @@ public class GeoMeteoWS {
      * Web service operation
      */
     @WebMethod(operationName = "dodajParkiraliste")
-    public void dodajParkiraliste(@WebParam(name = "parkiraliste") Parkiraliste parkiraliste) {
+    public boolean dodajParkiraliste(@WebParam(name = "parkiraliste") Parkiraliste parkiraliste) {
         preuzmiKonfiuraciju();
         //TODO 
         try {
 
             if (!checkIfExistParkingByName(parkiraliste.getNaziv())) {
-                addParkingnInDatabase(parkiraliste.getNaziv(), parkiraliste.getAdresa(), parkiraliste.getGeoloc().getLatitude(), parkiraliste.getGeoloc().getLongitude());
+                return addParkingnInDatabase(parkiraliste.getNaziv(), parkiraliste.getAdresa(), parkiraliste.getGeoloc().getLatitude(), parkiraliste.getGeoloc().getLongitude());
+
             }
         } catch (Exception e) {
-
+            return false;
         }
-
+        return false;
     }
 
     /**
@@ -477,7 +478,6 @@ public class GeoMeteoWS {
                 arrayList.add(Float.valueOf(min));
                 arrayList.add(Float.valueOf(max));
 
-         
             }
         }
         return arrayList;

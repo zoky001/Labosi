@@ -5,14 +5,26 @@
  */
 package org.foi.nwtis.zorhrncic.web.zrna;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import javax.inject.Named;
 import javax.enterprise.context.SessionScoped;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
+import javax.faces.application.FacesMessage;
+import javax.faces.component.UIComponent;
+import javax.faces.context.FacesContext;
+import javax.faces.validator.ValidatorException;
+import javax.json.Json;
+import javax.json.JsonObject;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
+import org.foi.nwtis.zorhrncic.ws.klijenti.MeteoRESTKlijent;
+import org.foi.nwtis.zorhrncic.ws.klijenti.MeteoRESTKlijentId;
 import org.foi.nwtis.zorhrncic.ws.klijenti.MeteoWSKlijent;
 import org.foi.nwtis.zorhrncic.ws.serveri.Lokacija;
 import org.foi.nwtis.zorhrncic.ws.serveri.MeteoPodaci;
@@ -31,13 +43,17 @@ public class OperacijaParkiraliste implements Serializable {
     private List<Parkiraliste> parkList;
     private List<Parkiraliste> parkListOdabrana;
     private List<MeteoPodaci> meteoList;
-    private final MeteoREST_JerseyClient client;
+    private MeteoRESTKlijent client = null;
+    private MeteoRESTKlijentId clientId = null;
+    private Gson gson;
 
     /**
      * Creates a new instance of OperacijaParkiraliste
      */
     public OperacijaParkiraliste() {
-        client = new MeteoREST_JerseyClient();
+        // client = new MeteoRESTKlijent();
+        client = new MeteoRESTKlijent();
+        gson = new Gson();
         getAllPArking();
     }
 
@@ -52,9 +68,14 @@ public class OperacijaParkiraliste implements Serializable {
         parkiraliste.setNaziv(naziv);
         parkiraliste.setAdresa(adresa);
         parkiraliste.setGeoloc(lokacija);
-        MeteoWSKlijent.dodajParkiraliste(parkiraliste);
+        if (MeteoWSKlijent.dodajParkiraliste(parkiraliste)) {
+            setMessage("Uspješno dodano parkiralište");
+        } else {
+            setMessage("Greška kod dodavanja.");
+        }
+
 //TODO ŠTO S LOKACIJOM?
-//message
+        getAllPArking();
         return "";
     }
 
@@ -64,14 +85,26 @@ public class OperacijaParkiraliste implements Serializable {
         pogreške u elementu za poruke.
          */
 
-        String post = "{\n"
-                + "    \n"
-                + "            \"naziv\": \"" + naziv + "\",\n"
-                + "            \"adresa\": \"" + adresa + "\"\n"
-                + "       \n"
-                + "}";
-
-        client.postJson(post);
+        if (naziv.length() == 0 || adresa.length() == 0) {
+            setMessage("Moraju biti popunjeni naziv i adresa");
+            return "";
+        }
+        String post = Json.createObjectBuilder()
+                .add("naziv", naziv)
+                .add("adresa", adresa)
+                .build()
+                .toString();
+        try {
+            com.google.gson.JsonObject jsonObject = new JsonParser().parse(client.postJson(post, String.class)).getAsJsonObject();
+            if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
+                setMessage("Uspješno dodano parkiralište");
+            } else {
+                setMessage("Greška kod dodavanja. \n " + jsonObject.get("poruka").toString());
+            }
+        } catch (Exception e) {
+            setMessage("Greška kod dodavanja. ");
+        }
+        getAllPArking();
         return "";
     }
 
@@ -82,9 +115,31 @@ public class OperacijaParkiraliste implements Serializable {
         pogreška treba ispisati opis pogreške u elementu za 
         poruke.
          */
-        for (Parkiraliste p : parkListOdabrana) {
-            System.out.println("" + p.getAdresa());
+
+        try {
+            if (parkListOdabrana.size() != 1) {
+                setMessage("Mora biti odabrano točno jesno parkiralište");
+                getAllPArking();
+                return "";
+            }
+            clientId = new MeteoRESTKlijentId(String.valueOf(parkListOdabrana.get(0).getId()));
+            com.google.gson.JsonObject jsonObject = new JsonParser().parse(client.getJson(String.class)).getAsJsonObject();
+            if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
+                for (JsonElement jsonElement : jsonObject.getAsJsonArray("odgovor")) {
+                    if (jsonElement.getAsJsonObject().get("id").getAsString().equalsIgnoreCase(String.valueOf(parkListOdabrana.get(0).getId()))) {
+                        naziv = jsonElement.getAsJsonObject().get("naziv").getAsString();
+                        adresa = jsonElement.getAsJsonObject().get("adresa").getAsString();
+                        setMessage("Uspješno dohvačeno parkiralište");
+                    }
+                }
+            } else {
+                setMessage("Greška kod dohvačanja. \n " + jsonObject.get("poruka").toString());
+            }
+
+        } catch (Exception e) {
+            setMessage("Greška kod dodavanja parkirališta. ");
         }
+        getAllPArking();
         return "";
     }
 
@@ -96,6 +151,21 @@ public class OperacijaParkiraliste implements Serializable {
         javi pogreška treba ispisati opis pogreške u elementu 
         za poruke.
          */
+
+ /*
+                try {
+            com.google.gson.JsonObject jsonObject = new JsonParser().parse(client.postJson(post, String.class)).getAsJsonObject();
+            if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
+                setMessage("Uspješno dodano parkiralište");
+            } else {
+                setMessage("Greška kod dodavanja. \n " + jsonObject.get("poruka").toString());
+            }
+        } catch (Exception e) {
+            setMessage("Greška kod dodavanja. ");
+        }
+        
+         */
+        getAllPArking();
         return "";
     }
 
@@ -104,10 +174,24 @@ public class OperacijaParkiraliste implements Serializable {
         REST web servisa. Ako se javi pogreška treba ispisati 
         opis pogreške u elementu za poruke.*/
 //TODO message
-        if (parkListOdabrana.size() == 1) {
-            client.deleteJson(String.valueOf(parkList.get(0).getId()));
-            getAllPArking();
+
+        try {
+            if (parkListOdabrana.size() == 1) {
+                clientId = new MeteoRESTKlijentId(String.valueOf(parkListOdabrana.get(0).getId()));
+                com.google.gson.JsonObject jsonObject = new JsonParser().parse(clientId.deleteJson(String.class
+                )).getAsJsonObject();
+                if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
+                    setMessage("Uspješno obrisano parkiralište");
+                } else {
+                    setMessage("Greška kod brisanja. \n " + jsonObject.get("poruka").toString());
+                }
+            } else {
+                setMessage("Mora biti odabrano točno JEDNO parkiralište.");
+            }
+        } catch (Exception e) {
+            setMessage("Greška kod brisanja. ");
         }
+        getAllPArking();
         return "";
     }
 
@@ -116,6 +200,25 @@ public class OperacijaParkiraliste implements Serializable {
         operacije SOAP web servisa. Podaci o nazivu i adresi
         prenose se u elemente u obrascu. Ako se javi pogreška 
         treba ispisati opis pogreške u elementu za poruke.*/
+        if (parkListOdabrana.size() != 1) {
+            setMessage("Mora biti odabrano točno jesno parkiralište");
+            return "";
+        }
+        naziv = parkListOdabrana.get(0).getNaziv();
+        adresa = parkListOdabrana.get(0).getAdresa();
+        /*
+                try {
+            com.google.gson.JsonObject jsonObject = new JsonParser().parse(client.postJson(post, String.class)).getAsJsonObject();
+            if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
+                setMessage("Uspješno dodano parkiralište");
+            } else {
+                setMessage("Greška kod dodavanja. \n " + jsonObject.get("poruka").toString());
+            }
+        } catch (Exception e) {
+            setMessage("Greška kod dodavanja. ");
+        }
+         */
+        getAllPArking();
         return "";
     }
 
@@ -127,18 +230,30 @@ public class OperacijaParkiraliste implements Serializable {
         pogreške u elementu za poruke*/
 
         //TODO message
-        meteoList = new ArrayList<>();
-        if (parkListOdabrana.size() < 2) {
+        try {
+            meteoList = new ArrayList<>();
+            if (parkListOdabrana.size() < 2) {
+                setMessage("Moraju biti odabrna minimalno dva parkirališta");
+                return "";
+            }
+            for (Parkiraliste p : parkListOdabrana) {
+                System.out.println("" + p.getAdresa());
+                List<MeteoPodaci> l = MeteoWSKlijent.dajSveMeteoPodatke(p.getId());
+                meteoList.addAll(l);
+            }
+            setMessage("Uspješno dohvaćeni podatci");
+        } catch (Exception e) {
+            setMessage("Greška kod dohvačanja podataka ");
+        }
 
-            //todo message
-            return "";
-        }
-        for (Parkiraliste p : parkListOdabrana) {
-            System.out.println("" + p.getAdresa());
-            List<MeteoPodaci> l = MeteoWSKlijent.dajSveMeteoPodatke(p.getId());
-            meteoList.addAll(l);
-        }
+        getAllPArking();
         return "";
+    }
+
+    private void setMessage(String message) {
+        FacesContext facesContext = FacesContext.getCurrentInstance();
+        FacesMessage facesMessage = new FacesMessage(message);
+        facesContext.addMessage(null, facesMessage);
     }
 
 //getter & setter
@@ -180,41 +295,10 @@ public class OperacijaParkiraliste implements Serializable {
 //rest
 
     private void getAllPArking() {
-
-        parkList = MeteoWSKlijent.dajSvaParkiralista();
-    }
-
-    static class MeteoREST_JerseyClient {
-
-        private WebTarget webTarget;
-        private Client client;
-        private static final String BASE_URI = "http://localhost:8088/zorhrncic_zadaca_3_1/webresources";
-
-        public MeteoREST_JerseyClient() {
-            client = javax.ws.rs.client.ClientBuilder.newClient();
-            webTarget = client.target(BASE_URI).path("meteo");
-        }
-
-        public String putJson(Object requestEntity, String id) throws ClientErrorException {
-            return webTarget.path(java.text.MessageFormat.format("{0}", new Object[]{id})).request(javax.ws.rs.core.MediaType.APPLICATION_JSON).put(javax.ws.rs.client.Entity.entity(requestEntity, javax.ws.rs.core.MediaType.APPLICATION_JSON), String.class);
-        }
-
-        public String postJson(Object requestEntity) throws ClientErrorException {
-            return webTarget.request(javax.ws.rs.core.MediaType.APPLICATION_JSON).post(javax.ws.rs.client.Entity.entity(requestEntity, javax.ws.rs.core.MediaType.APPLICATION_JSON), String.class);
-        }
-
-        public String deleteJson(String id) throws ClientErrorException {
-            return webTarget.path(java.text.MessageFormat.format("{0}", new Object[]{id})).request().delete(String.class);
-        }
-
-        public String getJson(String id) throws ClientErrorException {
-            WebTarget resource = webTarget;
-            resource = resource.path(java.text.MessageFormat.format("{0}", new Object[]{id}));
-            return resource.request(javax.ws.rs.core.MediaType.APPLICATION_JSON).get(String.class);
-        }
-
-        public void close() {
-            client.close();
+        try {
+            parkList = MeteoWSKlijent.dajSvaParkiralista();
+        } catch (Exception e) {
+            setMessage("Greška kod dohvačanja podataka ");
         }
     }
 

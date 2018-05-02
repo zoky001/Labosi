@@ -85,7 +85,7 @@ public class MeteoREST {
             json = Json.createObjectBuilder()
                     .add("odgovor", "[]")
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka.")
+                    .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka")
                     .build()
                     .toString();
         }
@@ -125,7 +125,7 @@ public class MeteoREST {
             json = Json.createObjectBuilder()
                     .add("odgovor", "[]")
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreška prilikom upisivanja podataka.")
+                    .add("poruka", "Dogodila se pogreska prilikom upisivanja podataka")
                     .build()
                     .toString();
         }
@@ -172,7 +172,7 @@ public class MeteoREST {
             json = Json.createObjectBuilder()
                     .add("odgovor", "[]")
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreška prilikom izmjene podataka.")
+                    .add("poruka", "Dogodila se pogreška prilikom izmjene podataka")
                     .build()
                     .toString();
         }
@@ -180,8 +180,8 @@ public class MeteoREST {
     }
 
     @DELETE
-    @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("{id}")
     public String deleteJson(@PathParam("id") String id) {
         //TODO
         /*
@@ -214,7 +214,7 @@ public class MeteoREST {
             json = Json.createObjectBuilder()
                     .add("odgovor", "[]")
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreška prilikom izmjene podataka.")
+                    .add("poruka", "Dogodila se pogreška prilikom izmjene podataka")
                     .build()
                     .toString();
         }
@@ -246,7 +246,7 @@ public class MeteoREST {
             json = Json.createObjectBuilder()
                     .add("odgovor", "[]")
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka.")
+                    .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka")
                     .build()
                     .toString();
         }

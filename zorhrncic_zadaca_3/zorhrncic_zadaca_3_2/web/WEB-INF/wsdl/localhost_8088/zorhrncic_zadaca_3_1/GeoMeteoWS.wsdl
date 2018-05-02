@@ -16,18 +16,6 @@
 <message name="dajSvaParkiralistaResponse">
 <part name="parameters" element="tns:dajSvaParkiralistaResponse"/>
 </message>
-<message name="dajZadnjeMeteoPodatke">
-<part name="parameters" element="tns:dajZadnjeMeteoPodatke"/>
-</message>
-<message name="dajZadnjeMeteoPodatkeResponse">
-<part name="parameters" element="tns:dajZadnjeMeteoPodatkeResponse"/>
-</message>
-<message name="dajVazeceMeteoPodatke">
-<part name="parameters" element="tns:dajVazeceMeteoPodatke"/>
-</message>
-<message name="dajVazeceMeteoPodatkeResponse">
-<part name="parameters" element="tns:dajVazeceMeteoPodatkeResponse"/>
-</message>
 <message name="dajSveMeteoPodatke_1">
 <part name="parameters" element="tns:dajSveMeteoPodatke_1"/>
 </message>
@@ -39,6 +27,18 @@
 </message>
 <message name="dajSveMeteoPodatkeResponse">
 <part name="parameters" element="tns:dajSveMeteoPodatkeResponse"/>
+</message>
+<message name="dajZadnjeMeteoPodatke">
+<part name="parameters" element="tns:dajZadnjeMeteoPodatke"/>
+</message>
+<message name="dajZadnjeMeteoPodatkeResponse">
+<part name="parameters" element="tns:dajZadnjeMeteoPodatkeResponse"/>
+</message>
+<message name="dajVazeceMeteoPodatke">
+<part name="parameters" element="tns:dajVazeceMeteoPodatke"/>
+</message>
+<message name="dajVazeceMeteoPodatkeResponse">
+<part name="parameters" element="tns:dajVazeceMeteoPodatkeResponse"/>
 </message>
 <message name="dodajParkiraliste">
 <part name="parameters" element="tns:dodajParkiraliste"/>
@@ -55,14 +55,6 @@
 <input wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajSvaParkiralistaRequest" message="tns:dajSvaParkiralista"/>
 <output wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajSvaParkiralistaResponse" message="tns:dajSvaParkiralistaResponse"/>
 </operation>
-<operation name="dajZadnjeMeteoPodatke">
-<input wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajZadnjeMeteoPodatkeRequest" message="tns:dajZadnjeMeteoPodatke"/>
-<output wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajZadnjeMeteoPodatkeResponse" message="tns:dajZadnjeMeteoPodatkeResponse"/>
-</operation>
-<operation name="dajVazeceMeteoPodatke">
-<input wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajVazeceMeteoPodatkeRequest" message="tns:dajVazeceMeteoPodatke"/>
-<output wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajVazeceMeteoPodatkeResponse" message="tns:dajVazeceMeteoPodatkeResponse"/>
-</operation>
 <operation name="dajSveMeteoPodatke_1">
 <input wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajSveMeteoPodatke_1Request" message="tns:dajSveMeteoPodatke_1"/>
 <output wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajSveMeteoPodatke_1Response" message="tns:dajSveMeteoPodatke_1Response"/>
@@ -70,6 +62,14 @@
 <operation name="dajSveMeteoPodatke">
 <input wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajSveMeteoPodatkeRequest" message="tns:dajSveMeteoPodatke"/>
 <output wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajSveMeteoPodatkeResponse" message="tns:dajSveMeteoPodatkeResponse"/>
+</operation>
+<operation name="dajZadnjeMeteoPodatke">
+<input wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajZadnjeMeteoPodatkeRequest" message="tns:dajZadnjeMeteoPodatke"/>
+<output wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajZadnjeMeteoPodatkeResponse" message="tns:dajZadnjeMeteoPodatkeResponse"/>
+</operation>
+<operation name="dajVazeceMeteoPodatke">
+<input wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajVazeceMeteoPodatkeRequest" message="tns:dajVazeceMeteoPodatke"/>
+<output wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dajVazeceMeteoPodatkeResponse" message="tns:dajVazeceMeteoPodatkeResponse"/>
 </operation>
 <operation name="dodajParkiraliste">
 <input wsam:Action="http://serveri.ws.zorhrncic.nwtis.foi.org/GeoMeteoWS/dodajParkiralisteRequest" message="tns:dodajParkiraliste"/>
@@ -96,24 +96,6 @@
 <soap:body use="literal"/>
 </output>
 </operation>
-<operation name="dajZadnjeMeteoPodatke">
-<soap:operation soapAction=""/>
-<input>
-<soap:body use="literal"/>
-</input>
-<output>
-<soap:body use="literal"/>
-</output>
-</operation>
-<operation name="dajVazeceMeteoPodatke">
-<soap:operation soapAction=""/>
-<input>
-<soap:body use="literal"/>
-</input>
-<output>
-<soap:body use="literal"/>
-</output>
-</operation>
 <operation name="dajSveMeteoPodatke_1">
 <soap:operation soapAction=""/>
 <input>
@@ -124,6 +106,24 @@
 </output>
 </operation>
 <operation name="dajSveMeteoPodatke">
+<soap:operation soapAction=""/>
+<input>
+<soap:body use="literal"/>
+</input>
+<output>
+<soap:body use="literal"/>
+</output>
+</operation>
+<operation name="dajZadnjeMeteoPodatke">
+<soap:operation soapAction=""/>
+<input>
+<soap:body use="literal"/>
+</input>
+<output>
+<soap:body use="literal"/>
+</output>
+</operation>
+<operation name="dajVazeceMeteoPodatke">
 <soap:operation soapAction=""/>
 <input>
 <soap:body use="literal"/>
