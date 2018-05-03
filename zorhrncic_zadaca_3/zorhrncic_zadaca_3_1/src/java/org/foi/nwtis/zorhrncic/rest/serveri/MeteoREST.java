@@ -12,6 +12,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.json.Json;
@@ -83,7 +84,7 @@ public class MeteoREST {
         } else {
             //with error
             json = Json.createObjectBuilder()
-                    .add("odgovor", "[]")
+                    .add("odgovor", Json.createArrayBuilder())
                     .add("status", "ERR")
                     .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka")
                     .build()
@@ -117,13 +118,13 @@ public class MeteoREST {
         }
         if (succes) {
             json = Json.createObjectBuilder()
-                    .add("odgovor", "[]")
+                    .add("odgovor", Json.createArrayBuilder())
                     .add("status", "OK")
                     .build()
                     .toString();
         } else {
             json = Json.createObjectBuilder()
-                    .add("odgovor", "[]")
+                    .add("odgovor", Json.createArrayBuilder())
                     .add("status", "ERR")
                     .add("poruka", "Dogodila se pogreska prilikom upisivanja podataka")
                     .build()
@@ -164,13 +165,13 @@ public class MeteoREST {
         }
         if (succes) {
             json = Json.createObjectBuilder()
-                    .add("odgovor", "[]")
+                    .add("odgovor", Json.createArrayBuilder())
                     .add("status", "OK")
                     .build()
                     .toString();
         } else {
             json = Json.createObjectBuilder()
-                    .add("odgovor", "[]")
+                    .add("odgovor", Json.createArrayBuilder())
                     .add("status", "ERR")
                     .add("poruka", "Dogodila se pogreška prilikom izmjene podataka")
                     .build()
@@ -206,15 +207,15 @@ public class MeteoREST {
         }
         if (succes) {
             json = Json.createObjectBuilder()
-                    .add("odgovor", "[]")
+                    .add("odgovor", Json.createArrayBuilder())
                     .add("status", "OK")
                     .build()
                     .toString();
         } else {
             json = Json.createObjectBuilder()
-                    .add("odgovor", "[]")
+                    .add("odgovor", Json.createArrayBuilder())
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreška prilikom izmjene podataka")
+                    .add("poruka", "Dogodila se pogreška prilikom brisanja podataka")
                     .build()
                     .toString();
         }
@@ -244,7 +245,7 @@ public class MeteoREST {
         } else {
             //with error
             json = Json.createObjectBuilder()
-                    .add("odgovor", "[]")
+                    .add("odgovor", Json.createArrayBuilder())
                     .add("status", "ERR")
                     .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka")
                     .build()

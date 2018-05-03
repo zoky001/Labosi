@@ -94,12 +94,15 @@ public class OperacijaParkiraliste implements Serializable {
                 .add("adresa", adresa)
                 .build()
                 .toString();
+        // 2. JSON to Java object, read it from a Json String.
+
+        ResponseJson response = gson.fromJson(client.postJson(post, String.class), ResponseJson.class);
+        System.out.println("");
         try {
-            com.google.gson.JsonObject jsonObject = new JsonParser().parse(client.postJson(post, String.class)).getAsJsonObject();
-            if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
+            if (response.getStatus().equalsIgnoreCase("OK")) {
                 setMessage("Uspješno dodano parkiralište");
             } else {
-                setMessage("Greška kod dodavanja. \n " + jsonObject.get("poruka").toString());
+                setMessage("Greška kod dodavanja. \n " + response.getPoruka());
             }
         } catch (Exception e) {
             setMessage("Greška kod dodavanja. ");
@@ -123,17 +126,17 @@ public class OperacijaParkiraliste implements Serializable {
                 return "";
             }
             clientId = new MeteoRESTKlijentId(String.valueOf(parkListOdabrana.get(0).getId()));
-            com.google.gson.JsonObject jsonObject = new JsonParser().parse(client.getJson(String.class)).getAsJsonObject();
-            if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
-                for (JsonElement jsonElement : jsonObject.getAsJsonArray("odgovor")) {
-                    if (jsonElement.getAsJsonObject().get("id").getAsString().equalsIgnoreCase(String.valueOf(parkListOdabrana.get(0).getId()))) {
-                        naziv = jsonElement.getAsJsonObject().get("naziv").getAsString();
-                        adresa = jsonElement.getAsJsonObject().get("adresa").getAsString();
+            ResponseJson response = gson.fromJson(client.getJson(String.class), ResponseJson.class);
+            if (response.getStatus().equalsIgnoreCase("OK")) {
+                for (Odgovor odgovor : response.getOdgovor()) {
+                    if (odgovor.getId().equalsIgnoreCase(String.valueOf(parkListOdabrana.get(0).getId()))) {
+                        naziv = odgovor.getNaziv();
+                        adresa = odgovor.getAdresa();
                         setMessage("Uspješno dohvačeno parkiralište");
                     }
                 }
             } else {
-                setMessage("Greška kod dohvačanja. \n " + jsonObject.get("poruka").toString());
+                setMessage("Greška kod dohvačanja. \n " + response.getPoruka());
             }
 
         } catch (Exception e) {
@@ -178,12 +181,12 @@ public class OperacijaParkiraliste implements Serializable {
         try {
             if (parkListOdabrana.size() == 1) {
                 clientId = new MeteoRESTKlijentId(String.valueOf(parkListOdabrana.get(0).getId()));
-                com.google.gson.JsonObject jsonObject = new JsonParser().parse(clientId.deleteJson(String.class
-                )).getAsJsonObject();
-                if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
+            //    com.google.gson.JsonObject jsonObject = new JsonParser().parse(clientId.deleteJson(String.class)).getAsJsonObject();
+                ResponseJson response = gson.fromJson(clientId.deleteJson(String.class), ResponseJson.class);    
+                if (response.getStatus().equalsIgnoreCase("OK")) {
                     setMessage("Uspješno obrisano parkiralište");
                 } else {
-                    setMessage("Greška kod brisanja. \n " + jsonObject.get("poruka").toString());
+                    setMessage("Greška kod brisanja. \n " + response.getPoruka());
                 }
             } else {
                 setMessage("Mora biti odabrano točno JEDNO parkiralište.");
