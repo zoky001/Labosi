@@ -20,7 +20,7 @@ import org.foi.nwtis.zorhrncic.web.PreuzmiMeteoPodatke;
 /**
  * Web application lifecycle listener.
  *
- * @author grupa_1
+ * @author Zoran Hrnčić
  */
 @WebListener
 public class SlusacAplikacije implements ServletContextListener {
@@ -30,12 +30,15 @@ public class SlusacAplikacije implements ServletContextListener {
     private PreuzmiMeteoPodatke meteoPodatke;
     private static ServletContext servletContext;
     private Object konfiguracijaSve;
+    
+    /**
+     * Preuzima konfiguraciju i upisuje podatke u context servleta.
+     * Starta radnu dretvu.
+     * @param sce 
+     */
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
-            //
-
-            
             ServletContext context = sce.getServletContext();
             this.servletContext = context;
             datoteka = context.getInitParameter("konfiguracija");
@@ -54,19 +57,25 @@ public class SlusacAplikacije implements ServletContextListener {
 
     }
 
+    /**
+     * Briše iz contexta atribute konfiguracije.
+     * 
+     * @param sce 
+     */
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
        if (meteoPodatke != null && meteoPodatke.isAlive()) {
-
             meteoPodatke.interrupt();
-
         }
         ServletContext context = sce.getServletContext();
         context.removeAttribute("BP_Konfig");
         context.removeAttribute("All_Konfig");
-
     }
 
+    /**
+     * Vraća context servleta.
+     * @return 
+     */
     public static ServletContext getServletContext() {
         return servletContext;
     }

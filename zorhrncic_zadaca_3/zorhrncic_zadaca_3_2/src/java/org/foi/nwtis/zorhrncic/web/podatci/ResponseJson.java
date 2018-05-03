@@ -1,9 +1,15 @@
-package org.foi.nwtis.zorhrncic.web.zrna;
+package org.foi.nwtis.zorhrncic.web.podatci;
+
+
 
 import java.util.List;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-
+/**
+ * Klasa predstavlja odgovor REST WS.
+ * 
+ * @author Zoran
+ */
 public class ResponseJson {
 
 @SerializedName("odgovor")

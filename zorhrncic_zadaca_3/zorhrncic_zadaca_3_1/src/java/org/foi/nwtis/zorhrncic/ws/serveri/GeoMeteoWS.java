@@ -5,8 +5,6 @@
  */
 package org.foi.nwtis.zorhrncic.ws.serveri;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -31,10 +29,7 @@ import org.foi.nwtis.zorhrncic.web.podaci.Lokacija;
 import org.foi.nwtis.zorhrncic.web.podaci.MeteoPodaci;
 import org.foi.nwtis.zorhrncic.web.podaci.Parkiraliste;
 import org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije;
-
 import javax.annotation.Resource;
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
 import javax.servlet.ServletContext;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
@@ -43,8 +38,10 @@ import org.foi.nwtis.zorhrncic.rest.klijenti.OWMKlijent;
 import org.foi.nwtis.zorhrncic.rest.serveri.MeteoREST;
 
 /**
+ * SOAP web servis koji obavlja funkcije upisa novog parkirališta, dohvačanje
+ * podataka lokacije, dohvačanje meteo podataka...
  *
- * @author Zoran
+ * @author Zoran Hrnčić
  */
 @WebService(serviceName = "GeoMeteoWS")
 public class GeoMeteoWS {
@@ -64,11 +61,12 @@ public class GeoMeteoWS {
     private String patternDateTimeSQL = "yyyy-MM-dd HH:mm:ss";
 
     public GeoMeteoWS() {
-        //preuzmiKonfiuraciju();
+
     }
 
     /**
-     * Web service operation
+     * Web service operation - Vraća popis svih parkirališta iz tablice
+     * "Parkiraliste" iz baze podataka
      */
     @WebMethod(operationName = "dajSvaParkiralista")
     public java.util.List<Parkiraliste> dajSvaParkiralista() {
@@ -78,17 +76,15 @@ public class GeoMeteoWS {
     }
 
     /**
-     * Web service operation
+     * Web service operation - dodaje novo parkiraliste u bazu podataka.
      */
     @WebMethod(operationName = "dodajParkiraliste")
     public boolean dodajParkiraliste(@WebParam(name = "parkiraliste") Parkiraliste parkiraliste) {
         preuzmiKonfiuraciju();
-        //TODO 
         try {
 
             if (!checkIfExistParkingByName(parkiraliste.getNaziv())) {
-                return addParkingnInDatabase(parkiraliste.getNaziv(), parkiraliste.getAdresa(), parkiraliste.getGeoloc().getLatitude(), parkiraliste.getGeoloc().getLongitude());
-
+                return processingAddParking(parkiraliste.getNaziv(), parkiraliste.getAdresa());
             }
         } catch (Exception e) {
             return false;
@@ -97,19 +93,13 @@ public class GeoMeteoWS {
     }
 
     /**
-     * Web service operation
+     * Web service operation - vraca sve meteo podatke iz baze podataka
+     * parkiralista čiji je ID prosljedjen.
      */
     @WebMethod(operationName = "dajSveMeteoPodatke")
     public java.util.List<MeteoPodaci> dajSveMeteoPodatke(@WebParam(name = "id") int id) {
-        //TODO 
-        /*
-        o	dajSveMeteoPodatke(int)
-        - vraća sve spremljene podatke iz baze podataka za uneseno 
-        parkirališta, ukoliko nema podataka vraća null
-         */
         preuzmiKonfiuraciju();
         List<MeteoPodaci> list = createMeteodata_ByParkingID(id);
-
         if (list == null || list.size() == 0) {
             return null;
         } else {
@@ -119,24 +109,20 @@ public class GeoMeteoWS {
 
     /**
      * Web service operation
+     *
+     * vraca sve meteo podatke iz baze podataka parkiralista čiji je ID
+     *
+     * podatci moraju udovoljavati prosljeđenom vremenskom intervalu
      */
     @WebMethod(operationName = "dajSveMeteoPodatke_1")
     @RequestWrapper(className = "org.dajSveMeteoPodatke_1")
     @ResponseWrapper(className = "org.dajSveMeteoPodatke_1Response")
     public java.util.List<MeteoPodaci> dajSveMeteoPodatke(@WebParam(name = "id") int id, @WebParam(name = "form") long form, @WebParam(name = "to") long to) {
-        //TODO 
-        /*
-        o	dajSveMeteoPodatke(int, long, long) 
-        - vraća sve spremljene podatke iz baze podataka za 
-        uneseno parkirališta i interval (timestamp), ukoliko nema 
-        podataka vraća null
-         */
         preuzmiKonfiuraciju();
         List<MeteoPodaci> list = createMeteodataInRange_ByParkingID(id, form, to);
         if (form > to) {
             return null;
         }
-
         if (list == null || list.size() == 0) {
             return null;
         } else {
@@ -146,16 +132,12 @@ public class GeoMeteoWS {
 
     /**
      * Web service operation
+     *
+     * Vraća posljednje METEO podatke parkirališta čiji je ID prosljeđen
+     *
      */
     @WebMethod(operationName = "dajZadnjeMeteoPodatke")
     public MeteoPodaci dajZadnjeMeteoPodatke(@WebParam(name = "id") int id) {
-        //TODO 
-        /*
-        o	dajZadnjeMeteoPodatke(int) - vraća posljednje 
-        spremljene meteo podatake 
-        iz baze podatka za uneseno parkiralište ukoliko 
-        nema podataka vraća null
-         */
         preuzmiKonfiuraciju();
         List<MeteoPodaci> list = createLastMeteodataByParkingID(id);
 
@@ -168,6 +150,11 @@ public class GeoMeteoWS {
 
     /**
      * Web service operation
+     *
+     * Putem WS dohvaca trenutno vazece meteo podatke parkiralista ciji je ID
+     * prosljeđen.
+     *
+     * Vraća vazece meteo podatke.
      */
     @WebMethod(operationName = "dajVazeceMeteoPodatke")
     public MeteoPodaci dajVazeceMeteoPodatke(@WebParam(name = "id") int id) {
@@ -194,20 +181,24 @@ public class GeoMeteoWS {
 
     /**
      * Web service operation
+     *
+     * Vraca listu u kojoj je:
+     *
+     * 1. element - minimalna temperatura
+     *
+     * 2.element - maximana temperatura
+     *
+     * koja zadovoljava vremenski interval za prosljeđeno parkiraiste
+     *
+     *
      */
     @WebMethod(operationName = "dajMinMaxTemp")
     public ArrayList<Float> dajMinMaxTemp(@WebParam(name = "id") int id, @WebParam(name = "from") long from, @WebParam(name = "to") long to) {
-        //TODO 
-        /*o	dajMinMaxTemp(int, long, long) - 
-        vraća min i max važeće temperature iz baze podatka 
-        za uneseno parkiralište i interval, ukoliko nema 
-        podataka vraća null*/
         preuzmiKonfiuraciju();
         ArrayList<Float> list = getMinMaxTempValueInRange_ByParkingID(id, from, to);
         if (from > to) {
             return null;
         }
-
         if (list == null || list.size() != 2) {
             return null;
         } else {
@@ -215,6 +206,11 @@ public class GeoMeteoWS {
         }
     }
 
+    /**
+     * Preuzimanje podataka iz konfiguracije i pohranjivanje u globalne
+     * varijable.
+     *
+     */
     private void preuzmiKonfiuraciju() {
         ServletContext servletContext
                 = (ServletContext) context.getMessageContext().get(MessageContext.SERVLET_CONTEXT);
@@ -224,10 +220,17 @@ public class GeoMeteoWS {
         lozinka = konfiguracijaBaza.getAdminPassword();
         url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getAdminDatabase();
         uprProgram = konfiguracijaBaza.getDriverDatabase();
-        gm_apiKey = konfiguracija.dajPostavku("apikey");
-        OWM_apikey = konfiguracija.dajPostavku("OWM_apikey");
+        gm_apiKey = konfiguracija.dajPostavku("gmapikey");
+        OWM_apikey = konfiguracija.dajPostavku("apikey");
     }
 
+    /**
+     * Dohvacanje podataka svih parkiralista iz baze podataka.
+     *
+     * Kreiranje Liste objekta koji sadrzi podatke o svim parkiralistima.
+     *
+     * @return
+     */
     private java.util.List<Parkiraliste> getArrayallParkingDataFromDatabase() {
         String upit = "SELECT * FROM PARKIRALISTA";
         java.util.List<Parkiraliste> svaParkiralista = null;
@@ -251,6 +254,12 @@ public class GeoMeteoWS {
         return svaParkiralista;
     }
 
+    /**
+     * Kreiranje liste parkiralista iz rezultata upita nad bazom podataka
+     *
+     * @param results
+     * @return
+     */
     private java.util.List<Parkiraliste> createParkiralistaArrayFromResultset(ResultSet results) {
         java.util.List<Parkiraliste> svaParkiralista = new ArrayList<>();
         if (results != null) {
@@ -271,6 +280,13 @@ public class GeoMeteoWS {
 
     }
 
+    /**
+     * Provjera postoji li u bazi podataka parkiraliste sa prosljedjenim
+     * nazivom.
+     *
+     * @param name - naziv parkiralista
+     * @return true - postoji; false - ne postoji
+     */
     private boolean checkIfExistParkingByName(String name) {
         String upit = "SELECT * FROM PARKIRALISTA WHERE NAZIV = '" + name + "'";
         boolean exist = false;
@@ -296,6 +312,12 @@ public class GeoMeteoWS {
         }
     }
 
+    /**
+     * Provjera postoji li u bazi podataka parkiralište sa prosljedjenim ID
+     *
+     * @param id - id parkialista
+     * @return true - postoji; false - ne postoji
+     */
     private boolean checkIfExistParkingByID(int id) {
         String upit = "SELECT * FROM PARKIRALISTA WHERE ID =" + id;
         boolean exist = false;
@@ -321,6 +343,28 @@ public class GeoMeteoWS {
         }
     }
 
+    /**
+     * Obrada dodavanja parkiralista.
+     *
+     * Dohvacaneje lokacije parkiralista putem WS
+     *
+     * Pohranjivanje parkiralista u bazu podataka.
+     *
+     * @param naziv
+     * @param adresa
+     * @return
+     */
+    private boolean processingAddParking(String naziv, String adresa) {
+        GMKlijent gmk = new GMKlijent(gm_apiKey);
+        Lokacija lok = gmk.getGeoLocation(adresa);
+        return addParkingnInDatabase(naziv, adresa, lok.getLatitude(), lok.getLongitude());
+    }
+
+    /**
+     * Upisivanje parkiralista u bazu podataka
+     *
+     * @return
+     */
     private boolean addParkingnInDatabase(String name, String address, String lat, String lon) {
         String upit = "INSERT INTO PARKIRALISTA (NAZIV, ADRESA, LATITUDE, LONGITUDE) \n"
                 + "	VALUES ('" + name + "', '" + address + "', " + lat + ", " + lon + ")";
@@ -345,8 +389,15 @@ public class GeoMeteoWS {
 
     }
 
+    /**
+     * Dohvacanje parkiralista iz baze podataka na temelju ID
+     *
+     * Dohvacanje trenutnih meteo podataka putem WS
+     *
+     * @param id
+     * @return
+     */
     private MeteoPodaci getCurrentValidMeteoDataByParkingID(int id) {
-
         MeteoPodaci meteo = null;
         String upit = "SELECT * FROM PARKIRALISTA where ID = " + id;
         try {
@@ -369,8 +420,13 @@ public class GeoMeteoWS {
         return meteo;
     }
 
+    /**
+     * Kreiranje liste meteo podataka određenog prakiralista na temelju ID
+     *
+     * @param id
+     * @return
+     */
     private List<MeteoPodaci> createLastMeteodataByParkingID(int id) {
-
         List<MeteoPodaci> nesto = null;
         DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
         String upit = "SELECT * FROM METEO where ID = " + id + " ORDER BY PREUZETO DESC FETCH FIRST 1 ROWS ONLY";
@@ -394,6 +450,14 @@ public class GeoMeteoWS {
         return nesto;
     }
 
+    /**
+     * Dohvacanje meteo podataka određenog parkralista u određenom intervalu
+     *
+     * @param id
+     * @param from
+     * @param to
+     * @return
+     */
     private List<MeteoPodaci> createMeteodataInRange_ByParkingID(int id, long from, long to) {
         preuzmiKonfiuraciju();
         List<MeteoPodaci> nesto = null;
@@ -419,6 +483,12 @@ public class GeoMeteoWS {
         return nesto;
     }
 
+    /**
+     * Dohvacanje meteo podataka iz baze podataka na temelju ID
+     *
+     * @param id
+     * @return
+     */
     private List<MeteoPodaci> createMeteodata_ByParkingID(int id) {
         preuzmiKonfiuraciju();
         List<MeteoPodaci> nesto = null;
@@ -443,6 +513,13 @@ public class GeoMeteoWS {
         return nesto;
     }
 
+    /**
+     * Kreiranje liste meteo podataka na temelju rezultata SQL upita.
+     *
+     * @param results
+     * @return
+     * @throws SQLException
+     */
     private List<MeteoPodaci> createMeteoPodatciArrayFromResultset_Weather(final ResultSet results) throws SQLException {
         List<MeteoPodaci> arrayList = new ArrayList<>();
         if (results != null) {
@@ -469,6 +546,18 @@ public class GeoMeteoWS {
         return arrayList;
     }
 
+    /**
+     * Kreiranje liste temperature
+     *
+     * 1. element - minimalna temp
+     *
+     * 2. element - max temperatura
+     *
+     *
+     * @param results
+     * @return
+     * @throws SQLException
+     */
     private ArrayList<Float> getMinMAxTempValueFromResultSet(final ResultSet results) throws SQLException {
         ArrayList<Float> arrayList = new ArrayList<>();
         if (results != null) {
@@ -483,6 +572,14 @@ public class GeoMeteoWS {
         return arrayList;
     }
 
+    /**
+     * Dohvaćanje trenutno vazecih podataka putem WS na temelju rezultata upisa
+     * koji sadrži lokaciju.
+     *
+     * @param results
+     * @return
+     * @throws SQLException
+     */
     private MeteoPodaci getCurrentValidaMeteoDataByResultSet(final ResultSet results) throws SQLException {
         MeteoPodaci meteo = null;
         if (results != null) {
@@ -497,6 +594,23 @@ public class GeoMeteoWS {
         return meteo;
     }
 
+    /**
+     * Kreiranje METEO DATA objekta na temelju podataka
+     *
+     * @param preuzeto
+     * @param arrayList
+     * @param temp
+     * @param tempMin
+     * @param tempMax
+     * @param vlaga
+     * @param tlak
+     * @param vjetar
+     * @param vjetarSmjer
+     * @param vrijeme
+     * @param vrijemeOpis
+     * @param idmeto
+     * @throws NumberFormatException
+     */
     private void createMeteoPodatciObject(String preuzeto, List<MeteoPodaci> arrayList, String temp, String tempMin, String tempMax, String vlaga, String tlak, String vjetar, String vjetarSmjer, String vrijeme, String vrijemeOpis, String idmeto) throws NumberFormatException {
         try {
             DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
@@ -534,6 +648,15 @@ public class GeoMeteoWS {
         }
     }
 
+    /**
+     * Dohvacanje minimalne i maximalne temperature parkiralista iz baze podataka u zadanom intervalu.
+     *
+     *
+     * @param id
+     * @param from
+     * @param to
+     * @return
+     */
     private ArrayList<Float> getMinMaxTempValueInRange_ByParkingID(int id, long from, long to) {
         ArrayList<Float> nesto = null;
         DateFormat df = new SimpleDateFormat(patternDateTimeSQL);

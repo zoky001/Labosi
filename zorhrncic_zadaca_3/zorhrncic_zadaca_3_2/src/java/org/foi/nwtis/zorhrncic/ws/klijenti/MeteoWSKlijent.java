@@ -7,7 +7,10 @@ package org.foi.nwtis.zorhrncic.ws.klijenti;
 
 /**
  *
- * @author Zoran
+ * Klasa sadrzi metode koje se spajaju na SOAP ws  i izvrsavaju metode servisa.
+ * 
+ * 
+ * @author Zoran Hrnčić
  */
 public class MeteoWSKlijent {
 
@@ -33,11 +36,7 @@ public class MeteoWSKlijent {
         return port.dajSvaParkiralista();
     }
 
-    public static java.util.List<org.foi.nwtis.zorhrncic.ws.serveri.Parkiraliste> dajSvaParkiralista_1() {
-        org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service service = new org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS_Service();
-        org.foi.nwtis.zorhrncic.ws.serveri.GeoMeteoWS port = service.getGeoMeteoWSPort();
-        return port.dajSvaParkiralista();
-    }
+  
     
     
     

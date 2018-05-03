@@ -1,9 +1,17 @@
+package org.foi.nwtis.zorhrncic.web.podatci;
 
-package org.foi.nwtis.zorhrncic.web.zrna;
+
+
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+
+/**
+ * Klasa je dio odgovora REST WS
+ * 
+ * @author Zoran
+ */
 public class Odgovor {
 
 @SerializedName("id")

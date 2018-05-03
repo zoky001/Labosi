@@ -13,15 +13,9 @@ import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.mail.Folder;
-import javax.mail.Message;
-import javax.mail.Session;
-import javax.mail.Store;
 import javax.servlet.ServletContext;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
@@ -34,57 +28,35 @@ import org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije;
 
 /**
  *
- * Dretva koja se okida nakon svakog intervala i obavlja sortiranje poruka u
- * mape i pohranjivanje IOT uredjaja u bazu podataka.
+ * Dretva koja se okida nakon svakog intervala i obavlja dohvacanje meteo
+ * podataka pohranjenih parkiralista iz baze podataka.
+ *
+ * Pohranjuje meteo podatke u bazu podataka u tablicu "Meteo"
  *
  * @author Zoran Hrncic
  */
 public class PreuzmiMeteoPodatke extends Thread {
 
-    private String formatIspisa = "|%-25s|%-25s|\n";
-    private String line20 = "-------------------------";
     private boolean krajRada = false;
     private int spavanje;
-    private Folder folder;
-    private Store store;
-    private Session session;
-    private String adresaServera;
-    private String korisnickoIme;
     private String lozinka;
-    private Message[] messages = null;
     private BP_Konfiguracija konfiguracijaBaza;
     private Konfiguracija konfiguracija;
     private long razlika = 0;
     private long pocetak = 0;
     private long kraj = 0;
-    private double koef = 0.01666666666;
-    private int portServera;
-    private int brojPorukaZaUcitavanje;
-    private String nazivAttachmenta;
-    private String nazivMape;
-    private String nazivDatotekePodatciRadu;
-    private long krajObrade;
-    private int brojPoruka = 0, brojdodanihIOT = 0, brojAzuriranihIOT = 0, brojNeispravnihPoruka = 0;
-    private final String protokol = "imap";
-    private int iot_id;
-    private String iot_command;
-    private Date iot_time;
-    private Properties iot_atributs;
-    private String upit;
-    private String uprProgram;
+    private double koef = 0.01866666666;
     private String usernameAdminDatabase;
     private String lozinkaDatabase;
     private String urlDatabase;
-
     private String patternDateTimeSQL = "yyyy-MM-dd HH:mm:ss";
-
     private final SimpleDateFormat sqlDateFormat;
-
     private long sleepTime;
     private String usernameAdmin;
     private String url;
     private String OWM_apikey;
     private String gm_apiKey;
+    private String uprProgram;
 
     /**
      * Pokrece pruzimanje podataka iz konfiguracije. Definira format datuma SQL
@@ -110,8 +82,8 @@ public class PreuzmiMeteoPodatke extends Thread {
         lozinka = konfiguracijaBaza.getAdminPassword();
         url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getAdminDatabase();
         uprProgram = konfiguracijaBaza.getDriverDatabase();
-        gm_apiKey = konfiguracija.dajPostavku("apikey");
-        OWM_apikey = konfiguracija.dajPostavku("OWM_apikey");
+        gm_apiKey = konfiguracija.dajPostavku("gmapikey");
+        OWM_apikey = konfiguracija.dajPostavku("apikey");
         spavanje = Integer.parseInt(konfiguracija.dajPostavku("intervalDretveZaMeteoPodatke"));
 
     }
@@ -137,8 +109,6 @@ public class PreuzmiMeteoPodatke extends Thread {
                 System.out.println("Razlika od prosle serijalizacije: " + (pocetak - kraj) / 1000 + " sec");
             }
             try {
-                System.out.println("Gotova obrada: " + broj++);
-
                 //radi
                 processing();
                 kraj = System.currentTimeMillis();
@@ -161,6 +131,10 @@ public class PreuzmiMeteoPodatke extends Thread {
         super.start();
     }
 
+    /**
+     * Dohvaca sve podatke parkiralista iz baze podataka. Dohavca meteo podatke
+     * svakog parkiralista. Pohranjuje meteo podatke u bazu podataka.
+     */
     private void processing() {
         try {
             List<Parkiraliste> parkiralistes = getAllParkingData();
@@ -180,6 +154,11 @@ public class PreuzmiMeteoPodatke extends Thread {
 
     }
 
+    /**
+     * Dohvaca sva parkialista iz baze podataka.
+     *
+     * @return
+     */
     private List<Parkiraliste> getAllParkingData() {
         List<Parkiraliste> nesto = null;
         String upit = "SELECT * FROM PARKIRALISTA";
@@ -203,6 +182,12 @@ public class PreuzmiMeteoPodatke extends Thread {
         return nesto;
     }
 
+    /**
+     * Kreiranje liste parkiralista iz rezultata upita nad bazom podataka.
+     *
+     * @param results
+     * @return
+     */
     private List<Parkiraliste> createArrayFromResultset(ResultSet results) {
         List<Parkiraliste> list = new ArrayList<>();
         if (results != null) {
@@ -222,19 +207,27 @@ public class PreuzmiMeteoPodatke extends Thread {
         return list;
     }
 
+    /**
+     * Dohvacanje meteo podataka putem WS za određenu lokaciju.
+     *
+     * @param lok
+     * @return
+     */
     private MeteoPodaci getMeteoData(Lokacija lok) {
         OWMKlijent owmk = new OWMKlijent(OWM_apikey);
         return owmk.getRealTimeWeather(lok.getLatitude(), lok.getLongitude());
     }
 
+    /**
+     * Dodavanje meteo podataka parkiralista u bazu podataka.
+     *
+     * @param meteoPodaci
+     * @param p
+     * @return
+     */
     private boolean addMeteoDataInDatabase(MeteoPodaci meteoPodaci, Parkiraliste p) {
         DateFormat df = new SimpleDateFormat(patternDateTimeSQL);
-
-        String upit = "INSERT INTO METEO "
-                + "(ID, ADRESASTANICE, LATITUDE, LONGITUDE, VRIJEME, VRIJEMEOPIS, TEMP, TEMPMIN, TEMPMAX, VLAGA, TLAK, VJETAR, VJETARSMJER, PREUZETO)"
-                + "VALUES "
-                + "(" + p.getId() + ", '', " + p.getGeoloc().getLatitude() + ", " + p.getGeoloc().getLongitude() + ", '" + meteoPodaci.getWeatherValue() + "' , '" + meteoPodaci.getPrecipitationMode() + "', " + meteoPodaci.getTemperatureValue() + ","
-                + " " + meteoPodaci.getTemperatureMin() + ", " + meteoPodaci.getTemperatureMax() + ", " + meteoPodaci.getHumidityValue() + ", " + meteoPodaci.getPressureValue() + ", " + meteoPodaci.getWindSpeedValue() + ", " + meteoPodaci.getWindDirectionValue() + ", '" + df.format(meteoPodaci.getLastUpdate()) + "')";
+        String upit = createMeteoInsertQuery(p, meteoPodaci, df);
 
         boolean success = false;
         try {
@@ -255,6 +248,29 @@ public class PreuzmiMeteoPodatke extends Thread {
             return success;
         }
 
+    }
+
+    /**
+     * Kreiranje upita za upis meteo podtaka u bazu podataka na temelju
+     * prosljeđenih podataka.
+     *
+     * @param p
+     * @param meteoPodaci
+     * @param df
+     * @return
+     */
+    private String createMeteoInsertQuery(Parkiraliste p, MeteoPodaci meteoPodaci, DateFormat df) {
+        String upit = "INSERT INTO METEO "
+                + "(ID, ADRESASTANICE, LATITUDE, LONGITUDE, VRIJEME, VRIJEMEOPIS, TEMP, TEMPMIN, TEMPMAX, VLAGA, TLAK, VJETAR, VJETARSMJER, PREUZETO)"
+                + "VALUES "
+                + "(" + p.getId() + ", '', " + p.getGeoloc().getLatitude() + ", " + p.getGeoloc().getLongitude() + ","
+                + " '" + meteoPodaci.getWeatherValue() + "' , '" + meteoPodaci.getPrecipitationMode() + "', "
+                + "" + meteoPodaci.getTemperatureValue() + ","
+                + " " + meteoPodaci.getTemperatureMin() + ", " + meteoPodaci.getTemperatureMax() + ", "
+                + "" + meteoPodaci.getHumidityValue() + ", " + meteoPodaci.getPressureValue() + ", "
+                + "" + meteoPodaci.getWindSpeedValue() + ", " + meteoPodaci.getWindDirectionValue() + ", "
+                + "'" + df.format(meteoPodaci.getLastUpdate()) + "')";
+        return upit;
     }
 
 }

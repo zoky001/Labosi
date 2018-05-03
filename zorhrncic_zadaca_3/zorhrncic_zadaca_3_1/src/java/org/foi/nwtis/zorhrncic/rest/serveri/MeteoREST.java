@@ -12,7 +12,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.json.Json;
@@ -38,11 +37,13 @@ import org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije;
 /**
  * REST Web Service
  *
- * @author Zoran
+ * Vrši obradu podataka parkirališta. Upis, dohvačanje svih iz baze i vračanje
+ * podataka, vračanje podataka vremena na lokacijama parkirališta.
+ *
+ * @author Zoran Hrnčić
  */
 @Path("meteo")
 public class MeteoREST {
-
 
     private BP_Konfiguracija konfiguracijaBaza;
     private Konfiguracija konfiguracija;
@@ -50,8 +51,6 @@ public class MeteoREST {
     private String lozinka;
     private String url;
     private String uprProgram;
-
-  
     private String json;
     private String gm_apiKey;
     private String OWM_apikey;
@@ -64,6 +63,8 @@ public class MeteoREST {
     }
 
     /**
+     * Vraća sve zapise iz baze podataka iz tablice "parkirališta".
+     *
      * Retrieves representation of an instance of
      * org.foi.nwtis.zorhrncic.rest.serveri.MeteoREST
      *
@@ -95,6 +96,10 @@ public class MeteoREST {
     }
 
     /**
+     * Upisuje nove podatke o novom parkiralištu u bazu podataka.
+     *
+     * Vrača ERR ako postojji parkiraliste sa istim nazivom.
+     *
      * PUT method for updating or creating an instance of MeteoREST
      *
      * @param content representation for the resource
@@ -126,30 +131,47 @@ public class MeteoREST {
             json = Json.createObjectBuilder()
                     .add("odgovor", Json.createArrayBuilder())
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreska prilikom upisivanja podataka")
+                    .add("poruka", "Dogodila se pogreska prilikom upisivanja podataka. Pokušajte promjeniti naziv parkirališta.")
                     .build()
                     .toString();
         }
         return json;
     }
 
+    /**
+     * Vraća ERR jer ova metoda nije podržana.
+     *
+     * PUT method for updating or creating an instance of MeteoREST
+     *
+     * @param content representation for the resource
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("{id}")
+    public String postJson(@PathParam("id") String id, String content) {
+
+        json = Json.createObjectBuilder()
+                .add("odgovor", Json.createArrayBuilder())
+                .add("status", "ERR")
+                .add("poruka", "Metoda nije podržana")
+                .build()
+                .toString();
+        return json;
+    }
+
+    /**
+     * Ažurira parkiralište sa novoprosljeđenim podatcima.
+     *
+     * @param id - id parkirališta
+     * @param content - podatci parkiralista
+     * @return rezultat uspjeha
+     */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{id}")
     public String putJson(@PathParam("id") String id, String content) {
-        //TODO
-        /*
-  u metodi putJson(String) i delete Json staviti da 
-        vraća pogrešku. Pripremiti odgovor u 
-        application/json formatu i zadanom strukturom
-        
-  u metodi putJson(@PathParam("id") String id) staviti da ažurira 
-        parkiralište. Prima podatke u application/json formatu. 
-        Pripremiti odgovor u application/json formatu i zadanom strukturom.
-         */
-        // TODO provjeri da li postoji parkiraliĹˇte s id iz argumenta
-        // TODO ako postoji aĹľurirati u bazi podataka
         boolean succes = false;
         json = "";
         String naziv, adresa;
@@ -163,6 +185,16 @@ public class MeteoREST {
         } catch (Exception e) {
 
         }
+        createPutResponse(succes);
+        return json;
+    }
+
+    /**
+     * Kreiranje odgorova PUT metode.
+     *
+     * @param succes
+     */
+    private void createPutResponse(boolean succes) {
         if (succes) {
             json = Json.createObjectBuilder()
                     .add("odgovor", Json.createArrayBuilder())
@@ -177,23 +209,59 @@ public class MeteoREST {
                     .build()
                     .toString();
         }
+    }
+
+    /**
+     * Vraća ERR, jer je to nepodržaa metoda.
+     *
+     * @param content
+     * @return
+     */
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String putJson(String content) {
+
+        json = Json.createObjectBuilder()
+                .add("odgovor", Json.createArrayBuilder())
+                .add("status", "ERR")
+                .add("poruka", "Metoda nije podržana")
+                .build()
+                .toString();
+
         return json;
     }
 
+    /**
+     * Vraća ERR jer metoda nije podržana.
+     *
+     * @return
+     */
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    public String deleteJson() {
+
+        json = Json.createObjectBuilder()
+                .add("odgovor", Json.createArrayBuilder())
+                .add("status", "ERR")
+                .add("poruka", "Metoda nije podržana")
+                .build()
+                .toString();
+
+        return json;
+    }
+
+    /**
+     * Briše parkiralište iz baze podataka sa prosljeđenim ID. Ako ne postoji,
+     * vraca grešku.
+     *
+     * @param id
+     * @return
+     */
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{id}")
     public String deleteJson(@PathParam("id") String id) {
-        //TODO
-        /*
-  u metodi putJson(String) i delete Json staviti da 
-        vraća pogrešku. Pripremiti odgovor u 
-        application/json formatu i zadanom strukturom
-        
-    	u metodi deleteJson(@PathParam("id") String id) staviti 
-        da briše parkiralište. Pripremiti odgovor u application/json 
-        formatu i zadanom strukturom.
-         */
         boolean succes = false;
         json = "";
         String naziv, adresa;
@@ -205,6 +273,16 @@ public class MeteoREST {
         } catch (Exception e) {
             succes = false;
         }
+        createDeleteResponse(succes);
+        return json;
+    }
+
+    /**
+     * Kreiranje odgovora DELETE metode
+     *
+     * @param succes
+     */
+    private void createDeleteResponse(boolean succes) {
         if (succes) {
             json = Json.createObjectBuilder()
                     .add("odgovor", Json.createArrayBuilder())
@@ -215,25 +293,22 @@ public class MeteoREST {
             json = Json.createObjectBuilder()
                     .add("odgovor", Json.createArrayBuilder())
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreška prilikom brisanja podataka")
+                    .add("poruka", "Dogodila se pogreška prilikom brisanja podataka. Možda ste prosljedili pogrešan ID.")
                     .build()
                     .toString();
         }
-        return json;
     }
 
+    /**
+     * Vraća METEO podatke parkirališta čiji je ID prosljeđen.
+     *
+     * @param id - id parkirališta
+     * @return
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{id}")
     public String getJson(@PathParam("id") String id) {
-        /*TODO
-     u metodi getJson() staviti da vraća na bazi putanje 
-        {id} važeće meteorološke podatke izabranog IoT uređaja. 
-        Pripremiti odgovor u application/json formatu i 
-        zadanom strukturom.
-         */
-
-        // TODO provjeri da li postoji parkiraliĹˇte s id iz argumenta
         json = "";
         JsonArrayBuilder allParkingData = createJSONdataWeather_ByParkingID(Integer.parseInt(id));
         if (allParkingData != null) {
@@ -247,7 +322,7 @@ public class MeteoREST {
             json = Json.createObjectBuilder()
                     .add("odgovor", Json.createArrayBuilder())
                     .add("status", "ERR")
-                    .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka")
+                    .add("poruka", "Dogodila se pogreška prilikom dohvaćanja podataka. Možda ste prosljedili pogrešan ID.")
                     .build()
                     .toString();
         }
@@ -255,15 +330,13 @@ public class MeteoREST {
         return json;
     }
 
-  /*  @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("{id}")
-    public String postJson(@PathParam("id") String id, String podaci) {
-        return "{\"odgovor\": [],"
-                + "\"status\": \"ERR\", \"poruka\": \"Nije dozvoljeno\"}";
-    }
-*/
+    /**
+     * Dohvacanje podataka svih parkiralista iz baze podataka.
+     *
+     * Kreiranje JSON Array objekta koji sadrzi podatke o svim parkiralistima.
+     *
+     * @return
+     */
     private JsonArrayBuilder createArrayJSONdata_allParkingData() {
         JsonArrayBuilder nesto = Json.createArrayBuilder();
         String upit = "SELECT * FROM PARKIRALISTA";
@@ -287,8 +360,15 @@ public class MeteoREST {
         return nesto;
     }
 
+    /**
+     * Kreiranje JSON Array objekta iz rezultata izvršavanja SQL upita nad bazom
+     * podataka.
+     *
+     * @param results
+     * @param nesto
+     * @return
+     */
     private JsonArrayBuilder createJSONArrayFromResultset(ResultSet results, JsonArrayBuilder nesto) {
-
         if (results != null) {
             try {
                 while (results.next()) {
@@ -314,6 +394,14 @@ public class MeteoREST {
 
     }
 
+    /**
+     * Dohvacanje podataka o lokaciji parkirališta iz baze podataka.
+     *
+     * Kreiranje Json Array objekta sa trenutnim podatcima o vremenu.
+     *
+     * @param id
+     * @return
+     */
     private JsonArrayBuilder createJSONdataWeather_ByParkingID(int id) {
         JsonArrayBuilder nesto = Json.createArrayBuilder();
         String upit = "SELECT * FROM PARKIRALISTA where ID = " + id;
@@ -337,15 +425,25 @@ public class MeteoREST {
         return nesto;
     }
 
+    /**
+     * Dohvaćanje trenutnih meteo podataka putem WEB-servisa.
+     *
+     * Kreiranje JSON Array objekta sa podatcima.
+     *
+     * @param results rezultat upita sa podatcima jednog parkiralista
+     * @param nesto djelomicno kriran JSON array
+     * @return
+     * @throws SQLException
+     */
     private JsonArrayBuilder createJSONArrayFromResultset_Weather(final ResultSet results, JsonArrayBuilder nesto) throws SQLException {
+        boolean exist = false;
         if (results != null) {
             while (results.next()) {
+                exist = true;
                 String latitude = results.getString("LATITUDE");
                 String longitude = results.getString("LONGITUDE");
-
                 OWMKlijent owmk = new OWMKlijent(OWM_apikey);
                 MeteoPodaci mp = owmk.getRealTimeWeather(latitude, longitude);
-
                 nesto.add(Json.createObjectBuilder()
                         .add("temp", mp.getTemperatureValue())
                         .add("vlaga", mp.getHumidityValue())
@@ -353,11 +451,18 @@ public class MeteoREST {
                 );
             }
         }
+        if (!exist) {
+            return null;
+        }
         return nesto;
     }
 
+    /**
+     * Preuzimanje podataka iz konfiguracije i pohranjivanje u globalne
+     * varijable.
+     *
+     */
     private void preuzmiKonfiuraciju() {
-
         ServletContext servletContext = (ServletContext) SlusacAplikacije.getServletContext();
         konfiguracijaBaza = (BP_Konfiguracija) servletContext.getAttribute("BP_Konfig");//new BP_Konfiguracija(putanja + datoteka);//baza
         konfiguracija = (Konfiguracija) servletContext.getAttribute("All_Konfig");//all config data
@@ -365,11 +470,18 @@ public class MeteoREST {
         lozinka = konfiguracijaBaza.getAdminPassword();
         url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getAdminDatabase();
         uprProgram = konfiguracijaBaza.getDriverDatabase();
-        gm_apiKey = konfiguracija.dajPostavku("apikey");
-        OWM_apikey = konfiguracija.dajPostavku("OWM_apikey");
+        gm_apiKey = konfiguracija.dajPostavku("gmapikey");
+        OWM_apikey = konfiguracija.dajPostavku("apikey");
 
     }
 
+    /**
+     * Provjera postoji li u bazi podataka parkiraliste sa prosljedjenim
+     * nazivom.
+     *
+     * @param name - naziv parkiralista
+     * @return true - postoji; false - ne postoji
+     */
     private boolean checkIfExistParkingByName(String name) {
         String upit = "SELECT * FROM PARKIRALISTA WHERE NAZIV = '" + name + "'";
         boolean exist = false;
@@ -395,6 +507,12 @@ public class MeteoREST {
         }
     }
 
+    /**
+     * Provjera postoji li u bazi podataka parkiralište sa prosljedjenim ID
+     *
+     * @param id - id parkialista
+     * @return true - postoji; false - ne postoji
+     */
     private boolean checkIfExistParkingByID(int id) {
         String upit = "SELECT * FROM PARKIRALISTA WHERE ID =" + id;
         boolean exist = false;
@@ -420,6 +538,15 @@ public class MeteoREST {
         }
     }
 
+    /**
+     * Upis parkiralista u abzu podataka.
+     *
+     * @param name - naziv parkiralista
+     * @param address - adresa park
+     * @param lat - latitude
+     * @param lon - longitude
+     * @return @return true - uspjeh; false - neuspjeh
+     */
     private boolean addParkingnInDatabase(String name, String address, String lat, String lon) {
         String upit = "INSERT INTO PARKIRALISTA (NAZIV, ADRESA, LATITUDE, LONGITUDE) \n"
                 + "	VALUES ('" + name + "', '" + address + "', " + lat + ", " + lon + ")";
@@ -444,6 +571,16 @@ public class MeteoREST {
 
     }
 
+    /**
+     * Azuriranje podataka parkiralista u bazi podataka.
+     *
+     * @param name - naziv parkiralista
+     * @param address - adresa parkiralista
+     * @param lat - latitude
+     * @param lon - longitude
+     * @param id - id parkiralista koje se azurira
+     * @return true - uspjeh; false - neuspjeh
+     */
     private boolean updateParkingnInDatabase(String name, String address, String lat, String lon, int id) {
         String upit = "UPDATE PARKIRALISTA\n"
                 + "  SET NAZIV='" + name + "', ADRESA='" + address + "', LATITUDE=" + lat + ", LONGITUDE=" + lon + "\n"
@@ -469,6 +606,12 @@ public class MeteoREST {
 
     }
 
+    /**
+     * Brisanje parkiralista u bazi podataka.
+     *
+     * @param id - id parkiralista koje se brise
+     * @return true - uspjeh; false - neuspjeh
+     */
     private boolean deleteParkingnInDatabase(int id) {
         String upit = "DELETE from PARKIRALISTA WHERE ID = " + id;
         boolean success = false;
@@ -491,7 +634,14 @@ public class MeteoREST {
         }
 
     }
-       private boolean deleteMeteoInDatabase(int id) {
+
+    /**
+     * Brisanje meteo podataka odabranog parkiralista iz baze podataka.
+     *
+     * @param id - id parkiralista za koje se brisu meteo podatci
+     * @return true - uspjeh; false - neuspjeh
+     */
+    private boolean deleteMeteoInDatabase(int id) {
         String upit = "DELETE FROM METEO WHERE ID = " + id;
         boolean success = false;
         try {
@@ -514,12 +664,31 @@ public class MeteoREST {
 
     }
 
+    /**
+     * Obrada dodavanja parkiralista.
+     *
+     * Dohvacanje lokacije putem WS na temelju adrese.
+     *
+     * @param naziv - naziv parkiraliste
+     * @param adresa - adresa parkiralista
+     * @return rez uspjeha
+     */
     private boolean processingAddParking(String naziv, String adresa) {
         GMKlijent gmk = new GMKlijent(gm_apiKey);
         Lokacija lok = gmk.getGeoLocation(adresa);
         return addParkingnInDatabase(naziv, adresa, lok.getLatitude(), lok.getLongitude());
     }
 
+    /**
+     * Obrada ažuriranja parkirališta.
+     *
+     *
+     * Dohvacanje lokacije putem WS na temelju adrese.
+     *
+     * @param naziv - naziv parkiraliste
+     * @param adresa - adresa parkiralista
+     * @return rez uspjeha
+     */
     private boolean processingUpdateParking(String naziv, String adresa, int id) {
         GMKlijent gmk = new GMKlijent(gm_apiKey);
         Lokacija lok = gmk.getGeoLocation(adresa);

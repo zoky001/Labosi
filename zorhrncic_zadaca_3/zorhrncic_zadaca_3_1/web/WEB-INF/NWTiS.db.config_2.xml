@@ -14,6 +14,6 @@
     <entry key="driver.database.derby">org.apache.derby.jdbc.ClientDriver</entry>
     <entry key="driver.database.postgresql">org.postgresql.Driver</entry>
     <entry key="intervalDretveZaMeteoPodatke">60</entry>
-    <entry key="apikey">AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc</entry>
-    <entry key="OWM_apikey">7505f1b2a843433f4c408932f2d4300d</entry>
+    <entry key="gmapikey">AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc</entry>
+    <entry key="apikey">7505f1b2a843433f4c408932f2d4300d</entry>
 </properties>

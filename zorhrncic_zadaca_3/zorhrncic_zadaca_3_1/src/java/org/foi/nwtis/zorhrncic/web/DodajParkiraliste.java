@@ -5,13 +5,10 @@
  */
 package org.foi.nwtis.zorhrncic.web;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -28,6 +25,10 @@ import org.foi.nwtis.zorhrncic.web.podaci.MeteoPodaci;
 import org.foi.nwtis.zorhrncic.web.slusaci.SlusacAplikacije;
 
 /**
+ * Servelet koji prima podatke iz forme, vrši obradu vezanu za dodavanje
+ * parkiališta u bazu podataka, dohvacanje lokacije..
+ *
+ * Prosljedjuje zahtjec na index.jsp
  *
  * @author Zoran
  */
@@ -79,6 +80,15 @@ public class DodajParkiraliste extends HttpServlet {
         request.getRequestDispatcher("/index.jsp").forward(request, response);
     }
 
+    /**
+     * dohvaćanje geolokacije putem WS na temelju adrese iz zahtjeva.
+     *
+     * postavljanje podataka lokacije u atribute cije vrijednosti se prikazuju
+     * na index.jsp
+     *
+     * @param request
+     * @return
+     */
     private boolean getGeolocation(HttpServletRequest request) {
         boolean success = false;
         try {
@@ -136,6 +146,11 @@ public class DodajParkiraliste extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
+    /**
+     * Preuzimanje podataka iz konfiguracije i pohranjivanje u globalne
+     * varijable.
+     *
+     */
     private void preuzmiKonfiuraciju() {
 
         ServletContext servletContext = (ServletContext) SlusacAplikacije.getServletContext();
@@ -145,11 +160,17 @@ public class DodajParkiraliste extends HttpServlet {
         lozinka = konfiguracijaBaza.getAdminPassword();
         url = konfiguracijaBaza.getServerDatabase() + konfiguracijaBaza.getAdminDatabase();
         uprProgram = konfiguracijaBaza.getDriverDatabase();
-        gm_apiKey = konfiguracija.dajPostavku("apikey");
-        OWM_apikey = konfiguracija.dajPostavku("OWM_apikey");
+        gm_apiKey = konfiguracija.dajPostavku("gmapikey");
+        OWM_apikey = konfiguracija.dajPostavku("apikey");
 
     }
 
+    /**
+     * PReuzimanje podataka o parkiralistu iz zahtjeva i pohrana istih u bazu podataka
+     * 
+     * @param request
+     * @return 
+     */
     private boolean saveParking(HttpServletRequest request) {
         boolean succes = false;
         try {
@@ -171,6 +192,13 @@ public class DodajParkiraliste extends HttpServlet {
         return succes;
     }
 
+    /**
+     * Dohvacanje MEteo podataka prema lokaciji upisanog parkiralista.
+     * 
+     * Pohranjivanje istih podatak au atribute čije se vrijednosti prikazuju u index.jsp
+     * @param request
+     * @return 
+     */
     private boolean getMeteoData(HttpServletRequest request) {
         boolean succes = false;
         try {
@@ -182,7 +210,6 @@ public class DodajParkiraliste extends HttpServlet {
             Lokacija lok = gmk.getGeoLocation(adresa);
             OWMKlijent owmk = new OWMKlijent(OWM_apikey);
             MeteoPodaci mp = owmk.getRealTimeWeather(lok.getLatitude(), lok.getLongitude());
-
             request.setAttribute("temp", mp.getTemperatureValue() + " " + mp.getTemperatureUnit());
             request.setAttribute("vlaga", mp.getHumidityValue() + " " + mp.getHumidityUnit());
             request.setAttribute("tlak", mp.getPressureValue() + " " + mp.getPressureUnit());
@@ -198,6 +225,14 @@ public class DodajParkiraliste extends HttpServlet {
         return succes;
     }
 
+    
+       /**
+     * Provjera postoji li u bazi podataka parkiraliste sa prosljedjenim
+     * nazivom.
+     *
+     * @param name - naziv parkiralista
+     * @return true - postoji; false - ne postoji
+     */
     private boolean checkIfExistParkingByName(String name) {
         String upit = "SELECT * FROM PARKIRALISTA WHERE NAZIV = '" + name + "'";
         boolean exist = false;
@@ -223,6 +258,15 @@ public class DodajParkiraliste extends HttpServlet {
         }
     }
 
+      /**
+     * Upis parkiralista u bazu podataka.
+     *
+     * @param name - naziv parkiralista
+     * @param address - adresa park
+     * @param lat - latitude
+     * @param lon - longitude
+     * @return @return true - uspjeh; false - neuspjeh
+     */
     private boolean addParkingnInDatabase(String name, String address, String lat, String lon) {
         String upit = "INSERT INTO PARKIRALISTA (NAZIV, ADRESA, LATITUDE, LONGITUDE) \n"
                 + "	VALUES ('" + name + "', '" + address + "', " + lat + ", " + lon + ")";

@@ -5,34 +5,31 @@
  */
 package org.foi.nwtis.zorhrncic.web.zrna;
 
+import org.foi.nwtis.zorhrncic.web.podatci.Odgovor;
+import org.foi.nwtis.zorhrncic.web.podatci.ResponseJson;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import javax.inject.Named;
 import javax.enterprise.context.SessionScoped;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ResourceBundle;
 import javax.faces.application.FacesMessage;
-import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
-import javax.faces.validator.ValidatorException;
 import javax.json.Json;
-import javax.json.JsonObject;
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-import org.foi.nwtis.zorhrncic.ws.klijenti.MeteoRESTKlijent;
-import org.foi.nwtis.zorhrncic.ws.klijenti.MeteoRESTKlijentId;
+import org.foi.nwtis.zorhrncic.rest.klijenti.MeteoRESTKlijent;
+import org.foi.nwtis.zorhrncic.rest.klijenti.MeteoRESTKlijentId;
 import org.foi.nwtis.zorhrncic.ws.klijenti.MeteoWSKlijent;
-import org.foi.nwtis.zorhrncic.ws.serveri.Lokacija;
 import org.foi.nwtis.zorhrncic.ws.serveri.MeteoPodaci;
 import org.foi.nwtis.zorhrncic.ws.serveri.Parkiraliste;
 
 /**
+ * Managed bean koji vrsi obradu vezanu za dodavanje,brisanje, azuriranje
+ * parkiralisat putem REST i SOAP WS
  *
- * @author Zoran
+ * Dohvacanje meteo podataka parkiralista
+ *
+ *
+ * @author Zoran Hrnčić
  */
 @Named(value = "operacijaParkiraliste")
 @SessionScoped
@@ -46,45 +43,51 @@ public class OperacijaParkiraliste implements Serializable {
     private MeteoRESTKlijent client = null;
     private MeteoRESTKlijentId clientId = null;
     private Gson gson;
+    private String id = null;
 
     /**
      * Creates a new instance of OperacijaParkiraliste
+     *
+     * kreiranje novog klijenta REST ws
+     *
+     * dohvacanje svih zapisa parkrialista
      */
     public OperacijaParkiraliste() {
-        // client = new MeteoRESTKlijent();
         client = new MeteoRESTKlijent();
         gson = new Gson();
         getAllPArking();
     }
 
+    
+    /**
+     * Dodavanje novog parkiralista putem SOAP ws
+     * 
+     * @return 
+     */
     public String upisiSOAP() {
-        //   za dodavanje parkirališta pomoću operacije SOAP web
-        //servisa. Ako se javi pogreška treba ispisati opis 
-        //pogreške u elementu za poruke.
-        Lokacija lokacija = new Lokacija();
-        lokacija.setLatitude("46.37438789999999");
-        lokacija.setLongitude("16.1025389");
+        if (naziv.length() == 0 || adresa.length() == 0) {
+            setMessage("Moraju biti popunjeni naziv i adresa");
+            return "";
+        }
         Parkiraliste parkiraliste = new Parkiraliste();
         parkiraliste.setNaziv(naziv);
         parkiraliste.setAdresa(adresa);
-        parkiraliste.setGeoloc(lokacija);
         if (MeteoWSKlijent.dodajParkiraliste(parkiraliste)) {
             setMessage("Uspješno dodano parkiralište");
         } else {
-            setMessage("Greška kod dodavanja.");
+            setMessage("Greška kod dodavanja. Pokušajte promjeniti naziv parkirališta.");
         }
-
-//TODO ŠTO S LOKACIJOM?
         getAllPArking();
         return "";
     }
 
+    /**
+     * Dodavanje novog parkiralista putem REST ws
+     * 
+     * 
+     * @return 
+     */
     public String upisiREST() {
-        /*za dodavanje parkirališta pomoću operacije REST
-        web servisa. Ako se javi pogreška treba ispisati opis
-        pogreške u elementu za poruke.
-         */
-
         if (naziv.length() == 0 || adresa.length() == 0) {
             setMessage("Moraju biti popunjeni naziv i adresa");
             return "";
@@ -94,8 +97,6 @@ public class OperacijaParkiraliste implements Serializable {
                 .add("adresa", adresa)
                 .build()
                 .toString();
-        // 2. JSON to Java object, read it from a Json String.
-
         ResponseJson response = gson.fromJson(client.postJson(post, String.class), ResponseJson.class);
         System.out.println("");
         try {
@@ -111,34 +112,33 @@ public class OperacijaParkiraliste implements Serializable {
         return "";
     }
 
+    
+    /**
+     * Dohvacanje podataka jednog parkiralista putem REST servisa
+     * 
+     * 
+     * @return 
+     */
     public String preuzmiREST() {
-        /*za preuzimanje podataka odabranog parkirališta 
-        pomoću operacije REST web servisa. Podaci o nazivu 
-        i adresi prenose se u elemente u obrascu. Ako se javi
-        pogreška treba ispisati opis pogreške u elementu za 
-        poruke.
-         */
-
         try {
             if (parkListOdabrana.size() != 1) {
-                setMessage("Mora biti odabrano točno jesno parkiralište");
+                setMessage("Mora biti odabrano točno JEDNO parkiralište");
                 getAllPArking();
                 return "";
             }
-            clientId = new MeteoRESTKlijentId(String.valueOf(parkListOdabrana.get(0).getId()));
             ResponseJson response = gson.fromJson(client.getJson(String.class), ResponseJson.class);
             if (response.getStatus().equalsIgnoreCase("OK")) {
                 for (Odgovor odgovor : response.getOdgovor()) {
                     if (odgovor.getId().equalsIgnoreCase(String.valueOf(parkListOdabrana.get(0).getId()))) {
                         naziv = odgovor.getNaziv();
                         adresa = odgovor.getAdresa();
+                        id = odgovor.getId();
                         setMessage("Uspješno dohvačeno parkiralište");
                     }
                 }
             } else {
                 setMessage("Greška kod dohvačanja. \n " + response.getPoruka());
             }
-
         } catch (Exception e) {
             setMessage("Greška kod dodavanja parkirališta. ");
         }
@@ -146,43 +146,52 @@ public class OperacijaParkiraliste implements Serializable {
         return "";
     }
 
+    
+    /**
+     * Azuriranje podataka jednog parkiralista putem REST ws
+     * 
+     * 
+     * @return 
+     */
     public String azururajREST() {
+        if (naziv.length() == 0 || adresa.length() == 0 || id == null) {
+            setMessage("Mora bti odabrano točnoo JEDNO parkiralište. \n Moraju biti popunjeni naziv i adresa");
+            return "";
+        }
+        String put = Json.createObjectBuilder()
+                .add("naziv", naziv).add("adresa", adresa).build().toString();
+        try {
+            clientId = new MeteoRESTKlijentId(String.valueOf(id));
+            ResponseJson response = gson.fromJson(clientId.putJson(put, String.class), ResponseJson.class);
 
-        /*za ažuriranje podataka odabranog parkirališta 
-        pomoću operacije REST web servisa. Podaci o nazivu 
-        i adresi preuzimaju se iz elemenata u obrascu. Ako se
-        javi pogreška treba ispisati opis pogreške u elementu 
-        za poruke.
-         */
-
- /*
-                try {
-            com.google.gson.JsonObject jsonObject = new JsonParser().parse(client.postJson(post, String.class)).getAsJsonObject();
-            if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
-                setMessage("Uspješno dodano parkiralište");
+            if (response.getStatus().equalsIgnoreCase("OK")) {
+                setMessage("Uspješno ažurirano parkiralište");
+                naziv = "";
+                adresa = "";
+                id = null;
             } else {
-                setMessage("Greška kod dodavanja. \n " + jsonObject.get("poruka").toString());
+                setMessage("Greška prilikom ažuriranja. \n " + response.getPoruka());
             }
         } catch (Exception e) {
-            setMessage("Greška kod dodavanja. ");
+            setMessage("Greška prilikom ažuriranja.");
         }
-        
-         */
         getAllPArking();
         return "";
     }
 
+    
+    
+    /**
+     * Brisanje parkrialista putem REST ws
+     * 
+     * 
+     * @return 
+     */
     public String brisiREST() {
-        /*za brisanje odabranog parkirališta pomoću operacije
-        REST web servisa. Ako se javi pogreška treba ispisati 
-        opis pogreške u elementu za poruke.*/
-//TODO message
-
         try {
             if (parkListOdabrana.size() == 1) {
                 clientId = new MeteoRESTKlijentId(String.valueOf(parkListOdabrana.get(0).getId()));
-            //    com.google.gson.JsonObject jsonObject = new JsonParser().parse(clientId.deleteJson(String.class)).getAsJsonObject();
-                ResponseJson response = gson.fromJson(clientId.deleteJson(String.class), ResponseJson.class);    
+                ResponseJson response = gson.fromJson(clientId.deleteJson(String.class), ResponseJson.class);
                 if (response.getStatus().equalsIgnoreCase("OK")) {
                     setMessage("Uspješno obrisano parkiralište");
                 } else {
@@ -198,45 +207,47 @@ public class OperacijaParkiraliste implements Serializable {
         return "";
     }
 
+    
+    /**
+     * Preuzimanje podataka jednog parkiralista putem SOAP ws
+     * 
+     * 
+     * @return 
+     */
     public String preuzmiSOAP() {
-        /*za preuzimanje podataka odabranog parkirališta pomoću 
-        operacije SOAP web servisa. Podaci o nazivu i adresi
-        prenose se u elemente u obrascu. Ako se javi pogreška 
-        treba ispisati opis pogreške u elementu za poruke.*/
         if (parkListOdabrana.size() != 1) {
-            setMessage("Mora biti odabrano točno jesno parkiralište");
+            setMessage("Mora biti odabrano točno JEDNO parkiralište");
+            getAllPArking();
             return "";
         }
-        naziv = parkListOdabrana.get(0).getNaziv();
-        adresa = parkListOdabrana.get(0).getAdresa();
-        /*
-                try {
-            com.google.gson.JsonObject jsonObject = new JsonParser().parse(client.postJson(post, String.class)).getAsJsonObject();
-            if (jsonObject.get("status").getAsString().equalsIgnoreCase("OK")) {
-                setMessage("Uspješno dodano parkiralište");
-            } else {
-                setMessage("Greška kod dodavanja. \n " + jsonObject.get("poruka").toString());
+        for (Parkiraliste parkiraliste : MeteoWSKlijent.dajSvaParkiralista()) {
+            if (parkiraliste.getId() == parkListOdabrana.get(0).getId()) {
+                naziv = parkiraliste.getNaziv();
+                adresa = parkiraliste.getAdresa();
+                id = String.valueOf(parkiraliste.getId());
+                setMessage("Uspješno dohvačeno parkiralište");
+                getAllPArking();
+                return "";
             }
-        } catch (Exception e) {
-            setMessage("Greška kod dodavanja. ");
         }
-         */
+        setMessage("Greška prilikom dohvačanja parirališta");
         getAllPArking();
         return "";
+
     }
 
+    
+    /**
+     * Preuzimanje meteo podataka svih odabranih parkiralista
+     * 
+     * 
+     * @return 
+     */
     public String preuzmiMeteo() {
-        /*za preuzimanje meteo podataka odabranog
-        parkirališta pomoću operacije SOAP web servisa. 
-        Podaci o meteo podacima prikazuju se u tablici u 
-        obrascu. Ako se javi pogreška treba ispisati opis 
-        pogreške u elementu za poruke*/
-
-        //TODO message
         try {
             meteoList = new ArrayList<>();
             if (parkListOdabrana.size() < 2) {
-                setMessage("Moraju biti odabrna minimalno dva parkirališta");
+                setMessage("Moraju biti odabrna MINIMALNO DVA parkirališta");
                 return "";
             }
             for (Parkiraliste p : parkListOdabrana) {
@@ -248,11 +259,17 @@ public class OperacijaParkiraliste implements Serializable {
         } catch (Exception e) {
             setMessage("Greška kod dohvačanja podataka ");
         }
-
         getAllPArking();
         return "";
     }
 
+    
+    /**
+     * Postavljanje poruke koja se prikazuje unutar JSF stranice.
+     * 
+     * 
+     * @param message 
+     */
     private void setMessage(String message) {
         FacesContext facesContext = FacesContext.getCurrentInstance();
         FacesMessage facesMessage = new FacesMessage(message);
@@ -297,6 +314,14 @@ public class OperacijaParkiraliste implements Serializable {
     }
 //rest
 
+    
+    /**
+     * Dohvacanje svih podataka parkiralista putem SOAP servisa
+     * 
+     * Pohrana podataka u listu koja se prikazuje u obliku Multiple Choice list box-a
+     * 
+     * 
+     */
     private void getAllPArking() {
         try {
             parkList = MeteoWSKlijent.dajSvaParkiralista();

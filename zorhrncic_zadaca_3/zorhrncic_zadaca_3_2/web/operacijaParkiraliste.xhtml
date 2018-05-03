@@ -190,13 +190,7 @@
                         <h:outputText value="#{item.windDirectionValue} #{item.windDirectionName} #{item.windDirectionCode}"></h:outputText>
 
                     </h:column>
-                    <h:column>
-                        <!-- column header -->
-                        <f:facet name="header">Vidljivost</f:facet>
-                        <!-- row record -->
-                        <h:outputText value="#{item.visibility}"></h:outputText>
-
-                    </h:column>
+                  
                     <h:column>
                         <!-- column header -->
                         <f:facet name="header">Vrijeme broj</f:facet>
@@ -206,41 +200,29 @@
                     </h:column>
                     <h:column>
                         <!-- column header -->
-                        <f:facet name="header">Vrijeme naziv</f:facet>
+                        <f:facet name="header">Vrijeme</f:facet>
                         <!-- row record -->
-                        <h:outputText value="#{item.weatherValue}"></h:outputText>
+                        <h:outputText value="#{item.visibility}"></h:outputText>
 
                     </h:column>
+                
+                   <!-- 
                     <h:column>
-                        <!-- column header -->
-                        <f:facet name="header">Oblaci</f:facet>
-                        <!-- row record -->
-                        <h:outputText value="#{item.cloudsName} #{item.cloudsValue}"></h:outputText>
-
-                    </h:column>
-                    <h:column>
-                        <!-- column header -->
-                        <f:facet name="header">Oborine</f:facet>
-                        <!-- row record -->
-                        <h:outputText value="#{item.precipitationValue} : #{item.precipitationUnit} : #{item.precipitationMode}"></h:outputText>
-
-                    </h:column>
-                    <h:column>
-                        <!-- column header -->
+                    
                         <f:facet name="header">Izlazak sunca</f:facet>
-                        <!-- row record -->
+                       
                         <h:outputText value="#{item.sunRise.toGregorianCalendar().time}">
                             <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
                         </h:outputText>
                     </h:column>
                     <h:column>
-                        <!-- column header -->
+                      
                         <f:facet name="header">Zalazak sunca</f:facet>
-                        <!-- row record -->
+                      
                         <h:outputText value="#{item.sunSet.toGregorianCalendar().time}">
                             <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
                         </h:outputText>
-                    </h:column>
+                    </h:column>-->
                     <h:column>
                         <!-- column header -->
                         <f:facet name="header">Preuzeto</f:facet>

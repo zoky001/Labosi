@@ -13,19 +13,19 @@ import javax.ws.rs.client.WebTarget;
  * Jersey REST client generated for REST resource:we [meteo]<br>
  * USAGE:
  * <pre>
- *        NewJerseyClient client = new NewJerseyClient();
+ *        MeteoRESTKlijent client = new MeteoRESTKlijent();
  *        Object response = client.XXX(...);
  *        // do whatever with response
  *        client.close();
  * </pre>
  *
- * @author grupa_1
+ * @author Zoran
  */
 public class MeteoRESTKlijent {
 
     private WebTarget webTarget;
     private Client client;
-    private static final String BASE_URI = "http://localhost:8084/zorhrncic_zadaca_3_1/webresources/";
+    private static final String BASE_URI = "http://localhost:8088/zorhrncic_zadaca_3_1/webresources/";
 
     public MeteoRESTKlijent() {
         client = javax.ws.rs.client.ClientBuilder.newClient();
@@ -34,18 +34,19 @@ public class MeteoRESTKlijent {
 
     /**
      * @param responseType Class representing the response
-     * @param requestEntity request data@return response object (instance of responseType class)
-     */
-    public <T> T postJson(Object requestEntity, Class<T> responseType) throws ClientErrorException {
-        return webTarget.request(javax.ws.rs.core.MediaType.APPLICATION_JSON).post(javax.ws.rs.client.Entity.entity(requestEntity, javax.ws.rs.core.MediaType.APPLICATION_JSON), responseType);
-    }
-
-    /**
-     * @param responseType Class representing the response
      * @return response object (instance of responseType class)
      */
     public <T> T getJson(Class<T> responseType) throws ClientErrorException {
         return webTarget.request(javax.ws.rs.core.MediaType.APPLICATION_JSON).get(responseType);
+    }
+
+    /**
+     * @param responseType Class representing the response
+     * @param requestEntity request data@return response object (instance of responseType class)
+     */
+    public <T> T postJson(Object requestEntity, Class<T> responseType) throws ClientErrorException {
+        return webTarget.request(javax.ws.rs.core.MediaType.APPLICATION_JSON).post(javax.ws.rs.client.Entity.entity(requestEntity, javax.ws.rs.core.MediaType.APPLICATION_JSON), responseType);
+
     }
 
     public void close() {
