@@ -1,0 +1,250 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <h:head>
+        <title>Facelet Title</title>
+        <h:outputStylesheet library="css" name="osnovna.css"/>
+        <!-- Latest compiled and minified CSS -->
+        <!-- Bootstrap core CSS -->
+        <h:outputStylesheet library="css" name="bootstrap-3.3.7-dist/css/bootstrap.min.css"/>
+    </h:head>
+
+    <h:body>
+
+        <header class="header">
+            <div class="text-centar">
+
+                <div class="navigacija"> 
+
+                    <br></br>
+                </div>
+            </div>
+
+        </header>
+
+
+        <div id="content" class="section text-centar">
+
+            <div class="naslov">
+                <h1>
+                    Korištenje SOAP i REST servisa
+                </h1>
+
+            </div>
+            <div class="row">
+                <div class="col-md-2">
+                    <br></br>
+                </div>
+                <div class="col-md-8">
+                    <h:form>
+
+
+
+                        <div class="row">
+                            <div class="col-md-3 form-group" rendered="">
+                                <h:outputLabel class="control-label" value="Naziv i adresa:"></h:outputLabel>
+                            </div>
+                            <div class="col-md-3  form-group" rendered="">
+                                <h:inputText class="form-control"  value="#{operacijaParkiraliste.naziv}" id="naziv" required="" 
+                                             requiredMessage="Morate unjeti naziv" validatorMessage="">
+
+                                </h:inputText>
+
+                                <h:message class="text-danger" id="m1" for="naziv"/>
+
+                            </div>
+                            <div class="col-md-3  form-group" rendered="">
+                                <h:inputText class="form-control"  value="#{operacijaParkiraliste.adresa}" id="adresa" required="" 
+                                             requiredMessage="Morate unjeti aderesu" validatorMessage="">
+
+                                </h:inputText>
+
+                                <h:message class="text-danger" id="m2" for="adresa"/>
+                            </div>
+                            <div class="col-md-3  form-group" rendered="">
+                                <div class="col-sm-offset-2 col-sm-10">
+                                    <h:commandButton  class=" btn-default btn-sm btn" value="Upiši SOAP" action="#{operacijaParkiraliste.upisiSOAP()}"/>
+
+                                </div>
+                                <br></br>
+
+                                <div class="col-sm-offset-2 col-sm-10" style="margin-top: 10px">
+                                    <h:commandButton  class="btn-default btn-sm btn" value="Upiši REST" action="#{operacijaParkiraliste.upisiREST()}"/>
+
+                                </div>
+                            </div>
+
+                        </div>
+
+
+
+
+                   
+                    <br></br>
+
+                        <div class="row">
+                            <div class="col-md-3 form-group">
+                                <h:outputLabel class="control-label" value="Parkirališta:"></h:outputLabel>
+                            </div>
+                            <div class="col-md-3 form-group">
+                                <h:selectManyListbox  class="form-control" style="vertical-align: top" id="selecBox" value="#{operacijaParkiraliste.parkListOdabrana}" size="5" required="" requiredMessage="Morate odabrati minimalno 2 parkirališta">
+
+                                    <f:selectItems value="#{operacijaParkiraliste.parkList}" var="d" itemLabel="#{d.naziv}" itemValue="#{d}" />
+
+                                </h:selectManyListbox>
+                                <h:message for="selecBox" class="text-danger" />
+                            </div>
+                            <div class="col-md-3 form-group">
+                                <div class="col-sm-offset-2 col-sm-10">
+                                    <h:commandButton  class=" btn-default btn-sm btn" value="Preuzmi REST" action="#{operacijaParkiraliste.preuzmiREST()}"/>
+
+                                </div>
+                                <br></br>
+
+                                <div class="col-sm-offset-2 col-sm-10" style="margin-top: 10px">
+                                    <h:commandButton  class="btn-default btn-sm btn" value="Ažuriraj REST" action="#{operacijaParkiraliste.azururajREST()}"/>
+
+                                </div>
+                                <div class="col-sm-offset-2 col-sm-10" style="margin-top: 10px">
+                                    <h:commandButton  class="btn-default btn-sm btn" value="Briši REST" action="#{operacijaParkiraliste.brisiREST()}"/>
+
+                                </div>
+                                <div class="col-sm-offset-2 col-sm-10" style="margin-top: 10px">
+                                    <h:commandButton  class="btn-default btn-sm btn" value="Preuzmi meteo" action="#{operacijaParkiraliste.preuzmiMeteo()}"/>
+
+                                </div>
+                                <div class="col-sm-offset-2 col-sm-10" style="margin-top: 10px">
+                                    <h:commandButton  class="btn-default btn-sm btn" value="Preuzmi SOAP" action="#{operacijaParkiraliste.preuzmiSOAP()}"/>
+
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <br></br>
+                            </div>
+                        </div>
+
+                    </h:form>
+                    <br></br>
+                    <!--dodati h messages  -->
+                    <h:messages class="alert alert-info col-md-offset-3 col-md-6" globalOnly="true" />
+                  
+                    
+                    <br></br>
+
+
+                </div>
+                <div class="col-md-2">
+                    <br></br>
+                </div>
+            </div>
+            <div class="row col-md-offset-1 col-md-10"> 
+                <h:dataTable class="table table-bordered" value="#{operacijaParkiraliste.meteoList}" var="item">
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Tempetatura</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.temperatureValue} #{item.temperatureUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Tempetatura min</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.temperatureMin} #{item.temperatureUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Tempetatura max</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.temperatureMax} #{item.temperatureUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Vlaga</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.humidityValue} #{item.humidityUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Tlak</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.pressureValue} #{item.pressureUnit}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Brzina vjetra</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.windSpeedValue} #{item.windSpeedName}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Smjer vjetra</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.windDirectionValue} #{item.windDirectionName} #{item.windDirectionCode}"></h:outputText>
+
+                    </h:column>
+                  
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Vrijeme broj</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.weatherNumber}"></h:outputText>
+
+                    </h:column>
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Vrijeme</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.visibility}"></h:outputText>
+
+                    </h:column>
+                
+                   <!-- 
+                    <h:column>
+                    
+                        <f:facet name="header">Izlazak sunca</f:facet>
+                       
+                        <h:outputText value="#{item.sunRise.toGregorianCalendar().time}">
+                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                        </h:outputText>
+                    </h:column>
+                    <h:column>
+                      
+                        <f:facet name="header">Zalazak sunca</f:facet>
+                      
+                        <h:outputText value="#{item.sunSet.toGregorianCalendar().time}">
+                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                        </h:outputText>
+                    </h:column>-->
+                    <h:column>
+                        <!-- column header -->
+                        <f:facet name="header">Preuzeto</f:facet>
+                        <!-- row record -->
+                        <h:outputText value="#{item.lastUpdate.toGregorianCalendar().time}">
+                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                        </h:outputText>
+
+                    </h:column>
+
+
+                </h:dataTable>
+            </div>
+
+
+
+
+        </div>
+        <br></br> <br></br>
+        <p></p>
+    </h:body>
+
+    <h:outputScript name="bootstrap-3.3.7-dist/js/bootstrap.min.js"/>
+</html>
+

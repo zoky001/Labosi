@@ -11,34 +11,30 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
-import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaApstraktna;
 import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
 import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 import org.foi.nwtis.zorhrncic.konfiguracije.bp.BP_Konfiguracija;
-import org.foi.nwtis.zorhrncic.web.dretve.ObradaPoruka;
+import org.foi.nwtis.zorhrncic.web.PreuzmiMeteoPodatke;
 
 /**
- * Slusac aplikacije koji postavlja konfiguraciju u kontext.
+ * Web application lifecycle listener.
  *
- * @author Zoran Hrncic
+ * @author Zoran Hrnčić
  */
 @WebListener
 public class SlusacAplikacije implements ServletContextListener {
 
     private String datoteka;
     private BP_Konfiguracija konfiguracija;
-    private ObradaPoruka obradaPoruka = null;
-    private Konfiguracija konfiguracijaSve;   
+    private PreuzmiMeteoPodatke meteoPodatke;
     private static ServletContext servletContext;
-           
-
+    private Object konfiguracijaSve;
+    
     /**
-     * Po pokretanju aplikacije se dohvaca se datoteka konfiguacije i pohranjuje
-     * se u kontext. Starta se radna dretva koja obavlja sortiranje poruka u
-     * mape.
-     *
-     * @param sce
+     * Preuzima konfiguraciju i upisuje podatke u context servleta.
+     * Starta radnu dretvu.
+     * @param sce 
      */
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -51,38 +47,36 @@ public class SlusacAplikacije implements ServletContextListener {
             konfiguracijaSve = KonfiguracijaApstraktna.preuzmiKonfiguraciju(putanja + datoteka);//all config data
             context.setAttribute("BP_Konfig", konfiguracija);
             context.setAttribute("All_Konfig", konfiguracijaSve);
-            obradaPoruka = new ObradaPoruka();
-            obradaPoruka.start();
+           meteoPodatke = new PreuzmiMeteoPodatke();
+           meteoPodatke.start();
         } catch (NemaKonfiguracije ex) {
             Logger.getLogger(SlusacAplikacije.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NeispravnaKonfiguracija ex) {
             Logger.getLogger(SlusacAplikacije.class.getName()).log(Level.SEVERE, null, ex);
         }
+
     }
 
     /**
-     * Na destroy aplikacije se prekida radna dretva koja vrsi obradu poruka.
-     * Brisu se konfguracije iz kontexta.
-     *
-     * @param sce
+     * Briše iz contexta atribute konfiguracije.
+     * 
+     * @param sce 
      */
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-
-        if (obradaPoruka != null && obradaPoruka.isAlive()) {
-
-            obradaPoruka.interrupt();
-
+       if (meteoPodatke != null && meteoPodatke.isAlive()) {
+            meteoPodatke.interrupt();
         }
         ServletContext context = sce.getServletContext();
         context.removeAttribute("BP_Konfig");
         context.removeAttribute("All_Konfig");
-
     }
 
+    /**
+     * Vraća context servleta.
+     * @return 
+     */
     public static ServletContext getServletContext() {
         return servletContext;
     }
- 
-    
 }
