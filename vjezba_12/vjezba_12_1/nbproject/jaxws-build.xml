@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+        *** GENERATED FROM jax-ws.xml - DO NOT EDIT !                             ***
+        *** TO MODIFY wsimport options USE Web Service node -> Edit WS Attributes ***
+        *** TO CHANGE TARGETS GENERATED TO jaxws-build.xml COPY THOSE             ***
+        *** TARGETS TO ../build.xml AND MODIFY THAT FILE INSTEAD                  ***
+
+        --><project xmlns:xalan="http://xml.apache.org/xslt" xmlns:ejbjarproject2="http://www.netbeans.org/ns/j2ee-ejbjarproject/2" xmlns:jaxws="http://www.netbeans.org/ns/jax-ws/1">
+    <!--
+                ===================
+                JAX-WS WSGEN SECTION
+                ===================
+            -->
+    <!--
+                ===================
+                JAX-WS WSIMPORT SECTION
+                ===================
+            -->
+    <target name="wsimport-init" depends="init">
+        <fail if="${wsimport.bad.version}" message="WsImport ant task defined in the classpath ${j2ee.platform.wsimport.classpath} has a serious bug. See http://wiki.netbeans.org/MetroIssue for details."/>
+        <mkdir dir="${build.generated.sources.dir}/jax-ws"/>
+        <mkdir dir="${classes.dir}"/>
+        <property name="j2ee.platform.wsimport.classpath" value="${libs.jaxws21.classpath}"/>
+        <taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport">
+            <classpath path="${j2ee.platform.wsimport.classpath}"/>
+        </taskdef>
+    </target>
+    <target name="wsimport-client-GeoMeteoWS" depends="wsimport-init">
+        <mkdir dir="${build.generated.dir}/jax-wsCache/GeoMeteoWS"/>
+        <property name="wsdl-GeoMeteoWS" location="${meta.inf}/xml-resources/web-service-references/GeoMeteoWS/wsdl/localhost_8084/zorhrncic_zadaca_3_1/GeoMeteoWS.wsdl"/>
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/GeoMeteoWS" destdir="${build.generated.dir}/jax-wsCache/GeoMeteoWS" wsdl="${wsdl-GeoMeteoWS}" catalog="catalog.xml" encoding="${source.encoding}" extension="true" verbose="true" fork="false" wsdlLocation="http://localhost:8084/zorhrncic_zadaca_3_1/GeoMeteoWS?wsdl" xnocompile="true" xendorsed="true">
+            <depends file="${wsdl-GeoMeteoWS}"/>
+            <produces dir="${build.generated.dir}/jax-wsCache/GeoMeteoWS"/>
+        </wsimport>
+        <copy todir="${build.generated.sources.dir}/jax-ws">
+            <fileset dir="${build.generated.dir}/jax-wsCache/GeoMeteoWS">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="wsimport-client-clean-GeoMeteoWS" depends="-init-project">
+        <delete dir="${build.generated.dir}/jax-wsCache/GeoMeteoWS"/>
+        <delete dir="${build.generated.sources.dir}/jax-ws/org/foi/nwtis/zorhrncic/ws/serveri"/>
+    </target>
+    <target name="wsimport-client-generate" depends="wsimport-client-GeoMeteoWS"/>
+</project>

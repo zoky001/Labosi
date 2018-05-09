@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <h:head>
+        <title>Parkirališta</title>
+        <h:outputScript library="js" name="websocket.js"/>
+    </h:head>
+    <h:body>
+        Hello from Facelets 12.33 parkiralista
+        <h:form>
+            <h:outputLabel for="naziv" value="Adresa i naziv obrnuto"></h:outputLabel>
+            <h:inputText id = "naziv" value="#{meteoPrognoza.naziv}"></h:inputText>
+            <h:inputText id = "adresa" value="#{meteoPrognoza.adresa}"></h:inputText>
+
+            <h:commandButton value="Dodaj" action="#{meteoPrognoza.dodajParkiralište()}">
+                <f:ajax execute="naziv, adresa" render="parkiralista, meteoPodatci"></f:ajax>
+
+            </h:commandButton>
+            <br></br>
+            <h:selectOneListbox id = "parkiralista" value="#{meteoPrognoza.odabraniUredaj}">
+                <f:selectItems value="#{meteoPrognoza.parkiralista}" var="p" itemLabel="#{p.toString}" itemValue="#{p.toString}"></f:selectItems>
+            </h:selectOneListbox>
+            <br></br>
+            <h:dataTable id = "meteoPodatci" value="#{meteoPrognoza.meteoPodaci}" var="mp">
+                <h:column>
+                    <h:outputText value="#{mp.temperatureValue}">
+                    </h:outputText>
+                </h:column>
+                <h:column>
+                    <h:outputText value="#{mp.pressureValue}">
+                    </h:outputText>
+                </h:column>
+                <h:column>
+                    <h:outputText value="#{mp.windSpeedValue}">
+                    </h:outputText>
+                </h:column>
+            </h:dataTable>
+
+
+        </h:form>
+
+
+    </h:body>
+</html>
+
