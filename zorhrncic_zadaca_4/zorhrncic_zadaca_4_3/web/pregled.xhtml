@@ -28,7 +28,7 @@
                         </div>
                         <div class="col-md-2 form-group" rendered="">
                             <h:commandButton  type="button" class="btn-primary btn-lg" value="Dodaj" action="#{pregled.dodajParkiraliste()}">
-                                <f:ajax execute="id naziv adresa" render="selecBoxRaspoloziva"></f:ajax>
+                                <f:ajax execute="id naziv adresa" render="selecBoxRaspoloziva selecBoxOdabrana id naziv adresa"></f:ajax>
 
                             </h:commandButton> 
                         </div>
@@ -55,7 +55,7 @@
                         <div class="col-md-2 form-group" rendered="">
 
                             <h:commandButton  type="button" class="btn-primary btn-lg" value="Upiši" action="#{pregled.azurirajParkiraliste()}">
-                                <f:ajax execute="id naziv adresa" render=""></f:ajax>
+                                <f:ajax execute="id naziv adresa" render="selecBoxRaspoloziva selecBoxOdabrana id naziv adresa"></f:ajax>
                             </h:commandButton>
                         </div>
                     </div>
@@ -94,7 +94,12 @@
 
                             </div>
                             <div class="col-md-offset-2 col-md-8" style="margin-top: 10px">
-                                <h:commandButton  type="button" class="btn-primary btn-sm" value="Ažuriraj" />
+                                <h:commandButton  type="button" class="btn-primary btn-sm" value="Ažuriraj" action="#{pregled.getDataForUpdate()}">
+
+
+                                    <f:ajax execute="selecBoxRaspoloziva" render="id naziv adresa"></f:ajax>
+
+                                </h:commandButton>
 
                             </div>
                         </div>
@@ -108,14 +113,24 @@
                         <div class="col-md-4">
                             <br></br>
 
-                            <h:commandButton  type="button" class="btn-primary btn-lg" value="PROGNOZE">
+                            <h:commandButton  type="button" class="btn-primary btn-lg" value="PROGNOZE" action="#{pregled.getForecastData()}">
+                                <f:ajax execute="selecBoxOdabrana" render="meteoDataTable"></f:ajax>
 
                             </h:commandButton>
                         </div>
                     </div>
 
                     <div class="row col-md-offset-1 col-md-10"> 
-                        <h:dataTable class="table table-bordered" value="#{pregled.tableMeteoPrognoza}" var="item">
+                        <h:dataTable  id = "meteoDataTable" class="table table-bordered" value="#{pregled.tableMeteoPrognoza}" var="item">
+
+                            <h:column>
+
+                                <f:facet name="header">Vrijeme</f:facet>
+
+                                <h:outputText value="#{item.date}">
+                                    <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                                </h:outputText>
+                            </h:column>
                             <h:column>
                                 <!-- column header -->
                                 <f:facet name="header">Tempetatura</f:facet>

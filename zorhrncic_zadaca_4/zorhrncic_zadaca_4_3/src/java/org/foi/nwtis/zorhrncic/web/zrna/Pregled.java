@@ -7,6 +7,7 @@ package org.foi.nwtis.zorhrncic.web.zrna;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -68,51 +69,77 @@ public class Pregled implements Serializable {
     }
 
     public String dodajParkiraliste() {
-        // parkiralista = meteoPrognosticar.dajParkiralista();
-        Lokacija lok = meteoKlijentZrno.dajLokaciju(adresa);
-        Parkiralista p = new Parkiralista();
-        p.setNaziv(naziv);
-        p.setAdresa(adresa);
-        p.setId(id);
-        float lat = Float.parseFloat(lok.getLatitude());
-        float longi = Float.parseFloat(lok.getLongitude());
-        p.setLatitude(lat);
-        p.setLongitude(longi);
-        parkiralistaFacade.create(p);
+
+        try {
+            meteoKlijentZrno.postaviKorisnickePodatke("7505f1b2a843433f4c408932f2d4300d", "AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc");
+
+            // parkiralista = meteoPrognosticar.dajParkiralista();
+            Lokacija lok = meteoKlijentZrno.dajLokaciju(adresa);
+            Parkiralista p = new Parkiralista();
+            p.setNaziv(naziv);
+            p.setAdresa(adresa);
+            p.setId(id);
+            float lat = Float.parseFloat(lok.getLatitude());
+            float longi = Float.parseFloat(lok.getLongitude());
+            p.setLatitude(lat);
+            p.setLongitude(longi);
+            parkiralistaFacade.create(p);
+
+        } catch (Exception e) {
+            System.out.println("ERROR UNOS PARK: " + e.getMessage());
+        }
         getAllParking();
         return "";
     }
 
     public String azurirajParkiraliste() {
-        // parkiralista = meteoPrognosticar.dajParkiralista();
-        Parkiralista p = new Parkiralista();
-        p.setNaziv(naziv);
-        p.setAdresa(adresa);
-        p.setId(id);
 
-        parkiralistaFacade.edit(p);
-        getAllParking();
+        if (id != null && naziv.length() > 0 && adresa.length() > 0) {
+            // parkiralista = meteoPrognosticar.dajParkiralista();
+            meteoKlijentZrno.postaviKorisnickePodatke("7505f1b2a843433f4c408932f2d4300d", "AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc");
+            Lokacija lok = meteoKlijentZrno.dajLokaciju(adresa);
+            float lat = Float.parseFloat(lok.getLatitude());
+            float longi = Float.parseFloat(lok.getLongitude());
+            Parkiralista p = getParkingDataByID(id);
+            p.setNaziv(naziv);
+            p.setAdresa(adresa);
+            p.setLatitude(lat);
+            p.setLongitude(longi);
+            parkiralistaFacade.edit(p);
+            getAllParking();
+            id = null;
+            naziv = "";
+            adresa = "";
+        } else {
+            //TODO mora biti popunjeni podatci
+
+        }
+
         return "";
     }
 
     public boolean dodajOdabrana() {
-
-        for (Izbornik izbornik : raspolozivaParkiralistaIzbornik) {
-
-            for (String string : raspolozivaParkiralistaString) {
-                if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
-
-                    odabranaParkiralistaIzbornik.add(izbornik);
-                    raspolozivaParkiralistaIzbornik.remove(izbornik);
-
+        List<Izbornik> brisanje = new ArrayList<Izbornik>();
+        try {
+            for (Izbornik izbornik : raspolozivaParkiralistaIzbornik) {
+                for (String string : raspolozivaParkiralistaString) {
+                    if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
+                        try {
+                            Izbornik izbornik1 = new Izbornik(izbornik.getLabela(), izbornik.getVrijednost());
+                            odabranaParkiralistaIzbornik.add(izbornik1);
+                            brisanje.add(izbornik);
+                        } catch (Exception e) {
+                            System.out.println("ERROR nutra: " + e.getMessage());
+                        }
+                    }
                 }
             }
+            raspolozivaParkiralistaIzbornik.removeAll(brisanje);
+            odabranaParkiralistaList = raspolozivaParkiralistaString;
+            raspolozivaParkiralistaString.clear();
+        } catch (Exception e) {
+            System.out.println("ERROR: " + e);
         }
-
-        /*
-        dodavanje odabranog(ih) parkirališta u odabrana parkirališta
-         */
-        // getAllParking();
         return true;
     }
 
@@ -120,18 +147,72 @@ public class Pregled implements Serializable {
         /*
         izbacivanje odabranog(ih) parkirališta iz popisa odabranihparkirališta, 
          */
-        for (Izbornik izbornik : odabranaParkiralistaIzbornik) {
+        List<Izbornik> brisanje = new ArrayList<Izbornik>();
+        try {
+            for (Izbornik izbornik : odabranaParkiralistaIzbornik) {
 
-            for (String string : odabranaParkiralistaList) {
-                if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
-                    raspolozivaParkiralistaIzbornik.add(izbornik);
-                    odabranaParkiralistaIzbornik.remove(izbornik);
-                   
-
+                for (String string : odabranaParkiralistaList) {
+                    if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
+                        Izbornik izbornik1 = new Izbornik(izbornik.getLabela(), izbornik.getVrijednost());
+                        raspolozivaParkiralistaIzbornik.add(izbornik1);
+                        brisanje.add(izbornik);
+                    }
                 }
             }
+            odabranaParkiralistaIzbornik.removeAll(brisanje);
+            raspolozivaParkiralistaString = odabranaParkiralistaList;
+            odabranaParkiralistaList.clear();
+        } catch (Exception e) {
         }
         return true;
+    }
+
+    public void getDataForUpdate() {
+        if (raspolozivaParkiralistaString.size() == 1) {
+            try {
+                for (Izbornik izbornik : raspolozivaParkiralistaIzbornik) {
+                    for (String string : raspolozivaParkiralistaString) {
+                        if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
+                            try {
+                                Parkiralista parking = getParkingDataByID(Integer.parseInt(izbornik.getVrijednost()));
+                                id = parking.getId();
+                                naziv = parking.getNaziv();
+                                adresa = parking.getAdresa();
+                            } catch (Exception e) {
+                                System.out.println("ERROR nutra: " + e.getMessage());
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("ERROR: " + e);
+            }
+        } else {
+            //TODO vrati grešku da mora biti jedno odabrano
+        }
+    }
+
+    public void getForecastData() {
+        /*
+        izbacivanje odabranog(ih) parkirališta iz popisa odabranihparkirališta, 
+         */
+        tableMeteoPrognoza = new ArrayList<MeteoPrognoza>();
+        meteoKlijentZrno.postaviKorisnickePodatke("7505f1b2a843433f4c408932f2d4300d", "AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc");
+        try {
+            for (Izbornik izbornik : odabranaParkiralistaIzbornik) {
+
+                for (String string : odabranaParkiralistaList) {
+                    if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
+                        MeteoPrognoza[] data = meteoKlijentZrno.dajMeteoPrognoze(0, getParkingDataByID(Integer.parseInt(izbornik.getVrijednost())).getAdresa());
+                        tableMeteoPrognoza.addAll(Arrays.asList(data));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            String mess = e.getMessage();
+            System.out.println("ERROR: " + mess);
+        }
+
     }
 
     /*
@@ -141,12 +222,11 @@ public class Pregled implements Serializable {
      */
     public void getAllParking() {
         raspolozivaParkiralistaIzbornik = new ArrayList<Izbornik>();
+        odabranaParkiralistaIzbornik.clear();
         Izbornik izbornik;
-
         List<Parkiralista> parki = parkiralistaFacade.findAll();
-
         for (Parkiralista park : parki) {
-            izbornik = new Izbornik(park.getNaziv(), park.getNaziv());
+            izbornik = new Izbornik(park.getNaziv(), String.valueOf(park.getId()));
             raspolozivaParkiralistaIzbornik.add(izbornik);
         }
     }
@@ -219,6 +299,9 @@ public class Pregled implements Serializable {
     }
 
     public List<Izbornik> getOdabranaParkiralistaIzbornik() {
+        if (odabranaParkiralistaIzbornik != null) {
+            Collections.sort(odabranaParkiralistaIzbornik, new LexicographicComparator());
+        }
         return odabranaParkiralistaIzbornik;
     }
 

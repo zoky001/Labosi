@@ -5,6 +5,7 @@
  */
 package org.foi.nwtis.zorhrncic.web.podaci;
 
+import java.util.Date;
 import org.foi.nwtis.zorhrncic.rest.klijenti.MeteoPodaci;
 
 /*
@@ -12,7 +13,6 @@ import org.foi.nwtis.zorhrncic.rest.klijenti.MeteoPodaci;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 /**
  *
  * @author dkermek
@@ -21,6 +21,7 @@ public class MeteoPrognoza {
 
     private int id;
     private int sat;
+    private Date date;
     private MeteoPodaci prognoza;
 
     public MeteoPrognoza() {
@@ -30,6 +31,16 @@ public class MeteoPrognoza {
         this.id = id;
         this.sat = dan;
         this.prognoza = prognoza;
+        long millis = sat * 1000;
+        this.date = new Date(millis);
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
     }
 
     public int getId() {
@@ -45,6 +56,8 @@ public class MeteoPrognoza {
     }
 
     public void setSat(int sat) {
+        long millis = sat * 1000;
+        this.date = new Date(millis);
         this.sat = sat;
     }
 
@@ -55,6 +68,5 @@ public class MeteoPrognoza {
     public void setPrognoza(MeteoPodaci prognoza) {
         this.prognoza = prognoza;
     }
-
 
 }
