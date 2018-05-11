@@ -54,6 +54,7 @@ public class OWMKlijentPrognoza extends OWMKlijent {
             ForecastResponse forecastResponse = gson.fromJson(odgovor, ForecastResponse.class);
             meteoPrognoze = new MeteoPrognoza[forecastResponse.getList().size()];
             for (int i = 0; i < forecastResponse.getList().size(); i++) {
+                long millis = (long)(forecastResponse.getList().get(i).getDt() * 1000);
                 meteoPodaci = new MeteoPodaci(
                         new Date(),// Date sunRise,
                         new Date(),// Date sunSet, 
@@ -79,7 +80,7 @@ public class OWMKlijentPrognoza extends OWMKlijent {
                         forecastResponse.getList().get(i).getWeather().get(0).getId(),//    int weatherNumber, 
                          forecastResponse.getList().get(i).getWeather().get(0).getMain(),//String weatherValue, 
                          forecastResponse.getList().get(i).getWeather().get(0).getIcon(),//  String weatherIcon, 
-                        new Date(forecastResponse.getList().get(i).getDt() * 1000)//  Date lastUpdate) 
+                        new Date()//  Date lastUpdate) 
                 );
              MeteoPrognoza meteoPrognoza  = new MeteoPrognoza(i, forecastResponse.getList().get(i).getDt(), meteoPodaci);
              meteoPrognoze[i] = meteoPrognoza;

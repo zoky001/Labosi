@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.inject.Named;
 import javax.enterprise.context.SessionScoped;
@@ -65,7 +66,12 @@ public class Pregled implements Serializable {
 
         odabranaParkiralistaIzbornik = new ArrayList<Izbornik>();
         raspolozivaParkiralistaIzbornik = new ArrayList<Izbornik>();
-        //getAllParking();
+        //
+    }
+
+    @PostConstruct
+    private void init() {
+        getAllParking();
     }
 
     public String dodajParkiraliste() {
@@ -136,7 +142,7 @@ public class Pregled implements Serializable {
             }
             raspolozivaParkiralistaIzbornik.removeAll(brisanje);
             odabranaParkiralistaList = raspolozivaParkiralistaString;
-            raspolozivaParkiralistaString.clear();
+            
         } catch (Exception e) {
             System.out.println("ERROR: " + e);
         }
@@ -161,7 +167,6 @@ public class Pregled implements Serializable {
             }
             odabranaParkiralistaIzbornik.removeAll(brisanje);
             raspolozivaParkiralistaString = odabranaParkiralistaList;
-            odabranaParkiralistaList.clear();
         } catch (Exception e) {
         }
         return true;
@@ -204,6 +209,12 @@ public class Pregled implements Serializable {
                 for (String string : odabranaParkiralistaList) {
                     if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
                         MeteoPrognoza[] data = meteoKlijentZrno.dajMeteoPrognoze(0, getParkingDataByID(Integer.parseInt(izbornik.getVrijednost())).getAdresa());
+
+                        for (MeteoPrognoza meteoPrognoza : Arrays.asList(data)) {
+
+                            meteoPrognoza.setId(Integer.parseInt(izbornik.getVrijednost()));
+                        }
+
                         tableMeteoPrognoza.addAll(Arrays.asList(data));
                     }
                 }

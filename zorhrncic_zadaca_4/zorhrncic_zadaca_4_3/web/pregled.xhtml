@@ -125,6 +125,15 @@
 
                             <h:column>
 
+                                <f:facet name="header">Parkiralište</f:facet>
+
+                                <h:outputText value="#{pregled.getParkingDataByID(item.id).naziv}">
+
+                                </h:outputText>
+                            </h:column>
+
+                            <h:column>
+
                                 <f:facet name="header">Vrijeme</f:facet>
 
                                 <h:outputText value="#{item.date}">
@@ -152,24 +161,55 @@
                                 <h:outputText value="#{item.prognoza.temperatureMax} #{item.prognoza.temperatureUnit}"></h:outputText>
 
                             </h:column>
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">Vlaga</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.prognoza.humidityValue} #{item.prognoza.humidityUnit}"></h:outputText>
 
-                            <!-- 
-                             <h:column>
-                             
-                                 <f:facet name="header">Izlazak sunca</f:facet>
-                                
-                                 <h:outputText value="">
-                                     <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
-                                 </h:outputText>
-                             </h:column>
-                             <h:column>
-                               
-                                 <f:facet name="header">Zalazak sunca</f:facet>
-                               
-                                 <h:outputText value="">
-                                     <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
-                                 </h:outputText>
-                             </h:column>-->
+                            </h:column>
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">Tlak</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.prognoza.pressureValue} #{item.prognoza.pressureUnit}"></h:outputText>
+
+                            </h:column>
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">Brzina vjetra</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.prognoza.windSpeedValue} #{item.prognoza.windSpeedName}"></h:outputText>
+
+                            </h:column>
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">Smjer vjetra</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.prognoza.windDirectionValue} °"></h:outputText>
+
+                            </h:column>
+
+
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">Vrijeme</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.prognoza.precipitationMode}"></h:outputText>
+
+                            </h:column>
+
+
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">Preuzeto</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.prognoza.lastUpdate}">
+                                    <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                                </h:outputText>
+
+                            </h:column>
+
 
 
 
@@ -177,12 +217,21 @@
                     </div>
 
 
-
+          
 
                 </h:form>
+
+
+                
+                
+
+
             </ui:define>
 
         </ui:composition>
 
     </body>
+
+
 </html>
+
