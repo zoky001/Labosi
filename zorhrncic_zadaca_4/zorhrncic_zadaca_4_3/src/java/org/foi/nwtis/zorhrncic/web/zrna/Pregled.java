@@ -16,6 +16,7 @@ import javax.ejb.EJB;
 import javax.inject.Named;
 import javax.enterprise.context.SessionScoped;
 import org.foi.nwtis.zorhrncic.ejb.eb.Parkiralista;
+import org.foi.nwtis.zorhrncic.ejb.sb.DnevnikFacade;
 import org.foi.nwtis.zorhrncic.ejb.sb.MeteoKlijentZrno;
 import org.foi.nwtis.zorhrncic.ejb.sb.ParkiralistaFacade;
 import org.foi.nwtis.zorhrncic.web.kontrole.Izbornik;
@@ -30,6 +31,7 @@ import org.foi.nwtis.zorhrncic.web.podaci.Parkiraliste;
 @Named(value = "pregled")
 @SessionScoped
 public class Pregled implements Serializable {
+
 
     @EJB
     private MeteoKlijentZrno meteoKlijentZrno;
@@ -142,7 +144,7 @@ public class Pregled implements Serializable {
             }
             raspolozivaParkiralistaIzbornik.removeAll(brisanje);
             odabranaParkiralistaList = raspolozivaParkiralistaString;
-            
+
         } catch (Exception e) {
             System.out.println("ERROR: " + e);
         }
@@ -367,5 +369,7 @@ public class Pregled implements Serializable {
     public void setTableMeteoPrognoza(List<MeteoPrognoza> tableMeteoPrognoza) {
         this.tableMeteoPrognoza = tableMeteoPrognoza;
     }
+
+
 
 }

@@ -1,7 +1,9 @@
 <?xml version='1.0' encoding='UTF-8' ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
 
     <body>
 
@@ -14,7 +16,167 @@
                 Pregled dnevnika
             </ui:define>
             <ui:define name="content">
-                pregled
+                <h:form>
+                    <div class="row">
+                        <div class="col-md-4 ">
+                            <div class="form-horizontal">
+
+
+                                <div class="form-group">
+                                    <h:outputLabel class="control-label col-sm-2" for="ipAddress" value="IP adresa:">
+
+                                    </h:outputLabel>
+
+                                    <div class="col-sm-10">
+                                        <h:inputText  class="form-control"  id = "ipAddress" value="#{pregledDnevnika.ipAddress}" validatorMessage="Mora biti pravilan oblik IPV6 adrese (npr: 0:0:0:0:0:0:0:1)">
+                                        
+                                            <f:validateRegex pattern="^$|(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$">
+                                                
+                                            </f:validateRegex>
+                                        
+                                        </h:inputText>
+                                        <h:message id ="valid0" for="ipAddress" class="text-danger"  />
+
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <h:outputLabel class="control-label col-sm-2" for="from" value="Od">
+
+                                    </h:outputLabel>
+
+                                    <div class="col-sm-10">
+                                        <h:inputText class="form-control"  id = "from" value="#{pregledDnevnika.from}" converterMessage="Datum mora biti sljedećeg oblika: 13. 05. 2018 13:19:24">  
+                                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss"></f:convertDateTime>  
+                                        </h:inputText>
+                                        <h:message id ="valid1" for="from" class="text-danger"  />
+
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <h:outputLabel class="control-label col-sm-2" for="to" value="Do:">
+
+                                    </h:outputLabel>
+
+                                    <div class="col-sm-10">
+                                        <h:inputText  class="form-control"  id = "to" value="#{pregledDnevnika.to}" converterMessage="Datum mora biti sljedećeg oblika: 13. 05. 2018 13:19:24"> 
+                                            <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />  
+                                        </h:inputText>
+                                        <h:message id ="valid2" for="to" class="text-danger"  />
+
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <h:outputLabel class="control-label col-sm-2" for="reqAddress" value="Adresa zahtjeva">
+
+                                    </h:outputLabel>
+
+                                    <div class="col-sm-10">
+                                        <h:inputText  class="form-control"  id = "reqAddress" value="#{pregledDnevnika.addressReq}"></h:inputText>
+                                        <h:message id ="valid3" for="reqAddress" class="text-danger"  />
+
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <h:outputLabel class="control-label col-sm-2" for="duration" value="Trajanje">
+
+                                    </h:outputLabel>
+
+                                    <div class="col-sm-10">
+                                        <h:inputText  class="form-control"  id = "duration" value="#{pregledDnevnika.duration}"  converterMessage="Smije biti broj u rasponu 0 - 50000 (ms)">
+
+                                            <f:validateLongRange
+                                                minimum="0"
+                                                maximum="50000"/>
+
+                                        </h:inputText>
+                                        <h:message id ="valid4" for="duration" class="text-danger"  />
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <div class="col-md-2 ">
+                            <div class="form-group bottom"> 
+                                <div class="col-sm-offset-2 col-sm-10">
+               
+                                    <h:commandButton style="margin-top: 210px" type="button" class="btn btn-default " value="Preuzmi" action="#{pregledDnevnika.searchByCriteria()}">
+                                        <f:ajax execute="duration reqAddress to from ipAddress" render="logDataTable valid0 valid1 valid2 valid3 valid4"></f:ajax>
+
+                                    </h:commandButton> 
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="col-md-4" rendered="">
+                            <br></br>
+                        </div>
+                    </div>
+
+
+
+                    <br></br>
+                    <!--dodati h messages  -->
+                    <h:messages class="alert alert-info col-md-offset-3 col-md-6" globalOnly="true" />
+
+
+                    <br></br>
+
+
+
+                    <div class="row col-md-offset-1 col-md-10"> 
+                        <h:dataTable  id = "logDataTable" class="table table-bordered" value="#{pregledDnevnika.dnevnikList}" var="item">
+
+                            <h:column>
+
+                                <f:facet name="header">ID</f:facet>
+
+                                <h:outputText value="#{item.id}">
+
+                                </h:outputText>
+                            </h:column>
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">URL</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.url}"></h:outputText>
+
+                            </h:column>
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">IP Adresa</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.ipadresa}"></h:outputText>
+
+                            </h:column>
+                            <h:column>
+                                <!-- column header -->
+                                <f:facet name="header">Trajanje</f:facet>
+                                <!-- row record -->
+                                <h:outputText value="#{item.trajanje} ms"></h:outputText>
+
+                            </h:column>
+
+                            <h:column>
+
+                                <f:facet name="header">Vrijeme</f:facet>
+
+                                <h:outputText value="#{item.vrijeme}">
+                                    <f:convertDateTime pattern="dd. MM. yyyy HH:mm:ss" />
+                                </h:outputText>
+                            </h:column>
+
+
+
+
+                        </h:dataTable>
+                    </div>
+
+
+
+
+                </h:form>
             </ui:define>
 
         </ui:composition>
