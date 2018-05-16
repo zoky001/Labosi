@@ -27,8 +27,8 @@
                             <h:inputText  class="form-control"  id = "id" value="#{pregled.id}"></h:inputText>
                         </div>
                         <div class="col-md-2 form-group" rendered="">
-                            <h:commandButton  type="button" class="btn-primary btn-lg" value="Dodaj" action="#{pregled.dodajParkiraliste()}">
-                                <f:ajax execute="id naziv adresa" render="selecBoxRaspoloziva selecBoxOdabrana id naziv adresa"></f:ajax>
+                            <h:commandButton  type="button" class="btn-primary btn-lg" value="Dodaj" action="#{pregled.dodajParkiraliste()}" onclick="closeMessage()">
+                                <f:ajax execute="id naziv adresa" render="selecBoxRaspoloziva selecBoxOdabrana id naziv adresa messages insertBtn"></f:ajax>
 
                             </h:commandButton> 
                         </div>
@@ -54,8 +54,8 @@
                         </div>
                         <div class="col-md-2 form-group" rendered="">
 
-                            <h:commandButton  type="button" class="btn-primary btn-lg" value="Upiši" action="#{pregled.azurirajParkiraliste()}">
-                                <f:ajax execute="id naziv adresa" render="selecBoxRaspoloziva selecBoxOdabrana id naziv adresa"></f:ajax>
+                            <h:commandButton onclick="closeMessage()" id = "insertBtn" style="#{pregled.showInsertBtn}"  type="button" class="btn-primary btn-lg" value="Upiši" action="#{pregled.azurirajParkiraliste()}">
+                                <f:ajax execute="id naziv adresa" render="messages selecBoxRaspoloziva selecBoxOdabrana id naziv adresa insertBtn messages"></f:ajax>
                             </h:commandButton>
                         </div>
                     </div>
@@ -63,8 +63,13 @@
 
                     <br></br>
                     <!--dodati h messages  -->
-                    <h:messages class="alert alert-info col-md-offset-3 col-md-6" globalOnly="true" />
 
+                    <div class="row">
+                        <h:messages id = "messages" class="alert alert-info col-md-offset-1 col-md-5 message" globalOnly="true" />
+                        <div class="col-md-6">
+                            <br></br>
+                        </div>
+                    </div>
 
                     <br></br>
 
@@ -74,12 +79,14 @@
 
                                 <f:selectItems value="#{pregled.raspolozivaParkiralistaIzbornik}" var="k" itemLabel="#{k.labela}" itemValue="#{k.vrijednost}" />
 
+                                <f:ajax event="change" execute="selecBoxRaspoloziva" render="updateBtn" listener="#{pregled.checkNumberSelectedItemInRaspolozivaList()}"></f:ajax>
+
                             </h:selectManyListbox>
                         </div>
                         <div class="col-md-2">
                             <div class=" col-md-offset-2 col-md-8" style="margin-top: 10px">
                                 <h:commandButton type="button" class="btn-primary btn-sm" value="Preuzmi" action="#{pregled.dodajOdabrana()}">
-                                    <f:ajax execute="selecBoxRaspoloziva " render="selecBoxRaspoloziva selecBoxOdabrana"></f:ajax>
+                                    <f:ajax execute="selecBoxRaspoloziva " render="selecBoxRaspoloziva selecBoxOdabrana updateBtn forecastBtn"></f:ajax>
 
 
                                 </h:commandButton>
@@ -88,16 +95,16 @@
                             <div class=" col-md-offset-2 col-md-8" style="margin-top: 10px">
                                 <h:commandButton type="button" class="btn-primary btn-sm" value="Vrati" action="#{pregled.izbrisiOdabrana()}" >
 
-                                    <f:ajax execute="selecBoxOdabrana" render="selecBoxRaspoloziva selecBoxOdabrana"></f:ajax>
+                                    <f:ajax execute="selecBoxOdabrana" render=" selecBoxRaspoloziva selecBoxOdabrana updateBtn forecastBtn meteoDataTable"></f:ajax>
 
                                 </h:commandButton>
 
                             </div>
                             <div class="col-md-offset-2 col-md-8" style="margin-top: 10px">
-                                <h:commandButton  type="button" class="btn-primary btn-sm" value="Ažuriraj" action="#{pregled.getDataForUpdate()}">
+                                <h:commandButton  id="updateBtn"  type="button" class="btn-primary btn-sm" style="#{pregled.showUpdateBtn}" value="Ažuriraj" action="#{pregled.getDataForUpdate()}">
 
 
-                                    <f:ajax execute="selecBoxRaspoloziva" render="id naziv adresa"></f:ajax>
+                                    <f:ajax execute="selecBoxRaspoloziva" render=" id naziv adresa insertBtn"></f:ajax>
 
                                 </h:commandButton>
 
@@ -113,15 +120,15 @@
                         <div class="col-md-4">
                             <br></br>
 
-                            <h:commandButton  type="button" class="btn-primary btn-lg" value="PROGNOZE" action="#{pregled.getForecastData()}">
-                                <f:ajax execute="selecBoxOdabrana" render="meteoDataTable"></f:ajax>
+                            <h:commandButton  id="forecastBtn" style="#{pregled.showForecastBtn}" type="button" class="btn-primary btn-lg" value="#{pregled.forecastBtnValue}" action="#{pregled.getForecastData()}">
+                                <f:ajax execute="selecBoxOdabrana" render="messages meteoDataTable forecastBtn"></f:ajax>
 
                             </h:commandButton>
                         </div>
                     </div>
 
                     <div class="row col-md-offset-1 col-md-10"> 
-                        <h:dataTable  id = "meteoDataTable" class="table table-bordered" value="#{pregled.tableMeteoPrognoza}" var="item">
+                        <h:dataTable  style="#{pregled.showMeteoDatatable}"  id = "meteoDataTable" class="table table-bordered" value="#{pregled.tableMeteoPrognoza}" var="item">
 
                             <h:column>
 
@@ -217,13 +224,13 @@
                     </div>
 
 
-          
+
 
                 </h:form>
 
 
-                
-                
+
+
 
 
             </ui:define>

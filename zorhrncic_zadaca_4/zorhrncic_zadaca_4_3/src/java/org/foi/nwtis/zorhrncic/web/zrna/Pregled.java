@@ -15,6 +15,8 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.inject.Named;
 import javax.enterprise.context.SessionScoped;
+import javax.faces.application.FacesMessage;
+import javax.faces.context.FacesContext;
 import org.foi.nwtis.zorhrncic.ejb.eb.Parkiralista;
 import org.foi.nwtis.zorhrncic.ejb.sb.DnevnikFacade;
 import org.foi.nwtis.zorhrncic.ejb.sb.MeteoKlijentZrno;
@@ -31,7 +33,6 @@ import org.foi.nwtis.zorhrncic.web.podaci.Parkiraliste;
 @Named(value = "pregled")
 @SessionScoped
 public class Pregled implements Serializable {
-
 
     @EJB
     private MeteoKlijentZrno meteoKlijentZrno;
@@ -60,6 +61,12 @@ public class Pregled implements Serializable {
     private String naziv;
 
     private Integer id;
+    private String showUpdateBtn = "visibility:hidden;";
+    private String showInsertBtn = "visibility:hidden;";
+    private String showForecastBtn = "visibility:hidden;";
+    private String showMeteoDatatable = "visibility:hidden;";
+
+    private String forecastBtnValue = "PROGNOZE";
 
     /**
      * Creates a new instance of Pregled
@@ -77,10 +84,8 @@ public class Pregled implements Serializable {
     }
 
     public String dodajParkiraliste() {
-
         try {
             meteoKlijentZrno.postaviKorisnickePodatke("7505f1b2a843433f4c408932f2d4300d", "AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc");
-
             // parkiralista = meteoPrognosticar.dajParkiralista();
             Lokacija lok = meteoKlijentZrno.dajLokaciju(adresa);
             Parkiralista p = new Parkiralista();
@@ -92,8 +97,13 @@ public class Pregled implements Serializable {
             p.setLatitude(lat);
             p.setLongitude(longi);
             parkiralistaFacade.create(p);
-
+            id = null;
+            naziv = "";
+            adresa = "";
+            showInsertBtn = "visibility:hidden;";
+            setMessage("Uspješno dodano parkiralište");
         } catch (Exception e) {
+            setMessage("Greška prilikom dodavanja parkirališta");
             System.out.println("ERROR UNOS PARK: " + e.getMessage());
         }
         getAllParking();
@@ -118,9 +128,12 @@ public class Pregled implements Serializable {
             id = null;
             naziv = "";
             adresa = "";
+            showInsertBtn = "visibility:hidden;";
+            setMessage("Uspješno ažurirano parkiralište");
         } else {
             //TODO mora biti popunjeni podatci
-
+            setMessage("Greška prilikom ažuriranja.");
+            setMessage("Moraju biti upisani ID, adresa i naziv!!!");
         }
 
         return "";
@@ -144,7 +157,8 @@ public class Pregled implements Serializable {
             }
             raspolozivaParkiralistaIzbornik.removeAll(brisanje);
             odabranaParkiralistaList = raspolozivaParkiralistaString;
-
+            showUpdateBtn = "visibility:hidden;";
+            checkNumberSelectedItemInOdabranaList();
         } catch (Exception e) {
             System.out.println("ERROR: " + e);
         }
@@ -169,6 +183,8 @@ public class Pregled implements Serializable {
             }
             odabranaParkiralistaIzbornik.removeAll(brisanje);
             raspolozivaParkiralistaString = odabranaParkiralistaList;
+            checkNumberSelectedItemInRaspolozivaList();
+            checkNumberSelectedItemInOdabranaList();
         } catch (Exception e) {
         }
         return true;
@@ -185,6 +201,7 @@ public class Pregled implements Serializable {
                                 id = parking.getId();
                                 naziv = parking.getNaziv();
                                 adresa = parking.getAdresa();
+                                showInsertBtn = "";
                             } catch (Exception e) {
                                 System.out.println("ERROR nutra: " + e.getMessage());
                             }
@@ -208,24 +225,61 @@ public class Pregled implements Serializable {
         try {
             for (Izbornik izbornik : odabranaParkiralistaIzbornik) {
 
-                for (String string : odabranaParkiralistaList) {
-                    if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
-                        MeteoPrognoza[] data = meteoKlijentZrno.dajMeteoPrognoze(0, getParkingDataByID(Integer.parseInt(izbornik.getVrijednost())).getAdresa());
+                // for (String string : odabranaParkiralistaList) {
+                //  if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
+                MeteoPrognoza[] data = meteoKlijentZrno.dajMeteoPrognoze(0, getParkingDataByID(Integer.parseInt(izbornik.getVrijednost())).getAdresa());
 
-                        for (MeteoPrognoza meteoPrognoza : Arrays.asList(data)) {
+                for (MeteoPrognoza meteoPrognoza : Arrays.asList(data)) {
 
-                            meteoPrognoza.setId(Integer.parseInt(izbornik.getVrijednost()));
-                        }
-
-                        tableMeteoPrognoza.addAll(Arrays.asList(data));
-                    }
+                    meteoPrognoza.setId(Integer.parseInt(izbornik.getVrijednost()));
                 }
+
+                tableMeteoPrognoza.addAll(Arrays.asList(data));
+                // }
+                // }
+            }
+            if (showMeteoDatatable == "") {
+                showMeteoDatatable = "visibility:hidden;";
+                forecastBtnValue = "PROGNOZE";
+            } else {
+                showMeteoDatatable = "";
+                forecastBtnValue = "ZATVORI PROGNOZE";
             }
         } catch (Exception e) {
             String mess = e.getMessage();
             System.out.println("ERROR: " + mess);
         }
 
+    }
+
+    public void checkNumberSelectedItemInRaspolozivaList() {
+        if (raspolozivaParkiralistaString.size() == 1) {
+            showUpdateBtn = "";
+        } else {
+            showUpdateBtn = "visibility:hidden;";
+        }
+    }
+
+    private void checkNumberSelectedItemInOdabranaList() {
+        if (odabranaParkiralistaIzbornik.size() > 0) {
+            showForecastBtn = "";
+        } else {
+            showForecastBtn = "visibility:hidden;";
+            forecastBtnValue = "PROGNOZE";
+            showMeteoDatatable = "visibility:hidden";
+        }
+    }
+
+    /**
+     * Postavljanje poruke koja se prikazuje unutar JSF stranice.
+     *
+     *
+     * @param message
+     */
+    private void setMessage(String message) {
+        FacesContext facesContext = FacesContext.getCurrentInstance();
+        FacesMessage facesMessage = new FacesMessage(message);
+        facesContext.addMessage(null, facesMessage);
     }
 
     /*
@@ -289,6 +343,14 @@ public class Pregled implements Serializable {
         }
 
         return raspolozivaParkiralistaIzbornik;
+    }
+
+    public String getForecastBtnValue() {
+        return forecastBtnValue;
+    }
+
+    public void setForecastBtnValue(String forecastBtnValue) {
+        this.forecastBtnValue = forecastBtnValue;
     }
 
     class LexicographicComparator implements Comparator<Izbornik> {
@@ -370,6 +432,44 @@ public class Pregled implements Serializable {
         this.tableMeteoPrognoza = tableMeteoPrognoza;
     }
 
+    public String getShowUpdateBtn() {
+        return showUpdateBtn;
+        /* if (raspolozivaParkiralistaString == null) {
+            return showUpdateBtn = "visibility:hidden;";
+        }
+        if (raspolozivaParkiralistaString.size() == 1) {
+            return "";
+        } else {
+             = "visibility:hidden;";
+        }*/
+    }
 
+    public void setShowUpdateBtn(String showUpdateBtn) {
+        this.showUpdateBtn = showUpdateBtn;
+    }
+
+    public String getShowInsertBtn() {
+        return showInsertBtn;
+    }
+
+    public void setShowInsertBtn(String showInsertBtn) {
+        this.showInsertBtn = showInsertBtn;
+    }
+
+    public String getShowForecastBtn() {
+        return showForecastBtn;
+    }
+
+    public void setShowForecastBtn(String showForecastBtn) {
+        this.showForecastBtn = showForecastBtn;
+    }
+
+    public String getShowMeteoDatatable() {
+        return showMeteoDatatable;
+    }
+
+    public void setShowMeteoDatatable(String showMeteoDatatable) {
+        this.showMeteoDatatable = showMeteoDatatable;
+    }
 
 }
