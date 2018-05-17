@@ -11,16 +11,23 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.inject.Named;
 import javax.enterprise.context.SessionScoped;
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
+import javax.servlet.ServletContext;
 import org.foi.nwtis.zorhrncic.ejb.eb.Parkiralista;
 import org.foi.nwtis.zorhrncic.ejb.sb.DnevnikFacade;
 import org.foi.nwtis.zorhrncic.ejb.sb.MeteoKlijentZrno;
 import org.foi.nwtis.zorhrncic.ejb.sb.ParkiralistaFacade;
+import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.KonfiguracijaApstraktna;
+import org.foi.nwtis.zorhrncic.konfiguracije.NeispravnaKonfiguracija;
+import org.foi.nwtis.zorhrncic.konfiguracije.NemaKonfiguracije;
 import org.foi.nwtis.zorhrncic.web.kontrole.Izbornik;
 import org.foi.nwtis.zorhrncic.web.podaci.Lokacija;
 import org.foi.nwtis.zorhrncic.web.podaci.MeteoPrognoza;
@@ -67,6 +74,9 @@ public class Pregled implements Serializable {
     private String showMeteoDatatable = "visibility:hidden;";
 
     private String forecastBtnValue = "PROGNOZE";
+    private ServletContext servletContext;
+    private String gm_apiKey;
+    private String OWM_apikey;
 
     /**
      * Creates a new instance of Pregled
@@ -75,6 +85,7 @@ public class Pregled implements Serializable {
 
         odabranaParkiralistaIzbornik = new ArrayList<Izbornik>();
         raspolozivaParkiralistaIzbornik = new ArrayList<Izbornik>();
+        fetchConfiguration();
         //
     }
 
@@ -221,7 +232,7 @@ public class Pregled implements Serializable {
         izbacivanje odabranog(ih) parkirališta iz popisa odabranihparkirališta, 
          */
         tableMeteoPrognoza = new ArrayList<MeteoPrognoza>();
-        meteoKlijentZrno.postaviKorisnickePodatke("7505f1b2a843433f4c408932f2d4300d", "AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc");
+        meteoKlijentZrno.postaviKorisnickePodatke(OWM_apikey, gm_apiKey);
         try {
             for (Izbornik izbornik : odabranaParkiralistaIzbornik) {
 
@@ -351,6 +362,21 @@ public class Pregled implements Serializable {
 
     public void setForecastBtnValue(String forecastBtnValue) {
         this.forecastBtnValue = forecastBtnValue;
+    }
+
+    private void fetchConfiguration() {
+        try {
+            ServletContext context = (ServletContext) FacesContext
+                    .getCurrentInstance().getExternalContext().getContext();
+            String datoteka = context.getInitParameter("konfiguracija");
+            String putanja = context.getRealPath("/WEB-INF") + java.io.File.separator;
+            Konfiguracija konfiguracija = KonfiguracijaApstraktna.preuzmiKonfiguraciju(putanja + datoteka); //all config data
+            gm_apiKey = konfiguracija.dajPostavku("gmapikey");
+            OWM_apikey = konfiguracija.dajPostavku("apikey");
+        } catch (NemaKonfiguracije | NeispravnaKonfiguracija ex) {
+            System.out.println("error: " + ex.getMessage());
+        }
+
     }
 
     class LexicographicComparator implements Comparator<Izbornik> {

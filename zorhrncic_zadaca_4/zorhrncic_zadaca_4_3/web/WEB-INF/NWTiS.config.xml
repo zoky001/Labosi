@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>NWTIS konfiguracija - api keys</comment>
+    <entry key="gmapikey">AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc</entry>
+    <entry key="apikey">7505f1b2a843433f4c408932f2d4300d</entry>
+</properties>
