@@ -27,7 +27,7 @@
                             <h:inputText  class="form-control"  id = "id" value="#{pregled.id}"></h:inputText>
                         </div>
                         <div class="col-md-2 form-group" rendered="">
-                            <h:commandButton  type="button" class="btn-primary btn-lg" value="Dodaj" action="#{pregled.dodajParkiraliste()}" onclick="closeMessage()">
+                            <h:commandButton  type="button" class="btn-primary btn col-md-12" style="height: 35px" value="Dodaj" action="#{pregled.dodajParkiraliste()}" onclick="closeMessage()">
                                 <f:ajax execute="id naziv adresa" render="selecBoxRaspoloziva selecBoxOdabrana id naziv adresa messages insertBtn"></f:ajax>
 
                             </h:commandButton> 
@@ -54,7 +54,7 @@
                         </div>
                         <div class="col-md-2 form-group" rendered="">
 
-                            <h:commandButton onclick="closeMessage()" id = "insertBtn" style="#{pregled.showInsertBtn}"  type="button" class="btn-primary btn-lg" value="Upiši" action="#{pregled.azurirajParkiraliste()}">
+                            <h:commandButton onclick="closeMessage()" id = "insertBtn" style="height: 35px; #{pregled.showInsertBtn} "  type="button" class="btn-primary btn col-md-12" value="Upiši" action="#{pregled.azurirajParkiraliste()}">
                                 <f:ajax execute="id naziv adresa" render="messages selecBoxRaspoloziva selecBoxOdabrana id naziv adresa insertBtn messages"></f:ajax>
                             </h:commandButton>
                         </div>
@@ -85,7 +85,7 @@
                         </div>
                         <div class="col-md-2">
                             <div class=" col-md-offset-2 col-md-8" style="margin-top: 10px">
-                                <h:commandButton type="button" class="btn-primary btn-sm" value="Preuzmi" action="#{pregled.dodajOdabrana()}">
+                                <h:commandButton type="button" class="btn-primary btn-sm col-md-12" value="Preuzmi" action="#{pregled.dodajOdabrana()}">
                                     <f:ajax execute="selecBoxRaspoloziva " render="selecBoxRaspoloziva selecBoxOdabrana updateBtn forecastBtn"></f:ajax>
 
 
@@ -93,7 +93,7 @@
 
                             </div>
                             <div class=" col-md-offset-2 col-md-8" style="margin-top: 10px">
-                                <h:commandButton type="button" class="btn-primary btn-sm" value="Vrati" action="#{pregled.izbrisiOdabrana()}" >
+                                <h:commandButton type="button" class="btn-primary btn-sm  col-md-12" value="Vrati" action="#{pregled.izbrisiOdabrana()}" >
 
                                     <f:ajax execute="selecBoxOdabrana" render=" selecBoxRaspoloziva selecBoxOdabrana updateBtn forecastBtn meteoDataTable"></f:ajax>
 
@@ -101,7 +101,7 @@
 
                             </div>
                             <div class="col-md-offset-2 col-md-8" style="margin-top: 10px">
-                                <h:commandButton  id="updateBtn"  type="button" class="btn-primary btn-sm" style="#{pregled.showUpdateBtn}" value="Ažuriraj" action="#{pregled.getDataForUpdate()}">
+                                <h:commandButton  id="updateBtn"  type="button" class="btn-primary btn-sm col-md-12" style="#{pregled.showUpdateBtn}" value="Ažuriraj" action="#{pregled.getDataForUpdate()}">
 
 
                                     <f:ajax execute="selecBoxRaspoloziva" render=" id naziv adresa insertBtn"></f:ajax>
