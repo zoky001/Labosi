@@ -15,7 +15,7 @@ import org.foi.nwtis.zorhrncic.rest.klijenti.MeteoPodaci;
  */
 /**
  *
- * @author dkermek
+ * @author Zorhrncic
  */
 public class MeteoPrognoza {
 

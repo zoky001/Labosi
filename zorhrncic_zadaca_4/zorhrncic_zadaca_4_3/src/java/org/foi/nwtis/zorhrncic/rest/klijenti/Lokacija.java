@@ -7,7 +7,7 @@ package org.foi.nwtis.zorhrncic.rest.klijenti;
 
 /**
  *
- * @author dkermek
+ * @author Zoran Hrncic
  */
 public class Lokacija {
 

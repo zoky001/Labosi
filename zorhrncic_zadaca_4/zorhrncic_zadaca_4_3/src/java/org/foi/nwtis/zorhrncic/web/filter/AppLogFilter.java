@@ -23,8 +23,10 @@ import org.foi.nwtis.zorhrncic.ejb.eb.Dnevnik;
 import org.foi.nwtis.zorhrncic.ejb.sb.DnevnikFacade;
 
 /**
+ * Apliokacijski filter koji biljezi svaku zahtjev prema aplikaciji, te
+ * pohranjuje podatek u bazu podataka.
  *
- * @author Zoran
+ * @author Zoran Hrncic
  */
 @WebFilter(filterName = "AppLogFilter", urlPatterns = {"/*"})
 public class AppLogFilter implements Filter {
@@ -116,6 +118,7 @@ public class AppLogFilter implements Filter {
         }
 
         doBeforeProcessing(request, response);
+        //begin request time
         long startTime = System.currentTimeMillis();
 
         Throwable problem = null;
@@ -128,10 +131,9 @@ public class AppLogFilter implements Filter {
             problem = t;
             t.printStackTrace();
         }
+        //finish request time
         long elapsed = System.currentTimeMillis() - startTime;
-        String name = "servlet";
         log("ispitivanje");
-
         if (request instanceof HttpServletRequest) {
             saveDataToLog(request, response, startTime, elapsed);
         }
@@ -248,6 +250,14 @@ public class AppLogFilter implements Filter {
         filterConfig.getServletContext().log(msg);
     }
 
+    /**
+     * Pohranjuje podatke o svakom zahtjevu u bazu podataka.
+     *
+     * @param request
+     * @param response
+     * @param startTime
+     * @param elapsed
+     */
     private void saveDataToLog(ServletRequest request, ServletResponse response, long startTime, long elapsed) {
         try {
             String url = ((HttpServletRequest) request).getRequestURL().toString();

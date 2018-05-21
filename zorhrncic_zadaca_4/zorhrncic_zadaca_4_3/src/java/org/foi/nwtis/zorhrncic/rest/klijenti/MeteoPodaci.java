@@ -11,7 +11,7 @@ import java.util.Date;
 
 /**
  *
- * @author dkermek
+ * @author Zoran Hrncic
  */
 public class MeteoPodaci {
 

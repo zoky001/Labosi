@@ -79,7 +79,7 @@
 
                                 <f:selectItems value="#{pregled.raspolozivaParkiralistaIzbornik}" var="k" itemLabel="#{k.labela}" itemValue="#{k.vrijednost}" />
 
-                                <f:ajax event="change" execute="selecBoxRaspoloziva" render="updateBtn" listener="#{pregled.checkNumberSelectedItemInRaspolozivaList()}"></f:ajax>
+                                <f:ajax event="change" execute="selecBoxRaspoloziva" render="updateBtn" listener="#{pregled.checkNumberOfSelectedItemInRaspolozivaList()}"></f:ajax>
 
                             </h:selectManyListbox>
                         </div>

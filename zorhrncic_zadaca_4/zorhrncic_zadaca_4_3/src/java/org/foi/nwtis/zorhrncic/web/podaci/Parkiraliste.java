@@ -10,7 +10,7 @@ import org.foi.nwtis.zorhrncic.rest.klijenti.Lokacija;
 
 /**
  *
- * @author dkermek
+ * @author zorhrncic
  */
 public class Parkiraliste {
     private int id;

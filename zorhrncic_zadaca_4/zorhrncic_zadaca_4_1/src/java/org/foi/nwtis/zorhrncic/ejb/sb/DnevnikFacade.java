@@ -5,7 +5,6 @@
  */
 package org.foi.nwtis.zorhrncic.ejb.sb;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.ejb.Stateless;
@@ -16,8 +15,6 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import javax.persistence.metamodel.EntityType;
-import javax.persistence.metamodel.Metamodel;
 import org.foi.nwtis.zorhrncic.ejb.eb.Dnevnik;
 
 /**
@@ -44,6 +41,17 @@ public class DnevnikFacade extends AbstractFacade<Dnevnik> {
         super(Dnevnik.class);
     }
 
+    
+    /**
+     * Dohvaca podateke iz tablice "Dnevnike" na temelju unešenih podataka za pretreaživanje.
+     * Mogu biti unjeti bilo koji od 5 podataka iz tablice.
+     * @param ipv6
+     * @param from
+     * @param to
+     * @param duration
+     * @param url
+     * @return 
+     */
     public List<Dnevnik> getByFilter(String ipv6, Date from, Date to, int duration, String url) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
 // Query for a List of objects.
@@ -61,9 +69,20 @@ public class DnevnikFacade extends AbstractFacade<Dnevnik> {
         List<Dnevnik> result = query.getResultList();
 
         return result;
-
     }
 
+    
+    /**
+     * Kreiranje predikata prema kojima se pretrazuje baza podataka; tablica "Dnevnik"
+     * 
+     * @param cb
+     * @param duration
+     * @param e
+     * @param url
+     * @param ipv6
+     * @param from
+     * @param to 
+     */
     private void createPredicates(CriteriaBuilder cb, int duration, Root e, String url, String ipv6, Date from, Date to) {
         predicate0 = cb.conjunction();
         predicate = cb.conjunction();

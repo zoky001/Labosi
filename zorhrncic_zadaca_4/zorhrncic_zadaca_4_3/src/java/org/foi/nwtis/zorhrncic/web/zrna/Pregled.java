@@ -11,8 +11,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.inject.Named;
@@ -21,7 +19,6 @@ import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
 import javax.servlet.ServletContext;
 import org.foi.nwtis.zorhrncic.ejb.eb.Parkiralista;
-import org.foi.nwtis.zorhrncic.ejb.sb.DnevnikFacade;
 import org.foi.nwtis.zorhrncic.ejb.sb.MeteoKlijentZrno;
 import org.foi.nwtis.zorhrncic.ejb.sb.ParkiralistaFacade;
 import org.foi.nwtis.zorhrncic.konfiguracije.Konfiguracija;
@@ -34,8 +31,10 @@ import org.foi.nwtis.zorhrncic.web.podaci.MeteoPrognoza;
 import org.foi.nwtis.zorhrncic.web.podaci.Parkiraliste;
 
 /**
+ * Zrno koje upravlja svim podatcima i aktivnostima vezanima uz pregled
+ * parkiralista i dohvacanje potrebnih podataka.
  *
- * @author grupa_1
+ * @author Zoran Hrncic
  */
 @Named(value = "pregled")
 @SessionScoped
@@ -51,53 +50,48 @@ public class Pregled implements Serializable {
     List<String> raspolozivaParkiralistaString;
     List<Izbornik> odabranaParkiralistaIzbornik;
     List<String> odabranaParkiralistaList;
-
     Parkiraliste azuriranoParkiraliste;
-
     Parkiraliste novoParkiraliste;
-
     List<String> listMeteoPrognoza;
-
     List<MeteoPrognoza> tableMeteoPrognoza;
-
-    /*
-    , prikaz ažuriranjaparkirališta, prikaz pregleda prognoza. 
-     */
     private String adresa;
-
     private String naziv;
-
     private Integer id;
     private String showUpdateBtn = "visibility:hidden;";
     private String showInsertBtn = "visibility:hidden;";
     private String showForecastBtn = "visibility:hidden;";
     private String showMeteoDatatable = "visibility:hidden;";
-
     private String forecastBtnValue = "PROGNOZE";
-    private ServletContext servletContext;
     private String gm_apiKey;
     private String OWM_apikey;
 
     /**
-     * Creates a new instance of Pregled
+     * Creates a new instance of Pregled Instanciranje potrebnih objekata.
+     * Poktenaje dohvacanje konfiguracije.
      */
     public Pregled() {
-
         odabranaParkiralistaIzbornik = new ArrayList<Izbornik>();
         raspolozivaParkiralistaIzbornik = new ArrayList<Izbornik>();
         fetchConfiguration();
-        //
     }
 
+    /**
+     * Dohvacanje svih parkiralista radi prikaza u listbox-u.
+     *
+     */
     @PostConstruct
     private void init() {
         getAllParking();
     }
 
+    /**
+     * Dodavanje novog parkiranisra u bazu podataka.
+     *
+     * @return
+     */
     public String dodajParkiraliste() {
         try {
-            meteoKlijentZrno.postaviKorisnickePodatke("7505f1b2a843433f4c408932f2d4300d", "AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc");
-            // parkiralista = meteoPrognosticar.dajParkiralista();
+            meteoKlijentZrno.postaviKorisnickePodatke(OWM_apikey, gm_apiKey);
             Lokacija lok = meteoKlijentZrno.dajLokaciju(adresa);
             Parkiralista p = new Parkiralista();
             p.setNaziv(naziv);
@@ -121,11 +115,14 @@ public class Pregled implements Serializable {
         return "";
     }
 
+    /**
+     * Azurira postojece parkiraliste u bazi podataka.
+     *
+     * @return
+     */
     public String azurirajParkiraliste() {
-
         if (id != null && naziv.length() > 0 && adresa.length() > 0) {
-            // parkiralista = meteoPrognosticar.dajParkiralista();
-            meteoKlijentZrno.postaviKorisnickePodatke("7505f1b2a843433f4c408932f2d4300d", "AIzaSyClMT9ZUK7VC2PrvIvjEttlEErqS8aHuMc");
+            meteoKlijentZrno.postaviKorisnickePodatke(OWM_apikey, gm_apiKey);
             Lokacija lok = meteoKlijentZrno.dajLokaciju(adresa);
             float lat = Float.parseFloat(lok.getLatitude());
             float longi = Float.parseFloat(lok.getLongitude());
@@ -142,7 +139,6 @@ public class Pregled implements Serializable {
             showInsertBtn = "visibility:hidden;";
             setMessage("Uspješno ažurirano parkiralište");
         } else {
-            //TODO mora biti popunjeni podatci
             setMessage("Greška prilikom ažuriranja.");
             setMessage("Moraju biti upisani ID, adresa i naziv!!!");
         }
@@ -150,6 +146,11 @@ public class Pregled implements Serializable {
         return "";
     }
 
+    /**
+     * Premjesta odabrana parkiralista iz liste raspolozivih u listu odabranih.
+     *
+     * @return
+     */
     public boolean dodajOdabrana() {
         List<Izbornik> brisanje = new ArrayList<Izbornik>();
         try {
@@ -169,17 +170,20 @@ public class Pregled implements Serializable {
             raspolozivaParkiralistaIzbornik.removeAll(brisanje);
             odabranaParkiralistaList = raspolozivaParkiralistaString;
             showUpdateBtn = "visibility:hidden;";
-            checkNumberSelectedItemInOdabranaList();
+            checkNumberOfItemInOdabranaList();
         } catch (Exception e) {
             System.out.println("ERROR: " + e);
         }
         return true;
     }
 
+    /**
+     * Premjestanje odabranih parkiralista iz liste odabranih u listu
+     * raspoloživih
+     *
+     * @return
+     */
     public boolean izbrisiOdabrana() {
-        /*
-        izbacivanje odabranog(ih) parkirališta iz popisa odabranihparkirališta, 
-         */
         List<Izbornik> brisanje = new ArrayList<Izbornik>();
         try {
             for (Izbornik izbornik : odabranaParkiralistaIzbornik) {
@@ -194,13 +198,17 @@ public class Pregled implements Serializable {
             }
             odabranaParkiralistaIzbornik.removeAll(brisanje);
             raspolozivaParkiralistaString = odabranaParkiralistaList;
-            checkNumberSelectedItemInRaspolozivaList();
-            checkNumberSelectedItemInOdabranaList();
+            checkNumberOfSelectedItemInRaspolozivaList();
+            checkNumberOfItemInOdabranaList();
         } catch (Exception e) {
         }
         return true;
     }
 
+    /**
+     * Dohvacanje odabranog parkiralista iz liste raspolozivih i popunjavanje
+     * forme za azuriranje parkiralista.
+     */
     public void getDataForUpdate() {
         if (raspolozivaParkiralistaString.size() == 1) {
             try {
@@ -223,31 +231,25 @@ public class Pregled implements Serializable {
                 System.out.println("ERROR: " + e);
             }
         } else {
-            //TODO vrati grešku da mora biti jedno odabrano
+            setMessage("Mora biti odabrano tocno 1 parkiraliste");
         }
     }
 
+    /**
+     * Dohvacanje podataka o vremenskim prognozama za odabrana parkiralista.
+     * Pohranjivanje podataka u listu "MeteoPrognoz
+     */
     public void getForecastData() {
-        /*
-        izbacivanje odabranog(ih) parkirališta iz popisa odabranihparkirališta, 
-         */
         tableMeteoPrognoza = new ArrayList<MeteoPrognoza>();
         meteoKlijentZrno.postaviKorisnickePodatke(OWM_apikey, gm_apiKey);
         try {
             for (Izbornik izbornik : odabranaParkiralistaIzbornik) {
-
-                // for (String string : odabranaParkiralistaList) {
-                //  if (string.equalsIgnoreCase(izbornik.getVrijednost())) {
                 MeteoPrognoza[] data = meteoKlijentZrno.dajMeteoPrognoze(0, getParkingDataByID(Integer.parseInt(izbornik.getVrijednost())).getAdresa());
-
                 for (MeteoPrognoza meteoPrognoza : Arrays.asList(data)) {
 
                     meteoPrognoza.setId(Integer.parseInt(izbornik.getVrijednost()));
                 }
-
                 tableMeteoPrognoza.addAll(Arrays.asList(data));
-                // }
-                // }
             }
             if (showMeteoDatatable == "") {
                 showMeteoDatatable = "visibility:hidden;";
@@ -263,7 +265,12 @@ public class Pregled implements Serializable {
 
     }
 
-    public void checkNumberSelectedItemInRaspolozivaList() {
+    /**
+     * Provjera broja odabranih parkiralista u listi raspolozivih. Prikazivanje,
+     * odnosno sakrivanje gumba za pokretanje azuriranja parkiralista.
+     *
+     */
+    public void checkNumberOfSelectedItemInRaspolozivaList() {
         if (raspolozivaParkiralistaString.size() == 1) {
             showUpdateBtn = "";
         } else {
@@ -271,7 +278,11 @@ public class Pregled implements Serializable {
         }
     }
 
-    private void checkNumberSelectedItemInOdabranaList() {
+    /**
+     * Provjera broja parkiralista u listi odabranih. Ovisno o tome se prikazuje
+     * ili sakriva gumb za dohvacanje meteoroloskih prognoza.
+     */
+    private void checkNumberOfItemInOdabranaList() {
         if (odabranaParkiralistaIzbornik.size() > 0) {
             showForecastBtn = "";
         } else {
@@ -293,10 +304,9 @@ public class Pregled implements Serializable {
         facesContext.addMessage(null, facesMessage);
     }
 
-    /*
-    parkirališta iz popisa odabranihparkirališta, 
-    pregled prognoza za odabrana parkirališta itd
-    
+    /**
+     * parkirališta iz popisa odabranihparkirališta, pregled prognoza za
+     * odabrana parkirališta itd
      */
     public void getAllParking() {
         raspolozivaParkiralistaIzbornik = new ArrayList<Izbornik>();
@@ -309,13 +319,36 @@ public class Pregled implements Serializable {
         }
     }
 
+    /**
+     * Dohvacanje parkiralista prema prosljedjenom ID-u
+     *
+     * @param id
+     * @return
+     */
     public Parkiralista getParkingDataByID(int id) {
-
         return parkiralistaFacade.find(id);
+    }
+
+    /**
+     * Dohvacanje konfiguracije u kojoj se nalaze kljucevi za koristenje
+     * vanjskih Web Servisa
+     */
+    private void fetchConfiguration() {
+        try {
+            ServletContext context = (ServletContext) FacesContext
+                    .getCurrentInstance().getExternalContext().getContext();
+            String datoteka = context.getInitParameter("konfiguracija");
+            String putanja = context.getRealPath("/WEB-INF") + java.io.File.separator;
+            Konfiguracija konfiguracija = KonfiguracijaApstraktna.preuzmiKonfiguraciju(putanja + datoteka); //all config data
+            gm_apiKey = konfiguracija.dajPostavku("gmapikey");
+            OWM_apikey = konfiguracija.dajPostavku("apikey");
+        } catch (NemaKonfiguracije | NeispravnaKonfiguracija ex) {
+            System.out.println("error: " + ex.getMessage());
+        }
 
     }
 
-//gett setrt
+//getter &  setter
     public String getAdresa() {
         return adresa;
     }
@@ -348,6 +381,11 @@ public class Pregled implements Serializable {
         this.parkiralistaFacade = parkiralistaFacade;
     }
 
+    /**
+     * Dohvacanje sortirane liste
+     *
+     * @return
+     */
     public List<Izbornik> getRaspolozivaParkiralistaIzbornik() {
         if (raspolozivaParkiralistaIzbornik != null) {
             Collections.sort(raspolozivaParkiralistaIzbornik, new LexicographicComparator());
@@ -362,29 +400,6 @@ public class Pregled implements Serializable {
 
     public void setForecastBtnValue(String forecastBtnValue) {
         this.forecastBtnValue = forecastBtnValue;
-    }
-
-    private void fetchConfiguration() {
-        try {
-            ServletContext context = (ServletContext) FacesContext
-                    .getCurrentInstance().getExternalContext().getContext();
-            String datoteka = context.getInitParameter("konfiguracija");
-            String putanja = context.getRealPath("/WEB-INF") + java.io.File.separator;
-            Konfiguracija konfiguracija = KonfiguracijaApstraktna.preuzmiKonfiguraciju(putanja + datoteka); //all config data
-            gm_apiKey = konfiguracija.dajPostavku("gmapikey");
-            OWM_apikey = konfiguracija.dajPostavku("apikey");
-        } catch (NemaKonfiguracije | NeispravnaKonfiguracija ex) {
-            System.out.println("error: " + ex.getMessage());
-        }
-
-    }
-
-    class LexicographicComparator implements Comparator<Izbornik> {
-
-        @Override
-        public int compare(Izbornik a, Izbornik b) {
-            return a.getLabela().compareToIgnoreCase(b.getLabela());
-        }
     }
 
     public void setRaspolozivaParkiralistaIzbornik(List<Izbornik> raspolozivaParkiralistaIzbornik) {
@@ -496,6 +511,14 @@ public class Pregled implements Serializable {
 
     public void setShowMeteoDatatable(String showMeteoDatatable) {
         this.showMeteoDatatable = showMeteoDatatable;
+    }
+
+    class LexicographicComparator implements Comparator<Izbornik> {
+
+        @Override
+        public int compare(Izbornik a, Izbornik b) {
+            return a.getLabela().compareToIgnoreCase(b.getLabela());
+        }
     }
 
 }

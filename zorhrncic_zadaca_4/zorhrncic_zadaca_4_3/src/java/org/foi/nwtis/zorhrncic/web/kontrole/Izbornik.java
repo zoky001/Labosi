@@ -7,7 +7,7 @@ package org.foi.nwtis.zorhrncic.web.kontrole;
 
 /**
  *
- * @author grupa_1
+ * @author zorhrncic
  */
 public class Izbornik {
     private String labela;

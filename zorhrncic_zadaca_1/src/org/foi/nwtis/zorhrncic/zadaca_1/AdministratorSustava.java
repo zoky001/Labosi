@@ -188,9 +188,55 @@ public class AdministratorSustava extends KorisnikSustava {
         try (InputStream inputStream = socket.getInputStream();
                 OutputStream outputStream = socket.getOutputStream();) {
             if (getCommand().size() > 0) {
+               /*
+                • STANI; – potpuno prekida preuzimanje meteoroloških podataka i preuzimanje komandi. I
+završava rad. Vraća OK 10; ako nije bio u postupku prekida, odnosno ERR 16; ako je bio u
+postupku prekida.
+• STANJE; – vraća trenutno stanje poslužitelja. Vraća OK dd; gdje dd znači: 11 – preuzima sve
+komanda i preuzima meteo podatke, 12 - preuzima sve komanda i ne preuzima meteo podatke,
+13 – preuzima samo poslužiteljske komanda i preuzima meteo podatke, 14 – preuzima samo
+poslužiteljske komanda i ne preuzima meteo podatke.
+• LISTAJ; – vraća podatke svih korisnika. Vraća OK 10; [{″ki″: d{1-6} ″prezime″: prezime,
+″ime″: ime,},...]; odnosno ERR 17; ako ne postoji.
+             • KORISNIK korisnik; LOZINKA lozinka; DODAJ ″prezime″ ″ime″; – Vraća
+OK 10; ako ne postoji korisnik i uspješno je dodan odnosno ERR 10; ako već postoji korisnik.
+• KORISNIK korisnik; LOZINKA lozinka; – autentikacija korisnika. Vraća ERR 11;
+ako ne postoji korisnik ili ne odgovara lozinka. Ako su podaci u redu i nema nastavka komande
+vraća OK 10; Odnosno ako ima, prelazi na obradu ostalog dijela komande.
+• PAUZA; – privremeno prekida preuzimanje ostalih komande osim za poslužitelja. Vraća OK
+10; ako nije bio u pauzi, odnosno ERR 12; ako je bio u pauzi.
+• KRENI; – nastavlja s preuzimanjem svih komandi. Vraća OK 10; ako je bio u pauzi, odnosno
+ERR 13; ako nije bio u pauzi.
+• PASIVNO; – privremeno prekida preuzimanje meteoroloških podataka od sljedećeg ciklusa
+Vraća OK 10; ako je bio u aktivnom radu, odnosno ERR 14; ako je bio u pasivnom radu.
+• AKTIVNO; – nastavlja s preuzimanjem meteoroloških podataka od sljedećeg ciklusa. Vraća
+OK 10; ako je bio u pasivnom radu, odnosno ERR 15; ako je bio u aktivnom radu.   
+                
+                */
+               
+               
+               /*
+               KORISNIK korisnik; LOZINKA lozinka; – autentikacija korisnika. Vraća ERR 11;
+ako ne postoji korisnik ili ne odgovara lozinka. Ako su podaci u redu i nema nastavka komande
+vraća OK 10; Odnosno ako ima, prelazi na obradu ostalog dijela komande.
+• GRUPA DODAJ; – registrira grupu. Vraća OK 20; ako nije bila registrirana (ne postoji),
+odnosno ERR 20; ako je bila registrirana.
+• GRUPA PREKID; – odjavljuje (deregistrira) grupu. Vraća OK 20; ako je bila registrirana,
+odnosno ERR 21; ako nije bila registrirana.
+• GRUPA KRENI; – aktivira grupu. Vraća OK 20; ako nije bila aktivna, ERR 22; ako je bila
+aktivna odnosno ERR 21; ako ne postoji.
+• GRUPA PAUZA; – blokira grupu. Vraća OK 20; ako je bila aktivna, ERR 23; ako nije bila
+aktivna odnosno ERR 21; ako ne postoji
+• GRUPA STANJE; – vraća status grupe. Vraća OK dd; gdje dd znači: 21 – grupa je aktivna,
+22 – grupa blokirana odnosno ERR 21; ako ne postoji.
+               */
+                outputStream.write("KORISNIK korisnik; LOZINKA lozinka; STANJE;".getBytes());
+              /*
                 for (String command : getCommand()) {
                     outputStream.write(command.getBytes());
                 }
+                
+                */
             } else {
                 System.out.println("ERROR 02; komanda nije ispravna");
             }
