@@ -12,20 +12,15 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.inject.Named;
-import javax.enterprise.context.RequestScoped;
 import javax.enterprise.context.SessionScoped;
 import org.foi.nwtis.zorhrncic.ejb.eb.Dnevnik;
-import org.foi.nwtis.zorhrncic.ejb.eb.Parkiralista;
 import org.foi.nwtis.zorhrncic.ejb.sb.DnevnikFacade;
-import org.foi.nwtis.zorhrncic.ejb.sb.MeteoKlijentZrno;
-import org.foi.nwtis.zorhrncic.ejb.sb.ParkiralistaFacade;
-import org.foi.nwtis.zorhrncic.web.kontrole.Izbornik;
-import org.foi.nwtis.zorhrncic.web.podaci.MeteoPrognoza;
-import org.foi.nwtis.zorhrncic.web.podaci.Parkiraliste;
 
 /**
  *
- * @author grupa_1
+ * Zrno služi za pregled zapisa iz dnevnika, te pretraživanje prema filtru.
+ *
+ * @author Zoran Hrnčić
  */
 @Named(value = "pregledDnevnika")
 @SessionScoped
@@ -49,12 +44,22 @@ public class PregledDnevnika implements Serializable {
     public PregledDnevnika() {
     }
 
+    
+    /**
+     * Dohvaca sve zapise iz dnevnika.
+     * 
+     */
     @PostConstruct
     private void init() {
         dnevnikList = dnevnikFacade.findAll();
     }
 
+    /**
+     * Pretraživanje zapisa prema zadaniim kriterijima.
+     * 
+     */
     public void searchByCriteria() {
+        init();
         System.out.println("from : " + from);
         System.out.println("to : " + to);
         System.out.println("ip : " + ipAddress);

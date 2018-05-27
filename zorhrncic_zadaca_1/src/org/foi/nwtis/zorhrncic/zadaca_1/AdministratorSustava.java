@@ -230,7 +230,7 @@ aktivna odnosno ERR 21; ako ne postoji
 • GRUPA STANJE; – vraća status grupe. Vraća OK dd; gdje dd znači: 21 – grupa je aktivna,
 22 – grupa blokirana odnosno ERR 21; ako ne postoji.
                */
-                outputStream.write("KORISNIK korisnik; LOZINKA lozinka; STANJE;".getBytes());
+                outputStream.write("KORISNIK korisnik; LOZINKA lozinka; STANI;".getBytes());
               /*
                 for (String command : getCommand()) {
                     outputStream.write(command.getBytes());
@@ -238,7 +238,7 @@ aktivna odnosno ERR 21; ako ne postoji
                 
                 */
             } else {
-                System.out.println("ERROR 02; komanda nije ispravna");
+                System.out.println("ERROR 02; komanda nije ispravna client");
             }
             outputStream.flush();
             socket.shutdownOutput();
